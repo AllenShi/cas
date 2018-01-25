@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html layout:decorator="layout">
+
+<head>
+    <title th:text="#{cas.login.pagetitle}"></title>
+</head>
+
+<body id="cas" class="login">
+    <div layout:fragment="content">
+            <div th:replace="fragments/insecure"/>
+            <div th:replace="fragments/defaultauthn"/>
+            <div th:replace="fragments/cookies"/>
+            <div th:replace="fragments/loginProviders" />
+            <div id="testServerMsg" style="display:none;"></div>
+            <div id="cookiesDisabled" class="errors" style="display: none;"></div>
+            <div id="emailAddressTyped" style="display: none;"></div>
+            <div th:replace="fragments/loginImpform" />
+            <div>
+                <a href="https://ucdavisit.service-now.com/ess/knowledge_detail.do?sysparm_article=KB0000527" target="_blank"><span th:text="#{screen.help}"/></a>
+            </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="layout">
+
+<head>
+    <title th:text="#{screen.confirmation.message}"></title>
+</head>
+
+<body id="cas">
+<div layout:fragment="content" class="confirmView">
+    <div id="msg" class="warn">
+        <p>Please change your passphrase. Our records indicate that your credentials are stored in a format that will soon be replaced for security purposes.<br><br>
+            Go to <a href="https://computingaccounts.ucdavis.edu" target="_blank">Computing Accounts</a> to update your passphrase so you can continue to access sites protected by CAS.<br><br>
+            Press Continue to complete login.
+        </p>
+
+        <form method="post" id="form" class="fm-v clearfix">
+            <input type="hidden" name="execution" th:value="${flowExecutionKey}"/>
+
+            <input class="form-element form-button" name="_eventId_success" accesskey="l"
+                   th:value="#{screen.button.continue}" tabindex="4" type="submit"/>
+        </form>
+
+    </div>
+</div>
+</body>
+</html>

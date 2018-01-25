@@ -1,0 +1,164 @@
+* {
+	/* So 100% means 100% */
+	box-sizing: border-box;
+}
+
+body {
+	margin: auto;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	max-width: 600px;
+	/* http://marketingtoolbox.ucdavis.edu/identity/fonts.html */
+	font-family: "Lucida Grande", "Lucida Sans", Verdana, sans-serif;
+	background: #ffffff;
+}
+
+.margins {
+    margin-left:50px;
+    margin-right:50px;
+}
+
+#header img {
+	width: 100%;
+	height: auto;
+}
+
+#header h1 {
+	text-align: center;
+	font-size: 1.3em;
+	margin-top: 10px;
+	margin-bottom: 0;
+	color: #002855;
+}
+
+#content {
+	padding-left: 50px;
+	padding-right: 50px;
+}
+
+#footer {
+	margin-top: 2.5em;
+	font-size: 11px;
+	color: #002855;
+}
+
+#footer .emphasized {
+	font-weight: bolder;
+}
+
+#article {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+@media only screen and (max-width: 500px) {
+	#wrapper { min-width: 320px; }
+    .margins {
+        margin-left:5px;
+        margin-right:5px;
+     }
+	#article {
+		-webkit-border-bottom-right-radius: 0px;
+		-webkit-border-bottom-left-radius: 0px;
+		-moz-border-radius-bottomright: 0px;
+		-moz-border-radius-bottomleft: 0px;
+		border-bottom-right-radius: 0px;
+		border-bottom-left-radius: 0px;
+	}
+}
+
+.errors {
+	border: 1px dotted #BB0000;
+	color: #BB0000;
+	padding: 15px;
+	font-size: 11px;
+    width:100%
+}
+
+form label {
+	font-weight: bold;
+}
+
+.form-element-wrapper {
+	margin-bottom: 1em;
+}
+
+.form-element {
+	width: 100%;
+	padding: 13px 12px;
+	border: none;
+	font-size: 14px;
+	border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+}
+
+.form-field {
+	border: 1px solid #B7B7B7;
+}
+
+.error {
+	border: 1px solid #BB0000;
+}
+
+.form-button {
+	background: #335379;
+	color: #c99700;
+	cursor: pointer;
+}
+
+#msg {
+    padding: 15px;
+    margin-bottom: 10px;
+    width:100%;
+}
+
+#msg.errors {
+    border: 1px dotted #BB0000;
+    color: #BB0000;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+#msg.success { 
+	border: 1px dotted #390; 
+	color: #390; 
+	padding-left: 15px;
+    padding-right: 15px;
+}
+
+#msg.info {
+	font-size:14px; 
+	background: #e8e8e8;
+}
+
+#msg.question { 
+	border: 1px dotted #390; 
+	color: #390; 
+	padding-left: 15px;
+    padding-right: 15px;
+}
+
+#msg.warn { 
+	border: 1px dotted #960; 
+	color: #960; 
+	padding-left: 15px;
+    padding-right: 15px;
+}
+
+#emailAddressTyped {
+	border: 1px dotted #960; 
+	color: #960; 
+	padding: 5px;
+	font-size: 13px;
+    margin-bottom : 10px;
+}
+
+#testServerMsg {
+	border: 1px dotted #002855; 
+	color: #002855; 
+	padding: 5px;
+	font-size: 13px;
+    margin-bottom : 10px;
+    text-justify: distribute;
+}

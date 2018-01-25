@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html layout:decorator="layout">
+
+<head th:inline="text">
+  <title>[[#{screen.success.header}]]</title>
+</head>
+
+<body id="cas">
+<div layout:fragment="content">
+    <div id="msg" class="info">
+        <p class="message">You have attempted to access a service that requires second factor authentication through Duo Security.<br/><br/>Information on second factor authenticaton and steps to setup a Duo account can be found <a href="https://ucdavisit.service-now.com/ess/knowledge_detail.do?sysparm_article=KB0001225">here</a>.</p>
+    </div>
+</div>
+</body>
+</html>

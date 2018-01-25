@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html layout:decorator="layout">
+
+<head th:inline="text">
+  <title>[[#{screen.success.header}]]</title>
+</head>
+
+<body id="cas">
+<div layout:fragment="content">
+    <div id="msg" class="errors">
+      <h2 th:utext="#{screen.blocked.header}"/>
+      <p th:utext="#{screen.duo.denied}"/>
+    </div>
+</div>
+</body>
+</html>

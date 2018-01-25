@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html layout:decorator="layout">
+
+<head th:inline="text">
+  <title>[[#{screen.success.header}]]</title>
+</head>
+
+<body id="cas">
+<div layout:fragment="content">
+    <div id="msg" class="errors">
+      <h2>Impersonation is Not Allowed</h2>
+      <p>You have not been authorized to impersonate the service you attempted to access.  If this is a mistake or you need impersonation to test this service, please contact IET.</p>
+    </div>
+</div>
+</body>
+</html>

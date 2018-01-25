@@ -1,0 +1,54 @@
+<form method="post" id="fm1" th:object="${credential}" htmlEscape="true" onsubmit="checkSubmitUsername(event);">
+
+    <div class="error" th:if="${#fields.hasErrors('*')}">
+        <span th:each="err : ${#fields.errors('*')}" th:utext="${err}"/>
+    </div>
+
+    <div class="form-element-wrapper">
+        <label for="impname" th:utext="#{screen.welcome.label.impid}"></label>
+        <input class="form-element form-field required"
+               th:field="*{impname}"
+               id="impname"
+               size="25"
+               path="impname"
+               htmlEscape="true"
+               spellcheck="false"
+               onkeyup="checkUsername(event);"/>
+    </div>
+
+    <div class="form-element-wrapper">
+        <label for="username" th:utext="#{screen.welcome.label.netid}"></label>
+        <input class="form-element form-field required"
+               th:field="*{username}"
+               id="username"
+               size="25"
+               path="username"
+               htmlEscape="true"
+               spellcheck="false"
+               onkeyup="checkUsername(event);"/>
+    </div>
+
+    <div class="form-element-wrapper">
+        <label for="password" th:utext="#{screen.welcome.label.password}"></label>
+        <input type="password"
+               class="form-element form-field required"
+               id="password"
+               size="25"
+               path="password"
+               htmlEscape="true"
+               spellcheck="false"
+               th:field="*{password}"/>
+    </div>
+
+    <div class="form-element-wrapper">
+        <input type="hidden" name="execution" th:value="${flowExecutionKey}"/>
+        <input type="hidden" name="_eventId" value="submit"/>
+        <input type="hidden" name="geolocation"/>
+        <input class="form-element form-button"
+               name="submit"
+               id="submit"
+               th:value="#{screen.welcome.button.login}"
+               type="submit"/>
+    </div>
+</form>
+

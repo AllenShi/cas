@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="http://www.springframework.org/schema/webflow"
+      xsi:schemaLocation="http://www.springframework.org/schema/webflow
+                          http://www.springframework.org/schema/webflow/spring-webflow.xsd">
+
+    <var name="credential" class="org.apereo.cas.authentication.ImpUsernamePasswordCredential"/>
+
+    <on-start>
+        <evaluate expression="initialFlowSetupAction"/>
+        <evaluate expression="true" result="conversationScope.impersonation"/>
+    </on-start>
+
+    <action-state id="initialAuthenticationRequestValidationCheck">
+        <evaluate expression="initialAuthenticationRequestValidationAction"/>
+        <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
+        <transition on="error" to="initializeLoginForm"/>
+        <transition on="success" to="ticketGrantingTicketCheck"/>
+    </action-state>
+
+    <action-state id="ticketGrantingTicketCheck">
+        <evaluate expression="ticketGrantingTicketCheckAction"/>
+        <transition on="notExists" to="gatewayRequestCheck"/>
+        <transition on="invalid" to="terminateSession"/>
+        <transition on="valid" to="hasServiceCheck"/>
+    </action-state>
+
+    <action-state id="initializeLoginForm">
+        <evaluate expression="initializeLoginAction" />
+        <transition on="success" to="viewLoginForm"/>
+    </action-state>
+
+    <view-state id="viewLoginForm" view="casLoginImpView" model="credential">
+        <binder>
+            <binding property="impname" required="true"/>
+            <binding property="username" required="true"/>
+            <binding property="password" required="true"/>
+        </binder>
+        <!--
+        <on-entry>
+            <evaluate expression="samlMetadataUIParserAction" />
+        </on-entry>
+        -->
+        <transition on="submit" bind="true" validate="true" to="checkImpersonators"/>
+    </view-state>
+
+    <decision-state id="checkImpersonators">
+        <if test="requestParameters.entityId != null"
+            then="checkByEntityId"
+            else="checkByURL"/>
+    </decision-state>
+
+    <decision-state id="checkByEntityId">
+        <if test="impersonators.canImpersonate(credential.username,requestParameters.entityId)"
+            then="realSubmit"
+            else="notAllowedImpersonation"/>
+    </decision-state>
+
+    <decision-state id="checkByURL">
+        <if test="impersonators.canImpersonate(credential.username,flowScope.service.getOriginalUrl())"
+            then="realSubmit"
+            else="notAllowedImpersonation"/>
+    </decision-state>
+
+    <action-state id="realSubmit">
+        <evaluate expression="authenticationViaFormAction"/>
+        <transition on="warn" to="warn"/>
+        <transition on="success" to="sendTicketGrantingTicket"/>
+        <!--<transition on="success" to="jaasView"/>-->
+        <transition on="successWithWarnings" to="showMessages"/>
+        <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
+        <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
+        <transition on="error" to="initializeLoginForm"/>
+        <transition on="deniedByDuo" to="deniedByDuo"/>
+        <transition on="duoEnrollUser" to="duoEnrollUser"/>
+        <transition on="duoUnavailable" to="duoUnavailable"/>
+    </action-state>
+
+    <view-state id="jaasView" view="jaasView">
+        <transition on="success" to="sendTicketGrantingTicket"/>
+    </view-state>
+
+    <view-state id="showAuthenticationWarningMessages" view="casLoginMessageView">
+        <on-entry>
+            <evaluate expression="sendTicketGrantingTicketAction"/>
+            <set name="requestScope.messages" value="messageContext.allMessages"/>
+        </on-entry>
+        <transition on="proceed" to="serviceCheck"/>
+    </view-state>
+
+    <action-state id="sendTicketGrantingTicket">
+        <evaluate expression="sendTicketGrantingTicketAction"/>
+        <transition on="success" to="serviceCheck"/>
+    </action-state>
+
+    <action-state id="generateServiceTicket">
+        <evaluate expression="generateServiceTicketAction"/>
+        <transition on="success" to="redirect"/>
+        <transition on="warn" to="warn"/>
+        <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
+        <transition on="error" to="initializeLoginForm"/>
+        <transition on="gateway" to="gatewayServicesManagementCheck"/>
+    </action-state>
+    <!--
+        <action-state id="redirect">
+            <evaluate expression="flowScope.service.getResponse(requestScope.serviceTicketId)"
+                      result-type="org.apereo.cas.authentication.principal.Response" result="requestScope.response"/>
+            <transition to="postRedirectDecision"/>
+        </action-state>
+    -->
+    <!--  This state is reached when Duo Preauth Denies a user-->
+    <end-state id="deniedByDuo" view="duoDeniedView"/>
+
+    <!--  This state is reached by a user who needs to enroll in Duo
+      We send the the TGT so they do not have to re-enter credentials
+      but will not be sent to their destination service.
+     -->
+    <end-state id="duoEnrollUser" view="enrollmentView">
+        <on-entry>
+            <evaluate expression="sendTicketGrantingTicketAction"/>
+        </on-entry>
+    </end-state>
+
+    <!--  This screen is shown when Duo is not available and CAS is
+          set to fail closed.  We send the ticket still so they have
+          SSO for other services that do not require Duo.
+    -->
+    <end-state id="duoUnavailable" view="duoUnavailable">
+        <on-entry>
+            <evaluate expression="sendTicketGrantingTicketAction"/>
+        </on-entry>
+    </end-state>
+
+    <end-state id="notAllowedImpersonation" view="notAllowedImpersonationView"/>
+
+    <!--
+        <end-state id="postView" view="protocol/casPostResponseView">
+            <on-entry>
+                <set name="requestScope.parameters" value="requestScope.response.attributes"/>
+                <set name="requestScope.originalUrl" value="flowScope.service.id"/>
+       q     </on-entry>
+        </end-state>
+    -->
+</flow>
