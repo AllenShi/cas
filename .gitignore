@@ -37,9 +37,6 @@ reports
 
 webapp/resources/static/css/*
 *.asc
-
-
-webapp-mgmt/cas-management-webapp/src/main/resources/static
 /.nb-gradle/
 etc/loadtests/loadtests/**
 etc/loadtests/locustfiles/**

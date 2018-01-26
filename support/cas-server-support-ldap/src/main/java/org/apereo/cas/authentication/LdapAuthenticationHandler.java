@@ -153,8 +153,6 @@ public class LdapAuthenticationHandler extends AbstractUsernamePasswordAuthentic
     @Override
     protected HandlerResult authenticateUsernamePasswordInternal(final UsernamePasswordCredential upc,
                                                                  final String originalPassword) throws GeneralSecurityException, PreventedException {
-
-
         final AuthenticationResponse response;
         try {
             LOGGER.debug("Attempting LDAP authentication for [{}]. Authenticator pre-configured attributes are [{}], "
@@ -189,7 +187,6 @@ public class LdapAuthenticationHandler extends AbstractUsernamePasswordAuthentic
             LOGGER.warn("DN resolution failed. [{}]", response.getMessage());
             throw new AccountNotFoundException(upc.getUsername() + " not found.");
         }
-
         throw new FailedLoginException("Invalid credentials");
     }
 

@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Implementation of the ServiceRegistryDao interface which stores the services in a LDAP Directory.
@@ -60,7 +61,15 @@ public class LdapServiceRegistryDao extends AbstractServiceRegistryDao {
             if (rs.getId() != RegisteredService.INITIAL_IDENTIFIER_VALUE) {
                 return update(rs);
             }
-            
+            insert(rs);
+        } catch (final Exception e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+        return rs;
+    }
+
+    private RegisteredService insert(final RegisteredService rs) {
+        try {
             final LdapEntry entry = this.ldapServiceMapper.mapFromRegisteredService(this.baseDn, rs);
             LdapUtils.executeAddOperation(this.connectionFactory, entry);
         } catch (final Exception e) {
@@ -91,6 +100,9 @@ public class LdapServiceRegistryDao extends AbstractServiceRegistryDao {
             LOGGER.debug("Updating registered service at [{}]", currentDn);
             final LdapEntry entry = this.ldapServiceMapper.mapFromRegisteredService(this.baseDn, rs);
             LdapUtils.executeModifyOperation(currentDn, this.connectionFactory, entry);
+        } else {
+            LOGGER.debug("Failed to locate DN for registered service by id [{}]. Attempting to save the service anew", rs.getId());
+            insert(rs);
         }
 
         return rs;
@@ -141,12 +153,13 @@ public class LdapServiceRegistryDao extends AbstractServiceRegistryDao {
             final Response<SearchResult> response = getSearchResultResponse();
             if (LdapUtils.containsResultEntry(response)) {
                 response.getResult().getEntries()
-                        .stream()
-                        .map(this.ldapServiceMapper::mapToRegisteredService)
-                        .forEach(s -> {
-                            publishEvent(new CasRegisteredServiceLoadedEvent(this, s));
-                            list.add(s);
-                        });
+                    .stream()
+                    .map(this.ldapServiceMapper::mapToRegisteredService)
+                    .filter(Objects::nonNull)
+                    .forEach(s -> {
+                        publishEvent(new CasRegisteredServiceLoadedEvent(this, s));
+                        list.add(s);
+                    });
             }
         } catch (final LdapException e) {
             LOGGER.error(e.getMessage(), e);
@@ -156,7 +169,7 @@ public class LdapServiceRegistryDao extends AbstractServiceRegistryDao {
 
     private Response<SearchResult> getSearchResultResponse() throws LdapException {
         return LdapUtils.executeSearchOperation(this.connectionFactory,
-                this.baseDn, LdapUtils.newLdaptiveSearchFilter(this.loadFilter));
+            this.baseDn, LdapUtils.newLdaptiveSearchFilter(this.loadFilter));
     }
 
     @Override
@@ -186,8 +199,8 @@ public class LdapServiceRegistryDao extends AbstractServiceRegistryDao {
      */
     private Response<SearchResult> searchForServiceById(final Long id) throws LdapException {
         final SearchFilter filter = LdapUtils.newLdaptiveSearchFilter(this.searchFilter,
-                LdapUtils.LDAP_SEARCH_FILTER_DEFAULT_PARAM_NAME,
-                CollectionUtils.wrap(id.toString()));
+            LdapUtils.LDAP_SEARCH_FILTER_DEFAULT_PARAM_NAME,
+            CollectionUtils.wrap(id.toString()));
         return LdapUtils.executeSearchOperation(this.connectionFactory, this.baseDn, filter);
     }
 

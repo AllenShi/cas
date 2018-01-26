@@ -13,10 +13,7 @@ server* expecting change notifications to quietly reload its configuration.
 
 Therefor, in order to broadcast such `change` events CAS
 presents [various endpoints](Monitoring-Statistics.html) that allow the adopter
-to **refresh** the configuration as needed. 
-For that, you will need to go to the page 'cas/status/dashboard' and click on Refresh button, or to go directly to 'cas/status/refresh' (POST request).
-
-This means that an adopter would simply
+to **refresh** the configuration as needed. This means that an adopter would simply
 change a required CAS settings and then would submit
 a request to CAS to refresh its current state. All CAS internal components that are affected
 by the external change are quietly reloaded
@@ -43,13 +40,6 @@ is used to control and direct settings and Spring Cloud configuration server is 
 CAS will begin to automatically watch and monitor the configuration files indicated by the profile and will auto-reload the state of the runtime
 application context automatically. You may also attempt to [refresh settings manually](Monitoring-Statistics.html)
 via the CAS admin screens.
-
-**Tip:** If you find that changes to `cas.properties` are not taking immediate effect (i.e. manually editing on the server), you can easily force detection of changes by touching the file:
-
-````
-# touch /etc/cas/config/cas.properties
-INFO [org.apereo.cas.support.events.listener.CasConfigurationEventListener] - <Received event [org.apereo.cas.support.events.config.CasConfigurationModifiedEvent@353ebd1c[],/etc/cas/config/cas.properties,false]. Refreshing CAS configuration...>
-````
 
 ### Spring Cloud
 

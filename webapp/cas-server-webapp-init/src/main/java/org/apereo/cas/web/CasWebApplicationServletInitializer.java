@@ -13,6 +13,7 @@ import java.util.Map;
  * @since 5.0.0
  */
 public class CasWebApplicationServletInitializer extends SpringBootServletInitializer {
+
     @Override
     protected SpringApplicationBuilder configure(final SpringApplicationBuilder builder) {
         final Map<String, Object> properties = CasEmbeddedContainerUtils.getRuntimeProperties(Boolean.FALSE);

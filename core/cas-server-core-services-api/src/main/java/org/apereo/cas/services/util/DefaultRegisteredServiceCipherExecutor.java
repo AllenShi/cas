@@ -41,8 +41,7 @@ public class DefaultRegisteredServiceCipherExecutor implements RegisteredService
             final PublicKey publicKey = createRegisteredServicePublicKey(service);
             final byte[] result = encodeInternal(data, publicKey, service);
             if (result != null) {
-                final String a = EncodingUtils.encodeBase64(result);
-                return a;
+                return EncodingUtils.encodeBase64(result);
             }
         } catch (final Exception e) {
             LOGGER.warn(e.getMessage(), e);

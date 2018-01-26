@@ -127,4 +127,3 @@ public class RankedAuthenticationProviderWebflowEventResolver extends AbstractCa
         return CollectionUtils.wrapSet(new EventFactorySupport().success(this));
     }
 }
-

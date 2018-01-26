@@ -11,6 +11,7 @@ import org.apereo.cas.pm.BasePasswordManagementService;
 import org.apereo.cas.pm.PasswordChangeBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -51,12 +52,17 @@ public class JdbcPasswordManagementService extends BasePasswordManagementService
 
     @Override
     public String findEmail(final String username) {
-        final String query = properties.getJdbc().getSqlFindEmail();
-        final String email = this.jdbcTemplate.queryForObject(query, String.class, username);
-        if (StringUtils.isNotBlank(email) && EmailValidator.getInstance().isValid(email)) {
-            return email;
+        try {
+            final String email = this.jdbcTemplate.queryForObject(properties.getJdbc().getSqlFindEmail(), String.class, username);
+            if (StringUtils.isNotBlank(email) && EmailValidator.getInstance().isValid(email)) {
+                return email;
+            }
+            LOGGER.debug("Username [{}] not found when searching for email", username);
+            return null;
+        } catch (final EmptyResultDataAccessException e) {
+            LOGGER.debug("Username [{}] not found when searching for email", username);
+            return null;
         }
-        return null;
     }
 
     @Override

@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Monitors the memcached hosts known to instances of {@link net.spy.memcached.MemcachedClientIF}.
+ * Monitors the memcached hosts known to an instance of {@link net.spy.memcached.MemcachedClientIF}.
  *
  * @author Marvin S. Addison
  * @since 3.5.1

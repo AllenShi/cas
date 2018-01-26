@@ -78,8 +78,7 @@ public class DefaultCasCookieValueManager implements CookieValueManager {
             throw new IllegalStateException("Invalid cookie. Required fields are empty");
         }
 
-        //final ClientInfo clientInfo = ClientInfoHolder.getClientInfo();
-        final ClientInfo clientInfo = new ClientInfo(request);
+        final ClientInfo clientInfo = ClientInfoHolder.getClientInfo();
         if (!remoteAddr.equals(clientInfo.getClientIpAddress())) {
             throw new IllegalStateException("Invalid cookie. Required remote address "
                     + remoteAddr + " does not match " + clientInfo.getClientIpAddress());

@@ -83,7 +83,7 @@ public abstract class AbstractSamlObjectBuilder implements Serializable {
     /**
      * The Config bean.
      */
-    protected transient OpenSamlConfigBean configBean;
+    protected OpenSamlConfigBean configBean;
 
     public AbstractSamlObjectBuilder(final OpenSamlConfigBean configBean) {
         this.configBean = configBean;
