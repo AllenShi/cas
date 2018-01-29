@@ -1,5 +1,6 @@
 package org.apereo.cas.adaptors.gauth;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.config.CasCoreAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationHandlersConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationMetadataConfiguration;
@@ -82,6 +83,7 @@ import static org.junit.Assert.*;
 @TestPropertySource(locations = {"classpath:/mongogauth.properties"})
 @EnableScheduling
 @ContextConfiguration(initializers = EnvironmentConversionServiceInitializer.class)
+@Slf4j
 public class GoogleAuthenticatorMongoDbTokenCredentialRepositoryTests {
 
     @Autowired
@@ -92,7 +94,7 @@ public class GoogleAuthenticatorMongoDbTokenCredentialRepositoryTests {
     public void verifySave() {
         registry.save("uid", "secret", 143211, Arrays.asList(1, 2, 3, 4, 5, 6));
         final OneTimeTokenAccount s = registry.get("uid");
-        assertEquals(s.getSecretKey(), "secret");
+        assertEquals("secret", s.getSecretKey());
     }
 
     @TestConfiguration

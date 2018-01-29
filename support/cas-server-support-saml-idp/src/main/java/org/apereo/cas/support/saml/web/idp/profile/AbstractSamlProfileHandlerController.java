@@ -1,5 +1,9 @@
 package org.apereo.cas.support.saml.web.idp.profile;
 
+import com.google.common.base.Splitter;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.net.URLBuilder;
 import net.shibboleth.utilities.java.support.xml.ParserPool;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +44,6 @@ import org.jasig.cas.client.validation.Assertion;
 import org.jasig.cas.client.validation.AssertionImpl;
 import org.opensaml.core.xml.util.XMLObjectSupport;
 import org.opensaml.messaging.context.MessageContext;
-import org.opensaml.messaging.decoder.servlet.BaseHttpServletRequestXMLMessageDecoder;
 import org.opensaml.saml.common.SAMLException;
 import org.opensaml.saml.common.SAMLObject;
 import org.opensaml.saml.common.SignableSAMLObject;
@@ -50,8 +53,6 @@ import org.opensaml.saml.saml2.binding.decoding.impl.HTTPSOAP11Decoder;
 import org.opensaml.saml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
@@ -79,28 +80,32 @@ import java.util.TreeMap;
  * @since 5.0.0
  */
 @Controller
+@Slf4j
+@RequiredArgsConstructor
 public abstract class AbstractSamlProfileHandlerController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSamlProfileHandlerController.class);
+    /**
+     * The Saml object signer.
+     */
+    protected final BaseSamlObjectSigner samlObjectSigner;
+    /**
+     * The Parser pool.
+     */
+    protected final ParserPool parserPool;
 
     /**
      * Authentication support to handle credentials and authn subsystem calls.
      */
-    protected AuthenticationSystemSupport authenticationSystemSupport;
+    protected final AuthenticationSystemSupport authenticationSystemSupport;
 
     /**
-     * The Saml object signer.
+     * The Services manager.
      */
-    protected BaseSamlObjectSigner samlObjectSigner;
+    protected final ServicesManager servicesManager;
 
     /**
-     * Signature validator.
+     * The Web application service factory.
      */
-    protected SamlObjectSignatureValidator samlObjectSignatureValidator;
-
-    /**
-     * The Parser pool.
-     */
-    protected ParserPool parserPool;
+    protected final ServiceFactory<WebApplicationService> webApplicationServiceFactory;
 
     /**
      * Callback service.
@@ -108,70 +113,29 @@ public abstract class AbstractSamlProfileHandlerController {
     protected Service callbackService;
 
     /**
-     * The Services manager.
-     */
-    protected ServicesManager servicesManager;
-
-    /**
-     * The Web application service factory.
-     */
-    protected ServiceFactory<WebApplicationService> webApplicationServiceFactory;
-
-    /**
      * The Saml registered service caching metadata resolver.
      */
-    protected SamlRegisteredServiceCachingMetadataResolver samlRegisteredServiceCachingMetadataResolver;
+    protected final SamlRegisteredServiceCachingMetadataResolver samlRegisteredServiceCachingMetadataResolver;
 
     /**
      * The Config bean.
      */
-    protected OpenSamlConfigBean configBean;
+    protected final OpenSamlConfigBean configBean;
 
     /**
      * The Response builder.
      */
-    protected SamlProfileObjectBuilder<? extends SAMLObject> responseBuilder;
+    protected final SamlProfileObjectBuilder<? extends SAMLObject> responseBuilder;
 
     /**
      * The cas properties.
      */
-    protected CasConfigurationProperties casProperties;
+    protected final CasConfigurationProperties casProperties;
 
     /**
-     * Instantiates a new Abstract saml profile handler controller.
-     *
-     * @param samlObjectSigner                             the saml object signer
-     * @param parserPool                                   the parser pool
-     * @param authenticationSystemSupport                  the authentication system support
-     * @param servicesManager                              the services manager
-     * @param webApplicationServiceFactory                 the web application service factory
-     * @param samlRegisteredServiceCachingMetadataResolver the saml registered service caching metadata resolver
-     * @param configBean                                   the config bean
-     * @param responseBuilder                              the response builder
-     * @param casProperties                                the cas properties
-     * @param samlObjectSignatureValidator                 the saml object signature validator
+     * Signature validator.
      */
-    public AbstractSamlProfileHandlerController(final BaseSamlObjectSigner samlObjectSigner,
-                                                final ParserPool parserPool,
-                                                final AuthenticationSystemSupport authenticationSystemSupport,
-                                                final ServicesManager servicesManager,
-                                                final ServiceFactory<WebApplicationService> webApplicationServiceFactory,
-                                                final SamlRegisteredServiceCachingMetadataResolver samlRegisteredServiceCachingMetadataResolver,
-                                                final OpenSamlConfigBean configBean,
-                                                final SamlProfileObjectBuilder<? extends SAMLObject> responseBuilder,
-                                                final CasConfigurationProperties casProperties,
-                                                final SamlObjectSignatureValidator samlObjectSignatureValidator) {
-        this.samlObjectSigner = samlObjectSigner;
-        this.parserPool = parserPool;
-        this.servicesManager = servicesManager;
-        this.webApplicationServiceFactory = webApplicationServiceFactory;
-        this.samlRegisteredServiceCachingMetadataResolver = samlRegisteredServiceCachingMetadataResolver;
-        this.configBean = configBean;
-        this.responseBuilder = responseBuilder;
-        this.authenticationSystemSupport = authenticationSystemSupport;
-        this.samlObjectSignatureValidator = samlObjectSignatureValidator;
-        this.casProperties = casProperties;
-    }
+    protected final SamlObjectSignatureValidator samlObjectSignatureValidator;
 
     /**
      * Post constructor placeholder for additional
@@ -192,8 +156,7 @@ public abstract class AbstractSamlProfileHandlerController {
      */
     protected Optional<SamlRegisteredServiceServiceProviderMetadataFacade> getSamlMetadataFacadeFor(final SamlRegisteredService registeredService,
                                                                                                     final RequestAbstractType authnRequest) {
-        return SamlRegisteredServiceServiceProviderMetadataFacade.get(this.samlRegisteredServiceCachingMetadataResolver,
-            registeredService, authnRequest);
+        return SamlRegisteredServiceServiceProviderMetadataFacade.get(this.samlRegisteredServiceCachingMetadataResolver, registeredService, authnRequest);
     }
 
     /**
@@ -203,10 +166,9 @@ public abstract class AbstractSamlProfileHandlerController {
      * @param entityId          the entity id
      * @return the saml metadata adaptor for service
      */
-    protected Optional<SamlRegisteredServiceServiceProviderMetadataFacade> getSamlMetadataFacadeFor(final SamlRegisteredService registeredService,
-                                                                                                    final String entityId) {
-        return SamlRegisteredServiceServiceProviderMetadataFacade
-            .get(this.samlRegisteredServiceCachingMetadataResolver, registeredService, entityId);
+    protected Optional<SamlRegisteredServiceServiceProviderMetadataFacade> getSamlMetadataFacadeFor(
+        final SamlRegisteredService registeredService, final String entityId) {
+        return SamlRegisteredServiceServiceProviderMetadataFacade.get(this.samlRegisteredServiceCachingMetadataResolver, registeredService, entityId);
     }
 
     /**
@@ -222,10 +184,9 @@ public abstract class AbstractSamlProfileHandlerController {
         }
         LOGGER.debug("Checking service access in CAS service registry for [{}]", serviceId);
         final RegisteredService registeredService =
-                this.servicesManager.findServiceBy(this.webApplicationServiceFactory.createService(serviceId));
+            this.servicesManager.findServiceBy(this.webApplicationServiceFactory.createService(serviceId));
         if (registeredService == null || !registeredService.getAccessStrategy().isServiceAccessAllowed()) {
-            LOGGER.warn("[{}] is not found in the registry or service access is denied. Ensure service is registered in service registry",
-                serviceId);
+            LOGGER.warn("[{}] is not found in the registry or service access is denied. Ensure service is registered in service registry", serviceId);
             throw new UnauthorizedServiceException(UnauthorizedServiceException.CODE_UNAUTHZ_SERVICE);
         }
 
@@ -323,42 +284,6 @@ public abstract class AbstractSamlProfileHandlerController {
             null, DateTimeUtils.dateOf(ZonedDateTime.now()), attributes);
     }
 
-    /**
-     * Decode authentication request saml object.
-     *
-     * @param request the request
-     * @param decoder the decoder
-     * @param clazz   the clazz
-     * @return the saml object
-     */
-    protected Pair<? extends SignableSAMLObject, MessageContext> decodeSamlContextFromHttpRequest(final HttpServletRequest request,
-                                                                                                  final BaseHttpServletRequestXMLMessageDecoder decoder,
-                                                                                                  final Class<? extends SignableSAMLObject> clazz) {
-        LOGGER.info("Received SAML profile request [{}]", request.getRequestURI());
-
-        try {
-            decoder.setHttpServletRequest(request);
-            decoder.setParserPool(this.parserPool);
-            decoder.initialize();
-            decoder.decode();
-
-            final MessageContext messageContext = decoder.getMessageContext();
-            final SignableSAMLObject object = (SignableSAMLObject) messageContext.getMessage();
-
-            if (object == null) {
-                throw new SAMLException("No " + clazz.getName() + " could be found in this request context. Decoder has failed.");
-            }
-
-            if (!clazz.isAssignableFrom(object.getClass())) {
-                throw new ClassCastException("SAML object [" + object.getClass().getName() + " type does not match " + clazz);
-            }
-
-            LOGGER.debug("Decoded SAML object [{}] from http request", object.getElementQName());
-            return Pair.of(object, messageContext);
-        } catch (final Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
 
     /**
      * Log cas validation assertion.
@@ -366,9 +291,9 @@ public abstract class AbstractSamlProfileHandlerController {
      * @param assertion the assertion
      */
     protected void logCasValidationAssertion(final Assertion assertion) {
-        LOGGER.info("CAS Assertion Valid: [{}]", assertion.isValid());
+        LOGGER.debug("CAS Assertion Valid: [{}]", assertion.isValid());
         LOGGER.debug("CAS Assertion Principal: [{}]", assertion.getPrincipal().getName());
-        LOGGER.debug("CAS Assertion AuthN Date: [{}]", assertion.getAuthenticationDate());
+        LOGGER.debug("CAS Assertion authentication Date: [{}]", assertion.getAuthenticationDate());
         LOGGER.debug("CAS Assertion ValidFrom Date: [{}]", assertion.getValidFromDate());
         LOGGER.debug("CAS Assertion ValidUntil Date: [{}]", assertion.getValidUntilDate());
         LOGGER.debug("CAS Assertion Attributes: [{}]", assertion.getAttributes());
@@ -399,7 +324,6 @@ public abstract class AbstractSamlProfileHandlerController {
         LOGGER.debug("Redirecting SAML authN request to [{}]", urlToRedirectTo);
         final AuthenticationRedirectStrategy authenticationRedirectStrategy = new DefaultAuthenticationRedirectStrategy();
         authenticationRedirectStrategy.redirect(request, response, urlToRedirectTo);
-
     }
 
     /**
@@ -412,8 +336,8 @@ public abstract class AbstractSamlProfileHandlerController {
         casProperties.getAuthn().getSamlIdp().getAuthenticationContextClassMappings()
             .stream()
             .map(s -> {
-                final String[] bits = s.split("->");
-                return Pair.of(bits[0], bits[1]);
+                final List<String> bits = Splitter.on("->").splitToList(s);
+                return Pair.of(bits.get(0), bits.get(1));
             })
             .forEach(p -> mappings.put(p.getKey(), p.getValue()));
         return mappings;
@@ -427,8 +351,7 @@ public abstract class AbstractSamlProfileHandlerController {
      * @param request      the request
      * @return the redirect url
      */
-    protected String buildRedirectUrlByRequestedAuthnContext(final String initialUrl, final AuthnRequest authnRequest,
-                                                             final HttpServletRequest request) {
+    protected String buildRedirectUrlByRequestedAuthnContext(final String initialUrl, final AuthnRequest authnRequest, final HttpServletRequest request) {
         final List<String> authenticationContextClassMappings = this.casProperties.getAuthn().getSamlIdp().getAuthenticationContextClassMappings();
         if (authnRequest.getRequestedAuthnContext() == null || authenticationContextClassMappings == null || authenticationContextClassMappings.isEmpty()) {
             return initialUrl;
@@ -462,6 +385,7 @@ public abstract class AbstractSamlProfileHandlerController {
      * @return the string
      * @throws SamlException the saml exception
      */
+    @SneakyThrows
     protected String constructServiceUrl(final HttpServletRequest request,
                                          final HttpServletResponse response,
                                          final Pair<? extends SignableSAMLObject, MessageContext> pair) throws SamlException {
@@ -488,8 +412,6 @@ public abstract class AbstractSamlProfileHandlerController {
                 url, casProperties.getServer().getName(),
                 CasProtocolConstants.PARAMETER_SERVICE,
                 CasProtocolConstants.PARAMETER_TICKET, false);
-        } catch (final Exception e) {
-            throw new SamlException(e.getMessage(), e);
         }
     }
 

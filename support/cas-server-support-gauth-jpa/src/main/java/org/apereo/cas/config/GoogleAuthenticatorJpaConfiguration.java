@@ -1,6 +1,7 @@
 package org.apereo.cas.config;
 
 import com.warrenstrange.googleauth.IGoogleAuthenticator;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.adaptors.gauth.JpaGoogleAuthenticatorTokenCredentialRepository;
 import org.apereo.cas.adaptors.gauth.GoogleAuthenticatorJpaTokenRepository;
 import org.apereo.cas.adaptors.gauth.repository.credentials.GoogleAuthenticatorAccount;
@@ -40,6 +41,7 @@ import java.util.List;
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @EnableTransactionManagement(proxyTargetClass = true)
 @EnableScheduling
+@Slf4j
 public class GoogleAuthenticatorJpaConfiguration {
 
 
@@ -51,8 +53,7 @@ public class GoogleAuthenticatorJpaConfiguration {
     public HibernateJpaVendorAdapter jpaGoogleAuthenticatorVendorAdapter() {
         return JpaBeans.newHibernateJpaVendorAdapter(casProperties.getJdbc());
     }
-
-    @RefreshScope
+    
     @Bean
     public DataSource dataSourceGoogleAuthenticator() {
         return JpaBeans.newDataSource(casProperties.getAuthn().getMfa().getGauth().getJpa().getDatabase());

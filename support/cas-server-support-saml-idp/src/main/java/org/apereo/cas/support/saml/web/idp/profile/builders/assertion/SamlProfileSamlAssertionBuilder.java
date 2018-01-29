@@ -1,5 +1,6 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.assertion;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.support.saml.SamlException;
@@ -16,16 +17,14 @@ import org.opensaml.saml.saml2.core.Conditions;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.saml.saml2.core.Statement;
 import org.opensaml.saml.saml2.core.Subject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * This is {@link SamlProfileSamlAssertionBuilder}.
@@ -33,9 +32,10 @@ import javax.servlet.http.HttpServletResponse;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class SamlProfileSamlAssertionBuilder extends AbstractSaml20ObjectBuilder implements SamlProfileObjectBuilder<Assertion> {
     private static final long serialVersionUID = -3945938960014421135L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(SamlProfileSamlAssertionBuilder.class);
+
 
     @Autowired
     private CasConfigurationProperties casProperties;
@@ -72,22 +72,22 @@ public class SamlProfileSamlAssertionBuilder extends AbstractSaml20ObjectBuilder
 
         final List<Statement> statements = new ArrayList<>();
         final AuthnStatement authnStatement = this.samlProfileSamlAuthNStatementBuilder.build(authnRequest, request, response,
-                casAssertion, service, adaptor, binding);
+            casAssertion, service, adaptor, binding);
         statements.add(authnStatement);
         final AttributeStatement attrStatement = this.samlProfileSamlAttributeStatementBuilder.build(authnRequest, request,
-                response, casAssertion, service, adaptor, binding);
-        
+            response, casAssertion, service, adaptor, binding);
+
         if (!attrStatement.getAttributes().isEmpty() || !attrStatement.getEncryptedAttributes().isEmpty()) {
             statements.add(attrStatement);
         }
 
         final String id = '_' + String.valueOf(Math.abs(RandomUtils.getInstanceNative().nextLong()));
         final Assertion assertion = newAssertion(statements, casProperties.getAuthn().getSamlIdp().getEntityId(),
-                ZonedDateTime.now(ZoneOffset.UTC), id);
+            ZonedDateTime.now(ZoneOffset.UTC), id);
         assertion.setSubject(this.samlProfileSamlSubjectBuilder.build(authnRequest, request, response,
-                casAssertion, service, adaptor, binding));
+            casAssertion, service, adaptor, binding));
         assertion.setConditions(this.samlProfileSamlConditionsBuilder.build(authnRequest,
-                request, response, casAssertion, service, adaptor, binding));
+            request, response, casAssertion, service, adaptor, binding));
         signAssertion(assertion, request, response, service, adaptor, binding);
         return assertion;
     }
@@ -108,16 +108,14 @@ public class SamlProfileSamlAssertionBuilder extends AbstractSaml20ObjectBuilder
                                  final SamlRegisteredService service,
                                  final SamlRegisteredServiceServiceProviderMetadataFacade adaptor,
                                  final String binding) throws SamlException {
-        try {
-            if (service.isSignAssertions()) {
-                LOGGER.debug("SAML registered service [{}] requires assertions to be signed", adaptor.getEntityId());
-                this.samlObjectSigner.encode(assertion, service, adaptor,
-                        response, request, binding);
-            } else {
-                LOGGER.debug("SAML registered service [{}] does not require assertions to be signed", adaptor.getEntityId());
-            }
-        } catch (final Exception e) {
-            throw new SamlException("Unable to marshall assertion for signing", e);
+
+        if (service.isSignAssertions()) {
+            LOGGER.debug("SAML registered service [{}] requires assertions to be signed", adaptor.getEntityId());
+            this.samlObjectSigner.encode(assertion, service, adaptor,
+                response, request, binding);
+        } else {
+            LOGGER.debug("SAML registered service [{}] does not require assertions to be signed", adaptor.getEntityId());
         }
+
     }
 }

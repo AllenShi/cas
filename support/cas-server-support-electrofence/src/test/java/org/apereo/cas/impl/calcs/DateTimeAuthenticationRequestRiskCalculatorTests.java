@@ -1,7 +1,9 @@
 package org.apereo.cas.impl.calcs;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.api.AuthenticationRiskEvaluator;
 import org.apereo.cas.api.AuthenticationRiskScore;
+import org.apereo.cas.audit.spi.config.CasCoreAuditConfiguration;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.config.CasCoreAuthenticationConfiguration;
@@ -38,6 +40,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -55,35 +58,39 @@ import static org.junit.Assert.*;
  * @since 5.1.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {RefreshAutoConfiguration.class,
-        ElectronicFenceConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class,
-        CasDefaultServiceTicketIdGeneratorsConfiguration.class,
-        CasCoreAuthenticationPrincipalConfiguration.class,
-        CasCoreAuthenticationPolicyConfiguration.class,
-        CasCoreAuthenticationMetadataConfiguration.class,
-        CasCoreAuthenticationSupportConfiguration.class,
-        CasCoreAuthenticationHandlersConfiguration.class,
-        CasCoreAuthenticationConfiguration.class, 
-        CasCoreServicesAuthenticationConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        CasPersonDirectoryConfiguration.class,
-        CasCoreServicesConfiguration.class,
-        GoogleMapsGeoCodingConfiguration.class,
-        CasCoreWebConfiguration.class,
-        CasCoreWebflowConfiguration.class,
-        CasCoreConfiguration.class,
-        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-        CasCoreTicketsConfiguration.class,
-        CasCoreTicketCatalogConfiguration.class,
-        CasCoreLogoutConfiguration.class,
-        CasCookieConfiguration.class,
-        CasEventsInMemoryRepositoryConfiguration.class,
-        CasCoreUtilConfiguration.class,
-        CasCoreEventsConfiguration.class})
+@SpringBootTest(classes = {
+    AopAutoConfiguration.class,
+    RefreshAutoConfiguration.class,
+    ElectronicFenceConfiguration.class,
+    CasWebApplicationServiceFactoryConfiguration.class,
+    CasDefaultServiceTicketIdGeneratorsConfiguration.class,
+    CasCoreAuthenticationPrincipalConfiguration.class,
+    CasCoreAuthenticationPolicyConfiguration.class,
+    CasCoreAuthenticationMetadataConfiguration.class,
+    CasCoreAuthenticationSupportConfiguration.class,
+    CasCoreAuthenticationHandlersConfiguration.class,
+    CasCoreAuthenticationConfiguration.class,
+    CasCoreServicesAuthenticationConfiguration.class,
+    CasCoreHttpConfiguration.class,
+    CasPersonDirectoryConfiguration.class,
+    CasCoreServicesConfiguration.class,
+    GoogleMapsGeoCodingConfiguration.class,
+    CasCoreWebConfiguration.class,
+    CasCoreWebflowConfiguration.class,
+    CasCoreConfiguration.class,
+    CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+    CasCoreTicketsConfiguration.class,
+    CasCoreTicketCatalogConfiguration.class,
+    CasCoreLogoutConfiguration.class,
+    CasCookieConfiguration.class,
+    CasEventsInMemoryRepositoryConfiguration.class,
+    CasCoreUtilConfiguration.class,
+    CasCoreAuditConfiguration.class,
+    CasCoreEventsConfiguration.class})
 @TestPropertySource(properties = "cas.authn.adaptive.risk.dateTime.enabled=true")
 @DirtiesContext
 @EnableScheduling
+@Slf4j
 public class DateTimeAuthenticationRequestRiskCalculatorTests {
 
     @Autowired
@@ -93,7 +100,7 @@ public class DateTimeAuthenticationRequestRiskCalculatorTests {
     @Autowired
     @Qualifier("authenticationRiskEvaluator")
     private AuthenticationRiskEvaluator authenticationRiskEvaluator;
-    
+
     @Before
     public void prepTest() {
         MockTicketGrantingTicketCreatedEventProducer.createEvents(this.casEventRepository);

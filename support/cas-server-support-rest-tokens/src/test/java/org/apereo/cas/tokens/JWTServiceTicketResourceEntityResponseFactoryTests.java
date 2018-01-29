@@ -1,6 +1,7 @@
 package org.apereo.cas.tokens;
 
 import com.nimbusds.jwt.JWTClaimsSet;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.authentication.AuthenticationResult;
@@ -87,6 +88,7 @@ import static org.junit.Assert.*;
         CasDefaultServiceTicketIdGeneratorsConfiguration.class,
         CasWebApplicationServiceFactoryConfiguration.class,
         CasRestTokensConfiguration.class})
+@Slf4j
 public class JWTServiceTicketResourceEntityResponseFactoryTests {
 
     @Autowired
@@ -112,7 +114,7 @@ public class JWTServiceTicketResourceEntityResponseFactoryTests {
         final Service service = RegisteredServiceTestUtils.getService("test");
         final ResponseEntity<String> response = serviceTicketResourceEntityResponseFactory.build(tgt.getId(), service, result);
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
@@ -123,7 +125,7 @@ public class JWTServiceTicketResourceEntityResponseFactoryTests {
         final Service service = RegisteredServiceTestUtils.getService("jwtservice");
         final ResponseEntity<String> response = serviceTicketResourceEntityResponseFactory.build(tgt.getId(), service, result);
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         assertFalse(response.getBody().startsWith(ServiceTicket.PREFIX));
         
         final Object jwt = this.tokenCipherExecutor.decode(response.getBody());

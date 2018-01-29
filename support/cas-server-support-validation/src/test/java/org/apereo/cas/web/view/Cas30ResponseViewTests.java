@@ -1,8 +1,11 @@
 package org.apereo.cas.web.view;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.CasViewConstants;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
+import org.apereo.cas.authentication.DefaultAuthenticationAttributeReleasePolicy;
 import org.apereo.cas.authentication.DefaultAuthenticationContextValidator;
 import org.apereo.cas.authentication.DefaultAuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.DefaultAuthenticationServiceSelectionStrategy;
@@ -11,16 +14,14 @@ import org.apereo.cas.authentication.ProtocolAttributeEncoder;
 import org.apereo.cas.authentication.UsernamePasswordCredential;
 import org.apereo.cas.authentication.support.DefaultCasProtocolAttributeEncoder;
 import org.apereo.cas.services.ServicesManager;
-import org.apereo.cas.services.web.support.DefaultAuthenticationAttributeReleasePolicy;
 import org.apereo.cas.util.EncodingUtils;
 import org.apereo.cas.util.cipher.NoOpCipherExecutor;
 import org.apereo.cas.util.crypto.PrivateKeyFactoryBean;
+import org.apereo.cas.validation.DefaultServiceTicketValidationAuthorizersExecutionPlan;
 import org.apereo.cas.web.AbstractServiceValidateController;
 import org.apereo.cas.web.AbstractServiceValidateControllerTests;
 import org.apereo.cas.web.ServiceValidateController;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ClassPathResource;
@@ -38,8 +39,8 @@ import org.springframework.web.servlet.support.RequestContext;
 import javax.crypto.Cipher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -52,8 +53,9 @@ import static org.junit.Assert.*;
  */
 @DirtiesContext
 @TestPropertySource(properties = {"cas.clearpass.cacheCredential=true", "cas.clearpass.crypto.enabled=false"})
+@Slf4j
 public class Cas30ResponseViewTests extends AbstractServiceValidateControllerTests {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Cas30ResponseViewTests.class);
+
 
     @Autowired
     @Qualifier("servicesManager")
@@ -74,16 +76,16 @@ public class Cas30ResponseViewTests extends AbstractServiceValidateControllerTes
     @Override
     public AbstractServiceValidateController getServiceValidateControllerInstance() throws Exception {
         return new ServiceValidateController(
-                getValidationSpecification(),
-                getAuthenticationSystemSupport(), getServicesManager(),
-                getCentralAuthenticationService(),
-                getProxyHandler(),
-                getArgumentExtractor(),
-                new DefaultMultifactorTriggerSelectionStrategy("", ""),
-                new DefaultAuthenticationContextValidator("", "OPEN", "test"),
-                cas3ServiceJsonView, cas3SuccessView,
-                cas3ServiceFailureView, "authenticationContext",
-                new LinkedHashSet<>()
+            getValidationSpecification(),
+            getAuthenticationSystemSupport(), getServicesManager(),
+            getCentralAuthenticationService(),
+            getProxyHandler(),
+            getArgumentExtractor(),
+            new DefaultMultifactorTriggerSelectionStrategy("", ""),
+            new DefaultAuthenticationContextValidator("", "OPEN", "test"),
+            cas3ServiceJsonView, cas3SuccessView,
+            cas3ServiceFailureView, "authenticationContext",
+            new DefaultServiceTicketValidationAuthorizersExecutionPlan()
         );
     }
 
@@ -109,8 +111,8 @@ public class Cas30ResponseViewTests extends AbstractServiceValidateControllerTes
         };
 
         final Cas30ResponseView view = new Cas30ResponseView(true, encoder, servicesManager, "attribute",
-                viewDelegated, true, new DefaultAuthenticationAttributeReleasePolicy(),
-                new DefaultAuthenticationServiceSelectionPlan(new DefaultAuthenticationServiceSelectionStrategy()));
+            viewDelegated, true, new DefaultAuthenticationAttributeReleasePolicy(),
+            new DefaultAuthenticationServiceSelectionPlan(new DefaultAuthenticationServiceSelectionStrategy()));
         final MockHttpServletResponse resp = new MockHttpServletResponse();
         view.render(modelAndView.getModel(), req, resp);
         return (Map<?, ?>) req.getAttribute(CasProtocolConstants.VALIDATION_CAS_MODEL_ATTRIBUTE_NAME_ATTRIBUTES);
@@ -146,27 +148,24 @@ public class Cas30ResponseViewTests extends AbstractServiceValidateControllerTes
         assertNotNull(pgt);
     }
 
+    @SneakyThrows
     private String decryptCredential(final String cred) {
-        try {
-            final PrivateKeyFactoryBean factory = new PrivateKeyFactoryBean();
-            factory.setAlgorithm("RSA");
-            factory.setLocation(new ClassPathResource("keys/RSA4096Private.p8"));
-            factory.setSingleton(false);
-            final PrivateKey privateKey = factory.getObject();
+        final PrivateKeyFactoryBean factory = new PrivateKeyFactoryBean();
+        factory.setAlgorithm("RSA");
+        factory.setLocation(new ClassPathResource("keys/RSA4096Private.p8"));
+        factory.setSingleton(false);
+        final PrivateKey privateKey = factory.getObject();
 
-            LOGGER.debug("Initializing cipher based on [{}]", privateKey.getAlgorithm());
-            final Cipher cipher = Cipher.getInstance(privateKey.getAlgorithm());
+        LOGGER.debug("Initializing cipher based on [{}]", privateKey.getAlgorithm());
+        final Cipher cipher = Cipher.getInstance(privateKey.getAlgorithm());
 
-            LOGGER.debug("Decoding value [{}]", cred);
-            final byte[] cred64 = EncodingUtils.decodeBase64(cred);
+        LOGGER.debug("Decoding value [{}]", cred);
+        final byte[] cred64 = EncodingUtils.decodeBase64(cred);
 
-            LOGGER.debug("Initializing decrypt-mode via private key [{}]", privateKey.getAlgorithm());
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        LOGGER.debug("Initializing decrypt-mode via private key [{}]", privateKey.getAlgorithm());
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
 
-            final byte[] cipherData = cipher.doFinal(cred64);
-            return new String(cipherData);
-        } catch (final Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        final byte[] cipherData = cipher.doFinal(cred64);
+        return new String(cipherData, StandardCharsets.UTF_8);
     }
 }

@@ -18,6 +18,7 @@ public interface ServiceTicketFactory extends TicketFactory {
      * @param ticketGrantingTicket the ticket granting ticket
      * @param service              the service
      * @param credentialProvided   current credential if provided as part of primary authn, may be false.
+     * @param clazz                the clazz
      * @return the t
      */
     <T extends Ticket> T create(TicketGrantingTicket ticketGrantingTicket,

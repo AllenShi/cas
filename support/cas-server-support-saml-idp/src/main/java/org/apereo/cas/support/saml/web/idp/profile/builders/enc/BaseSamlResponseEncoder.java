@@ -1,5 +1,9 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.enc;
 
+import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.velocity.app.VelocityEngine;
 import org.apereo.cas.support.saml.SamlException;
 import org.apereo.cas.support.saml.SamlIdPUtils;
 import org.apereo.cas.support.saml.services.idp.metadata.SamlRegisteredServiceServiceProviderMetadataFacade;
@@ -8,7 +12,6 @@ import org.opensaml.saml.common.binding.SAMLBindingSupport;
 import org.opensaml.saml.common.messaging.context.SAMLSelfEntityContext;
 import org.opensaml.saml.saml2.binding.encoding.impl.BaseSAML2MessageEncoder;
 import org.opensaml.saml.saml2.core.Response;
-import org.springframework.ui.velocity.VelocityEngineFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -19,11 +22,13 @@ import javax.servlet.http.HttpServletResponse;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
+@AllArgsConstructor
 public abstract class BaseSamlResponseEncoder {
     /**
      * The Velocity engine factory.
      */
-    protected final VelocityEngineFactory velocityEngineFactory;
+    protected final VelocityEngine velocityEngineFactory;
     /**
      * The Adaptor.
      */
@@ -37,16 +42,6 @@ public abstract class BaseSamlResponseEncoder {
      * The Http request.
      */
     protected final HttpServletRequest httpRequest;
-    
-    public BaseSamlResponseEncoder(final VelocityEngineFactory velocityEngineFactory,
-                                   final SamlRegisteredServiceServiceProviderMetadataFacade adaptor,
-                                   final HttpServletResponse httpResponse,
-                                   final HttpServletRequest httpRequest) {
-        this.velocityEngineFactory = velocityEngineFactory;
-        this.adaptor = adaptor;
-        this.httpRequest = httpRequest;
-        this.httpResponse = httpResponse;
-    }
 
     /**
      * Encode.
@@ -56,20 +51,18 @@ public abstract class BaseSamlResponseEncoder {
      * @return the response
      * @throws SamlException the saml exception
      */
+    @SneakyThrows
     public final Response encode(final Response samlResponse, final String relayState) throws SamlException {
-        try {
-            if (httpResponse != null) {
-                final BaseSAML2MessageEncoder encoder = getMessageEncoderInstance();
-                encoder.setHttpServletResponse(httpResponse);
+        if (httpResponse != null) {
+            final BaseSAML2MessageEncoder encoder = getMessageEncoderInstance();
+            encoder.setHttpServletResponse(httpResponse);
 
-                final MessageContext ctx = getEncoderMessageContext(samlResponse, relayState);
-                encoder.setMessageContext(ctx);
-                finalizeEncode(encoder, samlResponse, relayState);
-            }
-            return samlResponse;
-        } catch (final Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
+            final MessageContext ctx = getEncoderMessageContext(samlResponse, relayState);
+            encoder.setMessageContext(ctx);
+            finalizeEncode(encoder, samlResponse, relayState);
         }
+        return samlResponse;
+
     }
 
     /**
@@ -98,7 +91,7 @@ public abstract class BaseSamlResponseEncoder {
      * @throws Exception the saml exception
      */
     protected void finalizeEncode(final BaseSAML2MessageEncoder encoder,
-                                  final Response samlResponse, 
+                                  final Response samlResponse,
                                   final String relayState) throws Exception {
         encoder.initialize();
         encoder.encode();

@@ -1,6 +1,7 @@
 package org.apereo.cas;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apereo.cas.authentication.principal.DefaultPrincipalAttributesRepository;
 import org.apereo.cas.authentication.principal.Principal;
@@ -62,6 +63,7 @@ import static org.junit.Assert.*;
         CasDefaultServiceTicketIdGeneratorsConfiguration.class,
         CasCoreAuthenticationPrincipalConfiguration.class
 })
+@Slf4j
 public class DefaultPrincipalAttributesRepositoryTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "defaultPrincipalAttributesRepository.json");
@@ -74,14 +76,14 @@ public class DefaultPrincipalAttributesRepositoryTests {
     @Test
     public void checkDefaultAttributes() {
         final PrincipalAttributesRepository rep = new DefaultPrincipalAttributesRepository();
-        assertEquals(rep.getAttributes(this.principalFactory.createPrincipal("uid")).size(), 3);
+        assertEquals(3, rep.getAttributes(this.principalFactory.createPrincipal("uid")).size());
     }
 
     @Test
     public void checkInitialAttributes() {
         final Principal p = this.principalFactory.createPrincipal("uid", Collections.singletonMap("mail", "final@example.com"));
         final PrincipalAttributesRepository rep = new DefaultPrincipalAttributesRepository();
-        assertEquals(rep.getAttributes(p).size(), 1);
+        assertEquals(1, rep.getAttributes(p).size());
         assertTrue(rep.getAttributes(p).containsKey("mail"));
     }
 

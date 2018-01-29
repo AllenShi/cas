@@ -1,11 +1,15 @@
 package org.apereo.cas.authentication;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.principal.Service;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,27 +20,15 @@ import java.util.stream.Collectors;
  * @author Misagh Moayyed
  * @since 4.2.0
  */
+@Slf4j
+@Getter
+@AllArgsConstructor
 public class AuthenticationTransaction implements Serializable {
 
     private static final long serialVersionUID = 6213904009424725484L;
 
-    private final Collection<Credential> credentials;
     private final Service service;
-
-    /**
-     * Instantiates a new Default authentication transaction.
-     *
-     * @param service     the service
-     * @param credentials the credentials
-     */
-    protected AuthenticationTransaction(final Service service, final Collection<Credential> credentials) {
-        this.credentials = credentials;
-        this.service = service;
-    }
-
-    public Collection<Credential> getCredentials() {
-        return this.credentials;
-    }
+    private final Collection<Credential> credentials;
 
     /**
      * Wrap credentials into an authentication transaction, as a factory method,
@@ -59,10 +51,6 @@ public class AuthenticationTransaction implements Serializable {
      */
     public static AuthenticationTransaction wrap(final Credential... credentials) {
         return wrap(null, credentials);
-    }
-
-    public Service getService() {
-        return this.service;
     }
 
     /**
@@ -92,11 +80,18 @@ public class AuthenticationTransaction implements Serializable {
         }
     }
 
+    /**
+     * Sanitize credentials set. It's important to keep the order of
+     * the credentials in the final set as they were presented.
+     *
+     * @param credentials the credentials
+     * @return the set
+     */
     private static Set<Credential> sanitizeCredentials(final Credential[] credentials) {
         if (credentials != null && credentials.length > 0) {
             return Arrays.stream(credentials)
                     .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
         }
         return new HashSet<>(0);
     }

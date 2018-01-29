@@ -47,6 +47,7 @@ layout: null
         *   [Apache Cassandra](/$version/installation/Cassandra-Authentication.html)
         *   [Apache Fortress](/$version/integration/Configuring-Fortress-Integration.html)
         *   [Apache Shiro](/$version/installation/Shiro-Authentication.html)
+        *   [Apache Syncope](/$version/installation/Syncope-Authentication.html)
         *   [JWT](#jwtauthn)
             *   [Overview](/$version/installation/JWT-Authentication.html)
             *   [JWT Service Tickets](/$version/installation/Configure-ServiceTicket-JWT.html) 
@@ -133,8 +134,10 @@ layout: null
     *   [Access Strategy](/$version/installation/Configuring-Service-Access-Strategy.html)
     *   [Proxy Policy](/$version/installation/Configuring-Service-Proxy-Policy.html)
     *   [Custom Properties](/$version/installation/Configuring-Service-Custom-Properties.html)
+    *   [HTTP Security Headers](/$version/installation/Configuring-Service-Http-Security-Headers.html)
     *   [Contacts & Owners](/$version/installation/Configuring-Service-Contacts.html)
     *   [Expiration Policy](/$version/installation/Configuring-Service-Expiration-Policy.html)
+    *   [Required Authentication](/$version/installation/Configuring-Service-Required-AuthN.html)
     *   [Replication](/$version/installation/Configuring-Service-Replication.html)
     *   [Storage](#persistencesvcreg)
         *   [InMemory XML](/$version/installation/InMemory-Service-Management.html)
@@ -145,12 +148,21 @@ layout: null
         *   [JPA](/$version/installation/JPA-Service-Management.html)
         *   [Redis](/$version/installation/Redis-Service-Management.html)
         *   [DynamoDb](/$version/installation/DynamoDb-Service-Management.html)
+        *   [CosmosDb](/$version/installation/CosmosDb-Service-Management.html)
         *   [Couchbase](/$version/installation/Couchbase-Service-Management.html)
         *   [REST](/$version/installation/REST-Service-Management.html)
         *   [Custom](/$version/installation/Custom-Service-Management.html)
 
 * [Logs & Audits](#logs_audits)
     *   [Logging](/$version/installation/Logging.html)
+        *   [Cloudwatch](/$version/installation/Logging-Cloudwatch.html)
+        *   [Loggly](/$version/installation/Logging-Loggly.html)
+        *   [Logstash](/$version/installation/Logging-Logstash.html)
+        *   [MDC](/$version/installation/Logging-MDC.html)
+        *   [Papertrail](/$version/installation/Logging-Papertrail.html)
+        *   [Sentry](/$version/installation/Logging-Sentry.html)
+        *   [SysLog](/$version/installation/Logging-SysLog.html)
+        *   [Splunk](/$version/installation/Logging-Splunk.html)
     *   [Audits](/$version/installation/Audits.html)
     
 * [Monitoring & Statistics](#monitoroverview)
@@ -158,7 +170,6 @@ layout: null
     *   [Administration Server](/$version/installation/Configuring-Monitoring-Administration.html)
     *   [Metrics](/$version/installation/Configuring-Metrics.html)
     *   [Monitors](/$version/installation/Configuring-Monitoring.html)
-    *   [Sentry](/$version/integration/Sentry-Integration.html)
         
 * [User Interface](#user_interface)
     *   [Overview](/$version/installation/User-Interface-Customization.html)
@@ -181,6 +192,8 @@ layout: null
         *   [Locust](/$version/planning/Performance-Testing-Locust.html)
         *   [JMeter](/$version/planning/Performance-Testing-JMeter.html)
     *   [Service Discovery](/$version/installation/Service-Discovery-Guide.html)
+        *  [Eureka Service Discovery](/$version/installation/Service-Discovery-Guide-Eureka.html)
+        *  [Consul Service Discovery](/$version/installation/Service-Discovery-Guide-Consul.html)
     
 * [Protocols](#protocols)
     *   [Overview](/$version/protocol/Protocol-Overview.html)
@@ -194,7 +207,6 @@ layout: null
         *   [SAML2](/$version/installation/Configuring-SAML2-Authentication.html)
     *   [REST](/$version/protocol/REST-Protocol.html)
 
-
 * [Integration](#appintegration)
     *   [SAML2 Service Providers](/$version/integration/Configuring-SAML-SP-Integrations.html)
         *   [Google Apps](/$version/integration/Google-Apps-Integration.html)
@@ -202,7 +214,6 @@ layout: null
     *   [Google Analytics](/$version/integration/Configuring-Google-Analytics.html)
     *   [SCIM Provisioning](/$version/integration/SCIM-Integration.html)
     *   [CAS Clients](/$version/integration/CAS-Clients.html)
-    *   [Groovy Shell](/$version/installation/Configuring-Groovy-Console.html)
     *   [Swagger API](/$version/integration/Swagger-Integration.html)
     *   [Shibboleth Identity Provider](/$version/integration/Shibboleth.html)
 

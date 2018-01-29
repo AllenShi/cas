@@ -7,9 +7,11 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import org.apereo.cas.CentralAuthenticationService;;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.springframework.stereotype.Controller;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
-import org.apereo.cas.audit.spi.DelegatingAuditTrailManager;
+import org.apereo.cas.audit.AuditTrailExecutionPlan;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.ticket.ServiceTicket;
 import org.apereo.cas.ticket.Ticket;
 import org.apereo.cas.util.DateTimeUtils;
@@ -27,6 +29,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -44,20 +47,19 @@ import java.util.stream.Collectors;
  * @author Scott Battaglia
  * @since 3.3.5
  */
+@Slf4j
 public class StatisticsController extends BaseCasMvcEndpoint implements ServletContextAware {
-
     private static final int NUMBER_OF_BYTES_IN_A_KILOBYTE = 1024;
     private static final String MONITORING_VIEW_STATISTICS = "monitoring/viewStatistics";
 
     private final ZonedDateTime upTimeStartDate = ZonedDateTime.now(ZoneOffset.UTC);
 
-    private final DelegatingAuditTrailManager auditTrailManager;
+    private final AuditTrailExecutionPlan auditTrailManager;
     private final CentralAuthenticationService centralAuthenticationService;
     private final MetricRegistry metricsRegistry;
     private final HealthCheckRegistry healthCheckRegistry;
-    private final CasConfigurationProperties casProperties;
 
-    public StatisticsController(final DelegatingAuditTrailManager auditTrailManager,
+    public StatisticsController(final AuditTrailExecutionPlan auditTrailManager,
                                 final CentralAuthenticationService centralAuthenticationService,
                                 final MetricRegistry metricsRegistry,
                                 final HealthCheckRegistry healthCheckRegistry,
@@ -67,7 +69,6 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
         this.centralAuthenticationService = centralAuthenticationService;
         this.metricsRegistry = metricsRegistry;
         this.healthCheckRegistry = healthCheckRegistry;
-        this.casProperties = casProperties;
     }
 
     /**
@@ -98,14 +99,14 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
      */
     @GetMapping(value = "/getMemStats")
     @ResponseBody
-    public Map<String, Object> getMemoryStats(final HttpServletRequest request,
-                                              final HttpServletResponse response) {
+    public Map<String, Object> getMemoryStats(final HttpServletRequest request, final HttpServletResponse response) {
         ensureEndpointAccessIsAuthorized(request, response);
 
         final Map<String, Object> model = new HashMap<>();
-        model.put("totalMemory", convertToMegaBytes(Runtime.getRuntime().totalMemory()));
-        model.put("maxMemory", convertToMegaBytes(Runtime.getRuntime().maxMemory()));
-        model.put("freeMemory", convertToMegaBytes(Runtime.getRuntime().freeMemory()));
+        final Runtime runtime = Runtime.getRuntime();
+        model.put("totalMemory", convertToMegaBytes(runtime.totalMemory()));
+        model.put("maxMemory", convertToMegaBytes(runtime.maxMemory()));
+        model.put("freeMemory", convertToMegaBytes(runtime.freeMemory()));
         return model;
     }
 
@@ -119,10 +120,10 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
      */
     @GetMapping(value = "/getAuthnAudit")
     @ResponseBody
-    public Set<AuditActionContext> getAuthnAudit(final HttpServletRequest request,
-                                                 final HttpServletResponse response) {
+    public Set<AuditActionContext> getAuthnAudit(final HttpServletRequest request, final HttpServletResponse response) {
         ensureEndpointAccessIsAuthorized(request, response);
-        return this.auditTrailManager.get();
+        final LocalDate sinceDate = LocalDate.now().minusDays(casProperties.getAudit().getNumberOfDaysInHistory());
+        return this.auditTrailManager.getAuditRecordsSince(sinceDate);
     }
 
     /**
@@ -151,14 +152,14 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
             final LocalDateTime endDate = startDate.plus(Duration.parse(range));
 
             final List<AuditActionContext> authnEvents = audits.stream()
-                    .filter(a -> {
-                        final LocalDateTime actionTime = DateTimeUtils.localDateTimeOf(a.getWhenActionWasPerformed());
-                        return (actionTime.isEqual(startDate) || actionTime.isAfter(startDate))
-                                && (actionTime.isEqual(endDate) || actionTime.isBefore(endDate))
-                                && a.getActionPerformed().matches("AUTHENTICATION_(SUCCESS|FAILED)");
-                    })
-                    .sorted(Comparator.comparing(AuditActionContext::getWhenActionWasPerformed))
-                    .collect(Collectors.toList());
+                .filter(a -> {
+                    final LocalDateTime actionTime = DateTimeUtils.localDateTimeOf(a.getWhenActionWasPerformed());
+                    return (actionTime.isEqual(startDate) || actionTime.isAfter(startDate))
+                        && (actionTime.isEqual(endDate) || actionTime.isBefore(endDate))
+                        && a.getActionPerformed().matches("AUTHENTICATION_(SUCCESS|FAILED)");
+                })
+                .sorted(Comparator.comparing(AuditActionContext::getWhenActionWasPerformed))
+                .collect(Collectors.toList());
 
             final Duration steps = Duration.parse(scale);
             final Map<Integer, LocalDateTime> buckets = new LinkedHashMap<>();
@@ -212,7 +213,8 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
             final Collection<AuthenticationAuditSummary> values = summary.values();
             return values;
         };
-        return new WebAsyncTask<>(casProperties.getHttpClient().getAsyncTimeout(), asyncTask);
+        final long timeout = Beans.newDuration(casProperties.getHttpClient().getAsyncTimeout()).toMillis();
+        return new WebAsyncTask<>(timeout, asyncTask);
     }
 
     private static class AuthenticationAuditSummary {

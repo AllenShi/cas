@@ -4,12 +4,13 @@
 # Install travis: gem install travis
 # Login to travis: travis login
 # Encrypt the token: travis encrypt VAR_NAME=[OAUTH-TOKEN] -r apereo/cas --add env.global
+# Encrypted settings include SONATYPE_USER, SONATYPE_PWD, GH_TOKEN, COVERITY_SCAN_TOKEN
 
 language: java
 sudo: required
 branches:
   only:
-  - 5.2.x
+  - master
 jdk:
 - oraclejdk8
 # - oraclejdk9
@@ -38,6 +39,7 @@ env:
   - PUBLISH_SNAPSHOTS=false
   - PUBLISH_SNAPSHOTS=true
 before_install:
+- echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 - chmod -R 777 ./ci/init-travis-build.sh
 - ./ci/init-travis-build.sh
 - chmod -R 777 ./ci/push-docs-ghpages.sh

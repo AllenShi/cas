@@ -1,6 +1,7 @@
 package org.apereo.cas.consent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.services.AbstractRegisteredService;
@@ -27,6 +28,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class RestConsentRepositoryTests {
     private RestTemplate restTemplate;
     private MockRestServiceServer server;
@@ -68,7 +70,7 @@ public class RestConsentRepositoryTests {
         final RestConsentRepository repo = new RestConsentRepository(this.restTemplate, "/consent");
         final ConsentDecision d = repo.findConsentDecision(svc, regSvc, CoreAuthenticationTestUtils.getAuthentication());
         assertNotNull(d);
-        assertEquals(d.getPrincipal(), "casuser");
+        assertEquals("casuser", d.getPrincipal());
         server.verify();
     }
     

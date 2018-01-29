@@ -1,5 +1,8 @@
 package org.apereo.cas.ticket.artifact;
 
+import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.ServiceFactory;
@@ -20,6 +23,8 @@ import java.io.StringWriter;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
+@AllArgsConstructor
 public class DefaultSamlArtifactTicketFactory implements SamlArtifactTicketFactory {
     
     /**
@@ -37,14 +42,8 @@ public class DefaultSamlArtifactTicketFactory implements SamlArtifactTicketFacto
      */
     protected final ServiceFactory<WebApplicationService> webApplicationServiceFactory;
     
-    public DefaultSamlArtifactTicketFactory(final ExpirationPolicy expirationPolicy, final OpenSamlConfigBean configBean,
-                                            final ServiceFactory<WebApplicationService> webApplicationServiceFactory) {
-        this.expirationPolicy = expirationPolicy;
-        this.configBean = configBean;
-        this.webApplicationServiceFactory = webApplicationServiceFactory;
-    }
-
     @Override
+    @SneakyThrows
     public SamlArtifactTicket create(final String artifactId,
                                      final Authentication authentication,
                                      final TicketGrantingTicket ticketGrantingTicket, final String issuer,
@@ -59,13 +58,11 @@ public class DefaultSamlArtifactTicketFactory implements SamlArtifactTicketFacto
                 ticketGrantingTicket.getDescendantTickets().add(at.getId());
             }
             return at;
-        } catch (final Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
     @Override
-    public <T extends TicketFactory> T get(final Class<? extends Ticket> clazz) {
-        return (T) this;
+    public TicketFactory get(final Class<? extends Ticket> clazz) {
+        return this;
     }
 }

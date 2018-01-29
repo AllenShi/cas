@@ -5,6 +5,7 @@ import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.AESDecrypter;
 import com.nimbusds.jose.crypto.DirectDecrypter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.lambda.Unchecked;
@@ -12,8 +13,6 @@ import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.jwt.config.encryption.SecretEncryptionConfiguration;
 import org.pac4j.jwt.config.signature.SecretSignatureConfiguration;
 import org.pac4j.jwt.profile.JwtGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.shell.core.CommandMarker;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
@@ -29,8 +28,9 @@ import java.util.stream.Collectors;
  * @since 5.2.0
  */
 @Service
+@Slf4j
 public class GenerateJwtCommand implements CommandMarker {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GenerateJwtCommand.class);
+
     private static final int SEP_LENGTH = 8;
     
     private static final int DEFAULT_SIGNING_SECRET_SIZE = 256;
@@ -108,7 +108,7 @@ public class GenerateJwtCommand implements CommandMarker {
         LOGGER.debug(StringUtils.repeat('=', SEP_LENGTH));
         
         final String token = g.generate(profile);
-        LOGGER.info("==== JWT ====\n{}", token);
+        LOGGER.info("==== JWT ====\n[{}]", token);
     }
 
     private void configureJwtEncryption(final int encryptionSecretSize, final String encryptionAlgorithm,
@@ -119,7 +119,7 @@ public class GenerateJwtCommand implements CommandMarker {
         }
 
         final String encryptionSecret = RandomStringUtils.randomAlphanumeric(encryptionSecretSize);
-        LOGGER.info("==== Encryption Secret ====\n{}\n", encryptionSecret);
+        LOGGER.info("==== Encryption Secret ====\n[{}]\n", encryptionSecret);
 
         final String acceptedEncAlgs = Arrays.stream(JWEAlgorithm.class.getDeclaredFields())
                 .filter(f -> f.getType().equals(JWEAlgorithm.class))
@@ -140,23 +140,24 @@ public class GenerateJwtCommand implements CommandMarker {
         LOGGER.debug("Encryption method: [{}]. Available methods are [{}]", encryptionMethod, acceptedEncMethods);
 
         final JWEAlgorithm algorithm = JWEAlgorithm.parse(encryptionAlgorithm);
-        if (DirectDecrypter.SUPPORTED_ALGORITHMS.contains(algorithm.getName())) {
-            if (!DirectDecrypter.SUPPORTED_ENCRYPTION_METHODS.contains(encryptionMethod)) {
+        final EncryptionMethod encryptionMethodAlg = EncryptionMethod.parse(encryptionMethod);
+        
+        if (DirectDecrypter.SUPPORTED_ALGORITHMS.contains(algorithm)) {
+            if (!DirectDecrypter.SUPPORTED_ENCRYPTION_METHODS.contains(encryptionMethodAlg)) {
                 LOGGER.warn("Encrypted method [{}] is not supported for algorithm [{}]. Accepted methods are [{}]",
                         encryptionMethod, encryptionAlgorithm, DirectDecrypter.SUPPORTED_ENCRYPTION_METHODS);
                 return;
             }
         }
         if (AESDecrypter.SUPPORTED_ALGORITHMS.contains(algorithm)) {
-            if (!AESDecrypter.SUPPORTED_ENCRYPTION_METHODS.contains(encryptionMethod)) {
+            if (!AESDecrypter.SUPPORTED_ENCRYPTION_METHODS.contains(encryptionMethodAlg)) {
                 LOGGER.warn("Encrypted method [{}] is not supported for algorithm [{}]. Accepted methods are [{}]",
                         encryptionMethod, encryptionAlgorithm, AESDecrypter.SUPPORTED_ENCRYPTION_METHODS);
                 return;
             }
         }
 
-        final EncryptionMethod encMethod = EncryptionMethod.parse(encryptionMethod);
-        g.setEncryptionConfiguration(new SecretEncryptionConfiguration(encryptionSecret, algorithm, encMethod));
+        g.setEncryptionConfiguration(new SecretEncryptionConfiguration(encryptionSecret, algorithm, encryptionMethodAlg));
 
     }
 

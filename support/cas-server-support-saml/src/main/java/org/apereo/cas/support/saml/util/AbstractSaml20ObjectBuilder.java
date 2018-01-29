@@ -1,6 +1,7 @@
 package org.apereo.cas.support.saml.util;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.authentication.principal.WebApplicationService;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
@@ -32,9 +33,8 @@ import org.opensaml.saml.saml2.core.Subject;
 import org.opensaml.saml.saml2.core.SubjectConfirmation;
 import org.opensaml.saml.saml2.core.SubjectConfirmationData;
 import org.opensaml.soap.soap11.ActorBearing;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.security.SecureRandom;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -47,12 +47,11 @@ import java.util.stream.IntStream;
  * This is {@link AbstractSaml20ObjectBuilder}.
  * to build saml2 objects.
  *
- * @author Misagh Moayyed mmoayyed@unicon.net
+ * @author Misagh Moayyed
  * @since 4.1
  */
+@Slf4j
 public abstract class AbstractSaml20ObjectBuilder extends AbstractSamlObjectBuilder {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSaml20ObjectBuilder.class);
-
     private static final int HEX_HIGH_BITS_BITWISE_FLAG = 0x0f;
     private static final long serialVersionUID = -4325127376598205277L;
 
@@ -183,14 +182,14 @@ public abstract class AbstractSaml20ObjectBuilder extends AbstractSamlObjectBuil
     /**
      * New attribute statement.
      *
-     * @param attributes            the attributes
-     * @param setFriendlyName       the set friendly name
-     * @param configuredNameFormats the configured name formats
-     * @param defaultNameFormat     the default name format
+     * @param attributes             the attributes
+     * @param attributeFriendlyNames the attribute friendly names
+     * @param configuredNameFormats  the configured name formats
+     * @param defaultNameFormat      the default name format
      * @return the attribute statement
      */
     public AttributeStatement newAttributeStatement(final Map<String, Object> attributes,
-                                                    final boolean setFriendlyName,
+                                                    final Map<String, String> attributeFriendlyNames,
                                                     final Map<String, String> configuredNameFormats,
                                                     final String defaultNameFormat) {
         final AttributeStatement attrStatement = newSamlObject(AttributeStatement.class);
@@ -199,7 +198,8 @@ public abstract class AbstractSaml20ObjectBuilder extends AbstractSamlObjectBuil
                 LOGGER.info("Skipping attribute [{}] because it does not have any values.", e.getKey());
                 continue;
             }
-            final Attribute attribute = newAttribute(setFriendlyName, e, configuredNameFormats, defaultNameFormat);
+            final String friendlyName = attributeFriendlyNames.getOrDefault(e.getKey(), null);
+            final Attribute attribute = newAttribute(friendlyName, e, configuredNameFormats, defaultNameFormat);
             attrStatement.getAttributes().add(attribute);
         }
 
@@ -222,21 +222,23 @@ public abstract class AbstractSaml20ObjectBuilder extends AbstractSamlObjectBuil
     /**
      * New attribute.
      *
-     * @param setFriendlyName       the set friendly name
+     * @param attributeFriendlyName the attribute friendly name
      * @param e                     the entry to process and turn into a saml attribute
      * @param configuredNameFormats the configured name formats. If an attribute is found in this
      *                              collection, the linked name format will be used.
      * @param defaultNameFormat     the default name format
      * @return the attribute
      */
-    protected Attribute newAttribute(final boolean setFriendlyName,
+    protected Attribute newAttribute(final String attributeFriendlyName,
                                      final Map.Entry<String, Object> e,
                                      final Map<String, String> configuredNameFormats,
                                      final String defaultNameFormat) {
         final Attribute attribute = newSamlObject(Attribute.class);
         attribute.setName(e.getKey());
 
-        if (setFriendlyName) {
+        if (StringUtils.isNotBlank(attributeFriendlyName)) {
+            attribute.setFriendlyName(attributeFriendlyName);
+        } else {
             attribute.setFriendlyName(e.getKey());
         }
 
@@ -260,7 +262,7 @@ public abstract class AbstractSaml20ObjectBuilder extends AbstractSamlObjectBuil
         if (StringUtils.isBlank(nameFormat)) {
             return;
         }
-        
+
         final String compareFormat = nameFormat.trim().toLowerCase();
         if ("basic".equals(compareFormat) || compareFormat.equals(Attribute.BASIC)) {
             attribute.setNameFormat(Attribute.BASIC);
@@ -284,7 +286,7 @@ public abstract class AbstractSaml20ObjectBuilder extends AbstractSamlObjectBuil
     public AuthnStatement newAuthnStatement(final String contextClassRef, final ZonedDateTime authnInstant,
                                             final String sessionIndex) {
         LOGGER.debug("Building authentication statement with context class ref [{}] @ [{}] with index [{}]",
-                contextClassRef, authnInstant, sessionIndex);
+            contextClassRef, authnInstant, sessionIndex);
 
         final AuthnStatement stmt = newSamlObject(AuthnStatement.class);
         final AuthnContext ctx = newSamlObject(AuthnContext.class);
@@ -369,9 +371,9 @@ public abstract class AbstractSaml20ObjectBuilder extends AbstractSamlObjectBuil
         if (StringUtils.isNotBlank(inResponseTo)) {
             data.setInResponseTo(inResponseTo);
 
-            final String ip = InetAddressUtils.getByName(inResponseTo);
-            if (StringUtils.isNotBlank(ip)) {
-                data.setAddress(ip);
+            final InetAddress ip = InetAddressUtils.getByName(inResponseTo);
+            if (ip != null) {
+                data.setAddress(ip.getHostName());
             }
 
         }

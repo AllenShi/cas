@@ -20,9 +20,9 @@ The CAS server web application responds to the following strategies that dictate
 
 This is the default configuration mode which indicates that CAS does **NOT** require connections to an external configuration server
 and will run in an embedded *standalone mode*. When this option is turned on, CAS by default will attempt to locate settings and properties
-inside a given directory indicated under the setting name `cas.standalone.config` and otherwise falls back to using `/etc/cas/config` as the configuration directory.
-You may instruct CAS to use this setting via the methods [outlined here](Configuration-Management.html#overview). There also exists a `cas.standalone.config.file` which can 
-be used to directly feed a collection of properties to CAS in form of a file or classpath resource. 
+inside a given directory indicated under the setting name `cas.standalone.configurationDirectory` and otherwise falls back to using `/etc/cas/config` as the configuration directory.
+You may instruct CAS to use this setting via the methods [outlined here](Configuration-Management.html#overview). 
+There also exists a `cas.standalone.configurationFile` which can be used to directly feed a collection of properties to CAS in form of a file or classpath resource. 
 
 Similar to the Spring Cloud external configuration server, the contents of this directory include `(cas|application).(yml|properties)`
 files that can be used to control CAS behavior. Also note that this configuration directory can be monitored by CAS to auto-pick up changes
@@ -243,6 +243,11 @@ To see the relevant list of CAS properties for this feature, please [review this
 CAS is also able to use [Vault](https://www.vaultproject.io/) to
 locate properties and settings. [Please review this guide](Configuration-Properties-Security.html).
 
+##### HashiCorp Consul
+
+CAS is also able to use [Consul](https://www.consul.io/) to
+locate properties and settings. [Please review this guide](Service-Discovery-Guide-Consul.html).
+
 ##### Apache ZooKeeper
 
 CAS is also able to use [Apache ZooKeeper](https://zookeeper.apache.org/) to locate properties and settings.
@@ -308,6 +313,22 @@ The `DynamoDbCasProperties` table is automatically created by CAS with the follo
 ```
 
 To see the relevant list of CAS properties for this feature, please [review this guide](Configuration-Properties.html#dynamodb).
+
+##### Azure KeyVault Secrets
+
+CAS is also able to use Microsoft Azure's KeyVault Secrets to locate properties and settings. Support is provided via the following dependency in the WAR overlay:
+
+```xml
+<dependency>
+     <groupId>org.apereo.cas</groupId>
+     <artifactId>cas-server-core-configuration-cloud-azure-keyvault</artifactId>
+     <version>${cas.version}</version>
+</dependency>
+```
+
+To see the relevant list of CAS properties for this feature, please [review this guide](Configuration-Properties.html#azure-keyvault-secrets).
+
+**IMPORTANT**: The allowed  name pattern in Azure Key Vault is `^[0-9a-zA-Z-]+$`.For properties that contain that contain `.` in the name (i.e. `cas.some.property`),  replace `.` with `-` when you store the setting in Azure Key Vault (i.e. `cas-some-property`). The module  will handle the transformation for you. 
 
 ##### JDBC
 

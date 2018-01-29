@@ -1,7 +1,8 @@
 package org.apereo.cas.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.support.mongo.serviceregistry.MongoServiceRegistryProperties;
+import org.apereo.cas.configuration.model.support.mongo.serviceregistry.MongoDbServiceRegistryProperties;
 import org.apereo.cas.mongo.MongoDbConnectionFactory;
 import org.apereo.cas.services.MongoServiceRegistryDao;
 import org.apereo.cas.services.ServiceRegistryDao;
@@ -20,6 +21,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
  */
 @Configuration("mongoDbServiceRegistryConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class MongoDbServiceRegistryConfiguration {
 
     @Autowired
@@ -28,7 +30,7 @@ public class MongoDbServiceRegistryConfiguration {
     @ConditionalOnMissingBean(name = "mongoDbServiceRegistryTemplate")
     @Bean
     public MongoTemplate mongoDbServiceRegistryTemplate() {
-        final MongoServiceRegistryProperties mongo = casProperties.getServiceRegistry().getMongo();
+        final MongoDbServiceRegistryProperties mongo = casProperties.getServiceRegistry().getMongo();
         final MongoDbConnectionFactory factory = new MongoDbConnectionFactory();
 
         final MongoTemplate mongoTemplate = factory.buildMongoTemplate(mongo);
@@ -38,7 +40,7 @@ public class MongoDbServiceRegistryConfiguration {
     
     @Bean
     public ServiceRegistryDao serviceRegistryDao() {
-        final MongoServiceRegistryProperties mongo = casProperties.getServiceRegistry().getMongo();
+        final MongoDbServiceRegistryProperties mongo = casProperties.getServiceRegistry().getMongo();
         return new MongoServiceRegistryDao(
                 mongoDbServiceRegistryTemplate(),
                 mongo.getCollection());

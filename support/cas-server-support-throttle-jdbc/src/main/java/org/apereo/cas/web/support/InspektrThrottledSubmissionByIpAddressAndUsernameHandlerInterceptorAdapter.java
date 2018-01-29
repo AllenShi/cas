@@ -1,12 +1,11 @@
 package org.apereo.cas.web.support;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apereo.cas.audit.AuditTrailExecutionPlan;
 import org.apereo.cas.util.DateTimeUtils;
 import org.apereo.inspektr.audit.AuditActionContext;
-import org.apereo.inspektr.audit.AuditTrailManager;
 import org.apereo.inspektr.common.web.ClientInfo;
 import org.apereo.inspektr.common.web.ClientInfoHolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,15 +28,15 @@ import java.util.List;
  * @author Scott Battaglia
  * @since 3.3.5
  */
+@Slf4j
 public class InspektrThrottledSubmissionByIpAddressAndUsernameHandlerInterceptorAdapter extends AbstractThrottledSubmissionHandlerInterceptorAdapter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(InspektrThrottledSubmissionByIpAddressAndUsernameHandlerInterceptorAdapter.class);
+
 
     private static final double NUMBER_OF_MILLISECONDS_IN_SECOND = 1000.0;
 
     private static final String INSPEKTR_ACTION_THROTTLED = "THROTTLED_LOGIN_ATTEMPT";
-    private static final String INSPEKTR_ACTION_FAILED = "FAILED_LOGIN_ATTEMPT";
 
-    private final AuditTrailManager auditTrailManager;
+    private final AuditTrailExecutionPlan auditTrailManager;
     private final DataSource dataSource;
     private final String applicationCode;
     private final String authenticationFailureCode;
@@ -57,9 +56,10 @@ public class InspektrThrottledSubmissionByIpAddressAndUsernameHandlerInterceptor
      * @param sqlQueryAudit             the sql query audit
      * @param authenticationFailureCode the authentication failure code
      */
-    public InspektrThrottledSubmissionByIpAddressAndUsernameHandlerInterceptorAdapter(final int failureThreshold, final int failureRangeInSeconds,
+    public InspektrThrottledSubmissionByIpAddressAndUsernameHandlerInterceptorAdapter(final int failureThreshold,
+                                                                                      final int failureRangeInSeconds,
                                                                                       final String usernameParameter,
-                                                                                      final AuditTrailManager auditTrailManager,
+                                                                                      final AuditTrailExecutionPlan auditTrailManager,
                                                                                       final DataSource dataSource, final String appCode,
                                                                                       final String sqlQueryAudit, final String authenticationFailureCode) {
         super(failureThreshold, failureRangeInSeconds, usernameParameter);
@@ -105,7 +105,7 @@ public class InspektrThrottledSubmissionByIpAddressAndUsernameHandlerInterceptor
     @Override
     public void recordSubmissionFailure(final HttpServletRequest request) {
         super.recordSubmissionFailure(request);
-        recordAnyAction(request, INSPEKTR_ACTION_FAILED, "recordSubmissionFailure()");
+        recordAnyAction(request, this.authenticationFailureCode, "recordSubmissionFailure()");
     }
 
     @Override

@@ -1,9 +1,11 @@
 package org.apereo.cas.grouper.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apereo.cas.services.AbstractRegisteredService;
 import org.apereo.cas.services.JsonServiceRegistryDao;
 import org.apereo.cas.services.RegisteredServiceTestUtils;
+import org.apereo.cas.services.replication.NoOpRegisteredServiceReplicationStrategy;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,6 +25,7 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 4.2
  */
+@Slf4j
 public class GrouperRegisteredServiceAccessStrategyRegistryTests {
 
     private static final ClassPathResource RESOURCE = new ClassPathResource("services");
@@ -34,17 +37,17 @@ public class GrouperRegisteredServiceAccessStrategyRegistryTests {
 
     @Test
     public void checkAccessStrategyJson() throws Exception {
-
         final Map<String, Set<String>> attributes = new HashMap<>();
         final Set<String> v1 = new HashSet<>();
         v1.add("admin");
         attributes.put("memberOf", v1);
 
-        final AbstractRegisteredService service = RegisteredServiceTestUtils.getRegisteredService("test");
+        final AbstractRegisteredService service = RegisteredServiceTestUtils.getRegisteredService("testing");
         final GrouperRegisteredServiceAccessStrategy grouper = new GrouperRegisteredServiceAccessStrategy();
         grouper.setRequiredAttributes(attributes);
         service.setAccessStrategy(grouper);
-        final JsonServiceRegistryDao dao = new JsonServiceRegistryDao(RESOURCE, false, mock(ApplicationEventPublisher.class));
+        final JsonServiceRegistryDao dao = new JsonServiceRegistryDao(RESOURCE, false, 
+                mock(ApplicationEventPublisher.class), new NoOpRegisteredServiceReplicationStrategy());
         dao.save(service);
         dao.load();
     }

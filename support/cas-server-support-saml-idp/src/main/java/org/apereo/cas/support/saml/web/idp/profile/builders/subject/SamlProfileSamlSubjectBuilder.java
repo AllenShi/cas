@@ -1,5 +1,7 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.subject;
 
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.support.saml.SamlException;
@@ -12,8 +14,6 @@ import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.saml.saml2.core.Subject;
 import org.opensaml.saml.saml2.metadata.AssertionConsumerService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,9 +26,10 @@ import java.time.ZonedDateTime;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class SamlProfileSamlSubjectBuilder extends AbstractSaml20ObjectBuilder implements SamlProfileObjectBuilder<Subject> {
     private static final long serialVersionUID = 4782621942035583007L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(SamlProfileSamlSubjectBuilder.class);
+
 
     private final SamlProfileObjectBuilder<NameID> ssoPostProfileSamlNameIdBuilder;
 
@@ -60,15 +61,10 @@ public class SamlProfileSamlSubjectBuilder extends AbstractSaml20ObjectBuilder i
                                  final String binding) throws SamlException {
 
         final Assertion assertion = Assertion.class.cast(casAssertion);
-
-
         final ZonedDateTime validFromDate = ZonedDateTime.ofInstant(assertion.getValidFromDate().toInstant(), ZoneOffset.UTC);
-
+        LOGGER.debug("Locating the assertion consumer service url for binding [{}]", binding);
+        @NonNull
         final AssertionConsumerService acs = adaptor.getAssertionConsumerService(binding);
-        if (acs == null) {
-            throw new IllegalArgumentException("Failed to locate the assertion consumer service url for binding " + binding);
-        }
-
         final String location = StringUtils.isBlank(acs.getResponseLocation()) ? acs.getLocation() : acs.getResponseLocation();
         if (StringUtils.isBlank(location)) {
             LOGGER.warn("Subject recipient is not defined from either authentication request or metadata for [{}]", adaptor.getEntityId());
@@ -76,11 +72,11 @@ public class SamlProfileSamlSubjectBuilder extends AbstractSaml20ObjectBuilder i
 
         final NameID nameId = getNameIdForService(request, response, authnRequest, service, adaptor, binding, assertion);
         final Subject subject = newSubject(nameId,
-                service.isSkipGeneratingSubjectConfirmationRecipient() ? null : location,
-                service.isSkipGeneratingSubjectConfirmationNotOnOrAfter() ? null : validFromDate.plusSeconds(this.skewAllowance),
-                service.isSkipGeneratingSubjectConfirmationInResponseTo() ? null : authnRequest.getID(),
-                service.isSkipGeneratingSubjectConfirmationNotBefore() ? null : ZonedDateTime.now());
-        
+            service.isSkipGeneratingSubjectConfirmationRecipient() ? null : location,
+            service.isSkipGeneratingSubjectConfirmationNotOnOrAfter() ? null : validFromDate.plusSeconds(this.skewAllowance),
+            service.isSkipGeneratingSubjectConfirmationInResponseTo() ? null : authnRequest.getID(),
+            service.isSkipGeneratingSubjectConfirmationNotBefore() ? null : ZonedDateTime.now());
+
         LOGGER.debug("Created SAML subject [{}]", subject);
         return subject;
     }

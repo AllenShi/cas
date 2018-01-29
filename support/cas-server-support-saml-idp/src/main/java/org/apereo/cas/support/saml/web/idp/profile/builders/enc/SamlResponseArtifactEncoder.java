@@ -1,5 +1,7 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.enc;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.velocity.app.VelocityEngine;
 import org.apereo.cas.support.saml.services.idp.metadata.SamlRegisteredServiceServiceProviderMetadataFacade;
 import org.apereo.cas.ticket.artifact.SamlArtifactTicketFactory;
 import org.apereo.cas.ticket.registry.TicketRegistry;
@@ -14,7 +16,6 @@ import org.opensaml.saml.saml2.binding.encoding.impl.HTTPArtifactEncoder;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.metadata.AssertionConsumerService;
-import org.springframework.ui.velocity.VelocityEngineFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class SamlResponseArtifactEncoder extends BaseSamlResponseEncoder {
     private final TicketRegistry ticketRegistry;
     private final SamlArtifactTicketFactory samlArtifactTicketFactory;
@@ -32,7 +34,7 @@ public class SamlResponseArtifactEncoder extends BaseSamlResponseEncoder {
     private final SAMLArtifactMap samlArtifactMap;
     private final CookieRetrievingCookieGenerator ticketGrantingTicketCookieGenerator;
 
-    public SamlResponseArtifactEncoder(final VelocityEngineFactory velocityEngineFactory,
+    public SamlResponseArtifactEncoder(final VelocityEngine velocityEngineFactory,
                                        final SamlRegisteredServiceServiceProviderMetadataFacade adaptor,
                                        final HttpServletRequest httpRequest,
                                        final HttpServletResponse httpResponse, final RequestAbstractType authnRequest,
@@ -56,7 +58,7 @@ public class SamlResponseArtifactEncoder extends BaseSamlResponseEncoder {
     @Override
     protected BaseSAML2MessageEncoder getMessageEncoderInstance() throws Exception {
         final HTTPArtifactEncoder encoder = new HTTPArtifactEncoder();
-        encoder.setVelocityEngine(this.velocityEngineFactory.createVelocityEngine());
+        encoder.setVelocityEngine(this.velocityEngineFactory);
         return encoder;
     }
 

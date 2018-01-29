@@ -1,6 +1,8 @@
 package org.apereo.cas.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.util.RegexUtils;
 
@@ -19,6 +21,7 @@ import java.util.regex.Pattern;
  */
 @Entity
 @DiscriminatorValue("regex")
+@Slf4j
 public class RegexRegisteredService extends AbstractRegisteredService {
 
     private static final long serialVersionUID = -8258660210826975771L;
@@ -28,6 +31,7 @@ public class RegexRegisteredService extends AbstractRegisteredService {
     /**
      * {@inheritDoc}
      * Resets the pattern because we just changed the id.
+     *
      * @param id the new service id
      */
     @Override
@@ -35,7 +39,7 @@ public class RegexRegisteredService extends AbstractRegisteredService {
         this.serviceId = id;
         this.servicePattern = null;
     }
-    
+
     @Override
     public boolean matches(final Service service) {
         return service != null && matches(service.getId());
@@ -46,7 +50,7 @@ public class RegexRegisteredService extends AbstractRegisteredService {
         if (this.servicePattern == null) {
             this.servicePattern = RegexUtils.createPattern(this.serviceId);
         }
-        return this.servicePattern.matcher(serviceId).matches();
+        return StringUtils.isBlank(serviceId) ? false : this.servicePattern.matcher(serviceId).matches();
     }
 
     @Override
@@ -59,4 +63,5 @@ public class RegexRegisteredService extends AbstractRegisteredService {
     public String getFriendlyName() {
         return "CAS Client";
     }
+
 }

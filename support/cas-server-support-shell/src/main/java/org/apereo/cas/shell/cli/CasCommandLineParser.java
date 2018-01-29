@@ -1,5 +1,6 @@
 package org.apereo.cas.shell.cli;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -8,8 +9,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.util.RegexUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.Banner;
 import org.springframework.core.env.Environment;
 
@@ -21,9 +20,10 @@ import java.util.regex.Pattern;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class CasCommandLineParser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CasCommandLineParser.class);
+
     private static final int WIDTH = 120;
 
     private final CommandLineParser parser;
@@ -232,7 +232,7 @@ public class CasCommandLineParser {
     public static Banner.Mode getBannerMode(final String[] args) {
         final CasCommandLineParser parser = new CasCommandLineParser();
         final CommandLine line = parser.parse(args);
-        return (line != null && parser.isSkippingBanner(line) || isShell(args)) ? Banner.Mode.OFF : Banner.Mode.CONSOLE;
+        return (line != null && parser.isSkippingBanner(line)) || isShell(args) ? Banner.Mode.OFF : Banner.Mode.CONSOLE;
     }
 
     /**

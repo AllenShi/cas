@@ -1,5 +1,7 @@
 package org.apereo.cas.support.saml.web.idp.profile.sso;
 
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.xml.ParserPool;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -29,8 +31,6 @@ import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.metadata.AssertionConsumerService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,26 +43,11 @@ import javax.servlet.http.HttpServletResponse;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class SSOSamlProfileCallbackHandlerController extends AbstractSamlProfileHandlerController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SSOSamlProfileCallbackHandlerController.class);
 
     private final AbstractUrlBasedTicketValidator ticketValidator;
 
-    /**
-     * Instantiates a new idp-sso post saml profile handler controller.
-     *
-     * @param samlObjectSigner                             the saml object signer
-     * @param parserPool                                   the parser pool
-     * @param authenticationSystemSupport                  the authentication system support
-     * @param servicesManager                              the services manager
-     * @param webApplicationServiceFactory                 the web application service factory
-     * @param samlRegisteredServiceCachingMetadataResolver the saml registered service caching metadata resolver
-     * @param configBean                                   the config bean
-     * @param responseBuilder                              the response builder
-     * @param casProperties                                the cas properties
-     * @param samlObjectSignatureValidator                 the saml object signature validator
-     * @param ticketValidator                              the ticket validator
-     */
     public SSOSamlProfileCallbackHandlerController(final BaseSamlObjectSigner samlObjectSigner,
                                                    final ParserPool parserPool,
                                                    final AuthenticationSystemSupport authenticationSystemSupport,
@@ -169,11 +154,9 @@ public class SSOSamlProfileCallbackHandlerController extends AbstractSamlProfile
         LOGGER.debug("Determined authentication request binding is [{}], issued by [{}]", binding, authnRequest.getIssuer().getValue());
 
         LOGGER.debug("Checking metadata for [{}] to see if binding [{}] is supported", facade.getEntityId(), binding);
+        @NonNull
         final AssertionConsumerService svc = facade.getAssertionConsumerService(binding);
-        if (svc == null) {
-            throw new IllegalArgumentException("Requested binding [{}] is not supported by entity id " + facade.getEntityId());
-        }
-        LOGGER.debug("Binding [{}] is supported by [{}]", binding, facade.getEntityId());
+        LOGGER.debug("Binding [{}] is supported by [{}]", svc.getBinding(), facade.getEntityId());
         return binding;
     }
 }

@@ -2,18 +2,19 @@ package org.apereo.cas.support.oauth.web;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.BasicCredentialMetaData;
 import org.apereo.cas.authentication.BasicIdentifiableCredential;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.authentication.CredentialMetaData;
 import org.apereo.cas.authentication.DefaultAuthenticationBuilder;
-import org.apereo.cas.authentication.DefaultHandlerResult;
-import org.apereo.cas.authentication.HandlerResult;
+import org.apereo.cas.authentication.DefaultAuthenticationHandlerExecutionResult;
+import org.apereo.cas.authentication.AuthenticationHandlerExecutionResult;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.mock.MockTicketGrantingTicket;
 import org.apereo.cas.support.oauth.OAuth20Constants;
-import org.apereo.cas.support.oauth.web.endpoints.OAuth20UserProfileControllerController;
+import org.apereo.cas.support.oauth.web.endpoints.OAuth20UserProfileEndpointController;
 import org.apereo.cas.ticket.accesstoken.AccessToken;
 import org.apereo.cas.ticket.accesstoken.AccessTokenFactory;
 import org.apereo.cas.ticket.accesstoken.DefaultAccessTokenFactory;
@@ -35,12 +36,13 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 /**
- * This class tests the {@link OAuth20UserProfileControllerController} class.
+ * This class tests the {@link OAuth20UserProfileEndpointController} class.
  *
  * @author Jerome Leleu
  * @since 3.5.2
  */
 
+@Slf4j
 public class OAuth20ProfileControllerTests extends AbstractOAuth20Tests {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -57,7 +59,7 @@ public class OAuth20ProfileControllerTests extends AbstractOAuth20Tests {
     private AccessTokenFactory accessTokenFactory;
 
     @Autowired
-    private OAuth20UserProfileControllerController oAuth20ProfileController;
+    private OAuth20UserProfileEndpointController oAuth20ProfileController;
 
     @Test
     public void verifyNoGivenAccessToken() throws Exception {
@@ -172,7 +174,7 @@ public class OAuth20ProfileControllerTests extends AbstractOAuth20Tests {
 
     protected static Authentication getAuthentication(final Principal principal) {
         final CredentialMetaData metadata = new BasicCredentialMetaData(new BasicIdentifiableCredential(principal.getId()));
-        final HandlerResult handlerResult = new DefaultHandlerResult(principal.getClass().getCanonicalName(),
+        final AuthenticationHandlerExecutionResult handlerResult = new DefaultAuthenticationHandlerExecutionResult(principal.getClass().getCanonicalName(),
                 metadata, principal, new ArrayList<>());
 
         return DefaultAuthenticationBuilder.newInstance()

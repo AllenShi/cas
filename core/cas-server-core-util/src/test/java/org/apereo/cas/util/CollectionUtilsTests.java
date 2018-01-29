@@ -1,5 +1,6 @@
 package org.apereo.cas.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -10,19 +11,20 @@ import static org.junit.Assert.*;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class CollectionUtilsTests {
     @Test
     public void verifyWrappingItemsAsList() {
-        assertEquals(CollectionUtils.wrapList(1, 2, 3, 4).size(), 4);
+        assertEquals(4, CollectionUtils.wrapList(1, 2, 3, 4).size());
     }
 
     @Test
     public void verifyWrappingColItemsAsList() {
-        assertEquals(CollectionUtils.wrapList(new Object[]{1, 2, 3, 4}, new Object[]{1, 2, 3, 4}, 5, 6).size(), 10);
+        assertEquals(10, CollectionUtils.wrapList(new Object[]{1, 2, 3, 4}, new Object[]{1, 2, 3, 4}, 5, 6).size());
     }
 
     @Test
     public void verifyWrappingMapItemsAsList() {
-        assertEquals(CollectionUtils.wrapList(CollectionUtils.wrap("1", 2, "2", 2)).size(), 2);
+        assertEquals(2, CollectionUtils.wrapList(CollectionUtils.wrap("1", 2, "2", 2)).size());
     }
 }

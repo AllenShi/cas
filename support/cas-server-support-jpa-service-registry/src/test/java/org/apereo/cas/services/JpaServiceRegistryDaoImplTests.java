@@ -1,16 +1,19 @@
 package org.apereo.cas.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.config.CasCoreServicesConfiguration;
 import org.apereo.cas.config.CasCoreUtilConfiguration;
 import org.apereo.cas.config.JpaServiceRegistryConfiguration;
 import org.apereo.cas.support.oauth.services.OAuthRegisteredService;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
+import org.apereo.cas.util.CollectionUtils;
 import org.joda.time.DateTimeUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
@@ -19,6 +22,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,12 +39,15 @@ import static org.junit.Assert.*;
  * @since 3.1.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {RefreshAutoConfiguration.class,
-        CasCoreUtilConfiguration.class,
-        JpaServiceRegistryConfiguration.class,
-        JpaServiceRegistryDaoImplTests.TimeAwareServicesManagerConfiguration.class,
-        CasCoreServicesConfiguration.class})
+@SpringBootTest(classes = {
+    RefreshAutoConfiguration.class,
+    AopAutoConfiguration.class,
+    CasCoreUtilConfiguration.class,
+    JpaServiceRegistryConfiguration.class,
+    JpaServiceRegistryDaoImplTests.TimeAwareServicesManagerConfiguration.class,
+    CasCoreServicesConfiguration.class})
 @DirtiesContext
+@Slf4j
 public class JpaServiceRegistryDaoImplTests {
 
     @Autowired
@@ -81,7 +88,10 @@ public class JpaServiceRegistryDaoImplTests {
         r.setTheme("theme");
         r.setDescription("description");
         r.setAttributeReleasePolicy(new ReturnAllAttributeReleasePolicy());
-
+        final DefaultRegisteredServiceAccessStrategy strategy = new DefaultRegisteredServiceAccessStrategy();
+        strategy.setDelegatedAuthenticationPolicy(
+            new DefaultRegisteredServiceDelegatedAuthenticationPolicy(CollectionUtils.wrapList("one", "two")));
+        r.setAccessStrategy(strategy);
         final RegisteredService r2 = this.serviceRegistryDao.save(r);
         final RegisteredService r3 = this.serviceRegistryDao.findServiceById(r2.getId());
 
@@ -121,7 +131,7 @@ public class JpaServiceRegistryDaoImplTests {
         r.setTheme("theme");
         r.setDescription("description");
 
-        final Map<String, RegisteredServiceProperty> propertyMap = new HashMap<>();
+        final Map propertyMap = new HashMap<>();
 
         final DefaultRegisteredServiceProperty property = new DefaultRegisteredServiceProperty();
         final Set<String> values = new HashSet<>();
@@ -143,7 +153,29 @@ public class JpaServiceRegistryDaoImplTests {
         this.serviceRegistryDao.save(r);
 
         final RegisteredService r2 = this.serviceRegistryDao.load().get(0);
-        assertEquals(r2.getProperties().size(), 2);
+        assertEquals(2, r2.getProperties().size());
+
+    }
+
+
+    @Test
+    public void verifyRegisteredServiceContacts() {
+        final RegexRegisteredService r = new RegexRegisteredService();
+        r.setName("testContacts");
+        r.setServiceId("testContacts");
+
+        final List contacts = new ArrayList<>();
+        final DefaultRegisteredServiceContact contact = new DefaultRegisteredServiceContact();
+        contact.setDepartment("department");
+        contact.setId(1234);
+        contact.setName("ContactName");
+        contact.setPhone("123-456-789");
+        contacts.add(contact);
+        r.setContacts(contacts);
+
+        this.serviceRegistryDao.save(r);
+        final RegisteredService r2 = this.serviceRegistryDao.load().get(0);
+        assertEquals(1, r2.getContacts().size());
     }
 
     @Test
@@ -207,20 +239,20 @@ public class JpaServiceRegistryDaoImplTests {
         assertNotNull(svc);
         assertFalse(svc.getAccessStrategy().isServiceAccessAllowed());
     }
-    
+
     @TestConfiguration("timeAwareServicesManagerConfiguration")
     public static class TimeAwareServicesManagerConfiguration {
 
         @Autowired
         @Qualifier("serviceRegistryDao")
         private ServiceRegistryDao serviceRegistryDao;
-        
+
         @Bean
         public ServicesManager servicesManager() {
             return new TimeAwareServicesManager(serviceRegistryDao);
         }
-        
-        public class TimeAwareServicesManager extends DefaultServicesManager {
+
+        public static class TimeAwareServicesManager extends DefaultServicesManager {
             public TimeAwareServicesManager(final ServiceRegistryDao serviceRegistryDao) {
                 super(serviceRegistryDao, null);
             }

@@ -1,6 +1,7 @@
 package org.apereo.cas.tokens;
 
 import com.nimbusds.jwt.JWTClaimsSet;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.authentication.AuthenticationResult;
@@ -76,6 +77,7 @@ import static org.junit.Assert.*;
         CasDefaultServiceTicketIdGeneratorsConfiguration.class,
         CasWebApplicationServiceFactoryConfiguration.class,
         CasRestTokensConfiguration.class})
+@Slf4j
 public class JWTTicketGrantingTicketResourceEntityResponseFactoryTests {
     @Autowired
     @Qualifier("defaultAuthenticationSystemSupport")
@@ -100,7 +102,7 @@ public class JWTTicketGrantingTicketResourceEntityResponseFactoryTests {
 
         final ResponseEntity<String> response = ticketGrantingTicketResourceEntityResponseFactory.build(tgt, new MockHttpServletRequest());
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.CREATED);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
 
     @Test
@@ -113,7 +115,7 @@ public class JWTTicketGrantingTicketResourceEntityResponseFactoryTests {
         request.addParameter(TokenConstants.PARAMETER_NAME_TOKEN, Boolean.TRUE.toString());
         final ResponseEntity<String> response = ticketGrantingTicketResourceEntityResponseFactory.build(tgt, request);
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.CREATED);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
         
         final Object jwt = this.tokenCipherExecutor.decode(response.getBody());
         final JWTClaimsSet claims = JWTClaimsSet.parse(jwt.toString());
@@ -130,7 +132,7 @@ public class JWTTicketGrantingTicketResourceEntityResponseFactoryTests {
         request.addHeader(TokenConstants.PARAMETER_NAME_TOKEN, Boolean.TRUE.toString());
         final ResponseEntity<String> response = ticketGrantingTicketResourceEntityResponseFactory.build(tgt, request);
         assertNotNull(response);
-        assertEquals(response.getStatusCode(), HttpStatus.CREATED);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
 
         final Object jwt = this.tokenCipherExecutor.decode(response.getBody());
         final JWTClaimsSet claims = JWTClaimsSet.parse(jwt.toString());

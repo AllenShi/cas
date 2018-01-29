@@ -1,11 +1,13 @@
 package org.apereo.cas.support.openid.authentication.principal;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.principal.AbstractWebApplicationServiceResponseBuilder;
 import org.apereo.cas.authentication.principal.Response;
 import org.apereo.cas.authentication.principal.WebApplicationService;
+import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.openid.OpenIdProtocolConstants;
 import org.apereo.cas.ticket.AbstractTicketException;
 import org.apereo.cas.util.HttpRequestUtils;
@@ -16,8 +18,6 @@ import org.openid4java.message.Message;
 import org.openid4java.message.MessageException;
 import org.openid4java.message.ParameterList;
 import org.openid4java.server.ServerManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,9 +28,9 @@ import java.util.Map;
  * @author Misagh Moayyed
  * @since 4.2
  */
+@Slf4j
 public class OpenIdServiceResponseBuilder extends AbstractWebApplicationServiceResponseBuilder {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OpenIdServiceResponseBuilder.class);
-
+    
     private static final long serialVersionUID = -4581238964007702423L;
 
     private final ServerManager serverManager;
@@ -39,18 +39,12 @@ public class OpenIdServiceResponseBuilder extends AbstractWebApplicationServiceR
 
     private final String openIdPrefixUrl;
 
-    /**
-     * Instantiates a new Open id service response builder.
-     *
-     * @param openIdPrefixUrl              the open id prefix url
-     * @param serverManager                the server manager
-     * @param centralAuthenticationService the central authentication service
-     */
-    public OpenIdServiceResponseBuilder(final String openIdPrefixUrl,
-                                        final ServerManager serverManager,
-                                        final CentralAuthenticationService centralAuthenticationService) {
-        this.openIdPrefixUrl = openIdPrefixUrl;
+    public OpenIdServiceResponseBuilder(final String openIdPrefixUrl, final ServerManager serverManager,
+                                        final CentralAuthenticationService centralAuthenticationService,
+                                        final ServicesManager servicesManager) {
+        super(servicesManager);
         this.serverManager = serverManager;
+        this.openIdPrefixUrl = openIdPrefixUrl;
         this.centralAuthenticationService = centralAuthenticationService;
     }
 

@@ -3,6 +3,7 @@ package org.apereo.cas;
 import com.codahale.metrics.annotation.Counted;
 import com.codahale.metrics.annotation.Metered;
 import com.codahale.metrics.annotation.Timed;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.AuthenticationBuilder;
 import org.apereo.cas.authentication.AuthenticationCredentialsLocalBinder;
@@ -48,8 +49,7 @@ import org.apereo.cas.util.DigestUtils;
 import org.apereo.cas.validation.Assertion;
 import org.apereo.cas.validation.DefaultAssertionBuilder;
 import org.apereo.inspektr.audit.annotation.Audit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -69,41 +69,26 @@ import java.util.Map;
  * @since 3.0.0
  */
 @Transactional(transactionManager = "ticketTransactionManager")
+@Slf4j
 public class DefaultCentralAuthenticationService extends AbstractCentralAuthenticationService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCentralAuthenticationService.class);
+
 
     private static final long serialVersionUID = -8943828074939533986L;
 
-    /**
-     * Build the central authentication service implementation.
-     *
-     * @param ticketRegistry              the tickets registry.
-     * @param ticketFactory               the ticket factory
-     * @param servicesManager             the services manager.
-     * @param logoutManager               the logout manager.
-     * @param selectionStrategies         The service selection strategy during validation events.
-     * @param authenticationPolicyFactory Authentication policy that uses a service context to
-     *                                    produce stateful security policies to apply when authenticating credentials.
-     * @param principalFactory            principal factory to create principal objects
-     * @param cipherExecutor              Cipher executor to handle ticket validation.
-     */
-    public DefaultCentralAuthenticationService(final TicketRegistry ticketRegistry,
-                                               final TicketFactory ticketFactory,
-                                               final ServicesManager servicesManager,
-                                               final LogoutManager logoutManager,
-                                               final AuthenticationServiceSelectionPlan selectionStrategies,
-                                               final ContextualAuthenticationPolicyFactory<ServiceContext> authenticationPolicyFactory,
-                                               final PrincipalFactory principalFactory,
-                                               final CipherExecutor<String, String> cipherExecutor) {
-        super(ticketRegistry, ticketFactory, servicesManager, logoutManager,
-                selectionStrategies, authenticationPolicyFactory,
-                principalFactory, cipherExecutor);
+    public DefaultCentralAuthenticationService(final ApplicationEventPublisher applicationEventPublisher,
+                                               final TicketRegistry ticketRegistry, final ServicesManager servicesManager,
+                                               final LogoutManager logoutManager, final TicketFactory ticketFactory,
+                                               final AuthenticationServiceSelectionPlan authenticationRequestServiceSelectionStrategies,
+                                               final ContextualAuthenticationPolicyFactory<ServiceContext> serviceContextAuthenticationPolicyFactory,
+                                               final PrincipalFactory principalFactory, final CipherExecutor<String, String> cipherExecutor) {
+        super(applicationEventPublisher, ticketRegistry, servicesManager, logoutManager, ticketFactory,
+            authenticationRequestServiceSelectionStrategies, serviceContextAuthenticationPolicyFactory, principalFactory, cipherExecutor);
     }
 
     @Audit(
-            action = "TICKET_GRANTING_TICKET_DESTROYED",
-            actionResolverName = "DESTROY_TICKET_GRANTING_TICKET_RESOLVER",
-            resourceResolverName = "DESTROY_TICKET_GRANTING_TICKET_RESOURCE_RESOLVER")
+        action = "TICKET_GRANTING_TICKET_DESTROYED",
+        actionResolverName = "DESTROY_TICKET_GRANTING_TICKET_RESOLVER",
+        resourceResolverName = "DESTROY_TICKET_GRANTING_TICKET_RESOURCE_RESOLVER")
     @Timed(name = "DESTROY_TICKET_GRANTING_TICKET_TIMER")
     @Metered(name = "DESTROY_TICKET_GRANTING_TICKET_METER")
     @Counted(name = "DESTROY_TICKET_GRANTING_TICKET_COUNTER", monotonic = true)
@@ -137,9 +122,9 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
     }
 
     @Audit(
-            action = "SERVICE_TICKET",
-            actionResolverName = "GRANT_SERVICE_TICKET_RESOLVER",
-            resourceResolverName = "GRANT_SERVICE_TICKET_RESOURCE_RESOLVER")
+        action = "SERVICE_TICKET",
+        actionResolverName = "GRANT_SERVICE_TICKET_RESOLVER",
+        resourceResolverName = "GRANT_SERVICE_TICKET_RESOURCE_RESOLVER")
     @Timed(name = "GRANT_SERVICE_TICKET_TIMER")
     @Metered(name = "GRANT_SERVICE_TICKET_METER")
     @Counted(name = "GRANT_SERVICE_TICKET_COUNTER", monotonic = true)
@@ -162,35 +147,34 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
         final Authentication latestAuthentication = ticketGrantingTicket.getRoot().getAuthentication();
         AuthenticationCredentialsLocalBinder.bindCurrent(latestAuthentication);
         final Principal principal = latestAuthentication.getPrincipal();
-        final ServiceTicketFactory factory = this.ticketFactory.get(ServiceTicket.class);
+        final ServiceTicketFactory factory = (ServiceTicketFactory) this.ticketFactory.get(ServiceTicket.class);
         final ServiceTicket serviceTicket = factory.create(ticketGrantingTicket, service,
                 authenticationResult != null && authenticationResult.isCredentialProvided(),fromImpersonation);
         this.ticketRegistry.updateTicket(ticketGrantingTicket);
         this.ticketRegistry.addTicket(serviceTicket);
 
         LOGGER.info("Granted ticket [{}] for service [{}] and principal [{}]",
-                serviceTicket.getId(), DigestUtils.abbreviate(service.getId()), principal.getId());
+            serviceTicket.getId(), DigestUtils.abbreviate(service.getId()), principal.getId());
         doPublishEvent(new CasServiceTicketGrantedEvent(this, ticketGrantingTicket, serviceTicket));
         return serviceTicket;
     }
 
     @Audit(
-            action = "PROXY_TICKET",
-            actionResolverName = "GRANT_PROXY_TICKET_RESOLVER",
-            resourceResolverName = "GRANT_PROXY_TICKET_RESOURCE_RESOLVER")
+        action = "PROXY_TICKET",
+        actionResolverName = "GRANT_PROXY_TICKET_RESOLVER",
+        resourceResolverName = "GRANT_PROXY_TICKET_RESOURCE_RESOLVER")
     @Timed(name = "GRANT_PROXY_TICKET_TIMER")
     @Metered(name = "GRANT_PROXY_TICKET_METER")
     @Counted(name = "GRANT_PROXY_TICKET_COUNTER", monotonic = true)
     @Override
     public ProxyTicket grantProxyTicket(final String proxyGrantingTicket, final Service service)
-            throws AbstractTicketException {
+        throws AbstractTicketException {
 
         final ProxyGrantingTicket proxyGrantingTicketObject = getTicket(proxyGrantingTicket, ProxyGrantingTicket.class);
         final RegisteredService registeredService = this.servicesManager.findServiceBy(service);
 
         try {
-            RegisteredServiceAccessStrategyUtils.ensurePrincipalAccessIsAllowedForService(service,
-                    registeredService, proxyGrantingTicketObject,false);
+            RegisteredServiceAccessStrategyUtils.ensurePrincipalAccessIsAllowedForService(service, registeredService, proxyGrantingTicketObject, false);
             RegisteredServiceAccessStrategyUtils.ensureServiceSsoAccessIsAllowed(registeredService, service, proxyGrantingTicketObject);
         } catch (final PrincipalException e) {
             throw new UnauthorizedSsoServiceException();
@@ -201,35 +185,35 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
         // Perform security policy check by getting the authentication that satisfies the configured policy
         // This throws if no suitable policy is found
         getAuthenticationSatisfiedByPolicy(proxyGrantingTicketObject.getRoot().getAuthentication(),
-                new ServiceContext(service, registeredService));
+            new ServiceContext(service, registeredService));
 
         final Authentication authentication = proxyGrantingTicketObject.getRoot().getAuthentication();
         AuthenticationCredentialsLocalBinder.bindCurrent(authentication);
 
         final Principal principal = authentication.getPrincipal();
-        final ProxyTicketFactory factory = this.ticketFactory.get(ProxyTicket.class);
-        final ProxyTicket proxyTicket = factory.create(proxyGrantingTicketObject, service);
+        final ProxyTicketFactory factory = (ProxyTicketFactory) this.ticketFactory.get(ProxyTicket.class);
+        final ProxyTicket proxyTicket = factory.create(proxyGrantingTicketObject, service, ProxyTicket.class);
 
         this.ticketRegistry.updateTicket(proxyGrantingTicketObject);
         this.ticketRegistry.addTicket(proxyTicket);
 
         LOGGER.info("Granted ticket [{}] for service [{}] for user [{}]",
-                proxyTicket.getId(), service.getId(), principal.getId());
+            proxyTicket.getId(), service.getId(), principal.getId());
 
         doPublishEvent(new CasProxyTicketGrantedEvent(this, proxyGrantingTicketObject, proxyTicket));
         return proxyTicket;
     }
 
     @Audit(
-            action = "PROXY_GRANTING_TICKET",
-            actionResolverName = "CREATE_PROXY_GRANTING_TICKET_RESOLVER",
-            resourceResolverName = "CREATE_PROXY_GRANTING_TICKET_RESOURCE_RESOLVER")
+        action = "PROXY_GRANTING_TICKET",
+        actionResolverName = "CREATE_PROXY_GRANTING_TICKET_RESOLVER",
+        resourceResolverName = "CREATE_PROXY_GRANTING_TICKET_RESOURCE_RESOLVER")
     @Timed(name = "CREATE_PROXY_GRANTING_TICKET_TIMER")
     @Metered(name = "CREATE_PROXY_GRANTING_TICKET_METER")
     @Counted(name = "CREATE_PROXY_GRANTING_TICKET_COUNTER", monotonic = true)
     @Override
     public ProxyGrantingTicket createProxyGrantingTicket(final String serviceTicketId, final AuthenticationResult authenticationResult)
-            throws AuthenticationException, AbstractTicketException {
+        throws AuthenticationException, AbstractTicketException {
 
         AuthenticationCredentialsLocalBinder.bindCurrent(authenticationResult.getAuthentication());
         final ServiceTicket serviceTicket = this.ticketRegistry.getTicket(serviceTicketId, ServiceTicket.class);
@@ -242,7 +226,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
         final RegisteredService registeredService = this.servicesManager.findServiceBy(serviceTicket.getService());
 
         RegisteredServiceAccessStrategyUtils
-                .ensurePrincipalAccessIsAllowedForService(serviceTicket, authenticationResult, registeredService);
+            .ensurePrincipalAccessIsAllowedForService(serviceTicket, authenticationResult, registeredService);
 
         if (!registeredService.getProxyPolicy().isAllowedToProxy()) {
             LOGGER.warn("ServiceManagement: Service [{}] attempted to proxy, but is not allowed.", serviceTicket.getService().getId());
@@ -250,8 +234,8 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
         }
 
         final Authentication authentication = authenticationResult.getAuthentication();
-        final ProxyGrantingTicketFactory factory = this.ticketFactory.get(ProxyGrantingTicket.class);
-        final ProxyGrantingTicket proxyGrantingTicket = factory.create(serviceTicket, authentication);
+        final ProxyGrantingTicketFactory factory = (ProxyGrantingTicketFactory) this.ticketFactory.get(ProxyGrantingTicket.class);
+        final ProxyGrantingTicket proxyGrantingTicket = factory.create(serviceTicket, authentication, ProxyGrantingTicket.class);
 
         LOGGER.debug("Generated proxy granting ticket [{}] based off of [{}]", proxyGrantingTicket, serviceTicketId);
         this.ticketRegistry.addTicket(proxyGrantingTicket);
@@ -263,9 +247,9 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
     }
 
     @Audit(
-            action = "SERVICE_TICKET_VALIDATE",
-            actionResolverName = "VALIDATE_SERVICE_TICKET_RESOLVER",
-            resourceResolverName = "VALIDATE_SERVICE_TICKET_RESOURCE_RESOLVER")
+        action = "SERVICE_TICKET_VALIDATE",
+        actionResolverName = "VALIDATE_SERVICE_TICKET_RESOLVER",
+        resourceResolverName = "VALIDATE_SERVICE_TICKET_RESOURCE_RESOLVER")
     @Timed(name = "VALIDATE_SERVICE_TICKET_TIMER")
     @Metered(name = "VALIDATE_SERVICE_TICKET_METER")
     @Counted(name = "VALIDATE_SERVICE_TICKET_COUNTER", monotonic = true)
@@ -298,7 +282,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
 
                 if (!serviceTicket.isValidFor(service)) {
                     LOGGER.error("Service ticket [{}] with service [{}] does not match supplied service [{}]",
-                            serviceTicketId, serviceTicket.getService().getId(), service);
+                        serviceTicketId, serviceTicket.getService().getId(), service);
                     throw new UnrecognizableServiceForServiceTicketValidationException(serviceTicket.getService());
                 }
             }
@@ -310,9 +294,9 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
             LOGGER.debug("Located registered service definition [{}] from [{}] to handle validation request", registeredService, selectedService);
             RegisteredServiceAccessStrategyUtils.ensureServiceAccessIsAllowed(selectedService, registeredService);
 
-            final TicketGrantingTicket root = serviceTicket.getGrantingTicket().getRoot();
+            final TicketGrantingTicket root = serviceTicket.getTicketGrantingTicket().getRoot();
             final Authentication authentication = getAuthenticationSatisfiedByPolicy(root.getAuthentication(),
-                    new ServiceContext(selectedService, registeredService));
+                new ServiceContext(selectedService, registeredService));
             final Principal principal = authentication.getPrincipal();
 
             final RegisteredServiceAttributeReleasePolicy attributePolicy = registeredService.getAttributeReleasePolicy();
@@ -320,17 +304,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
 
 
             final Map<String, Object> attributesToRelease = attributePolicy != null
-                    ? attributePolicy.getAttributes(principal, selectedService, registeredService) : new HashMap<>();
-            /*
-            final Map<String, Object> attributesToRelease;
-            if(!registeredService.getClass().getSimpleName().startsWith("Oidc")) {
-                attributesToRelease = attributePolicy != null
-                        ? attributePolicy.getAttributes(principal, selectedService, registeredService) : new HashMap<>();
-            } else {
-                attributesToRelease = principal.getAttributes();
-           }
-           */
-
+                ? attributePolicy.getAttributes(principal, selectedService, registeredService) : new HashMap<>();
 
             LOGGER.debug("Calculated attributes for release per the release policy are [{}]", attributesToRelease.keySet());
 
@@ -343,7 +317,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
             final Authentication finalAuthentication = builder.build();
 
             RegisteredServiceAccessStrategyUtils.ensurePrincipalAccessIsAllowedForService(selectedService, registeredService,
-                    finalAuthentication, false);
+                finalAuthentication, false);
 
             AuthenticationCredentialsLocalBinder.bindCurrent(finalAuthentication);
 
@@ -367,15 +341,15 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
     }
 
     @Audit(
-            action = "TICKET_GRANTING_TICKET",
-            actionResolverName = "CREATE_TICKET_GRANTING_TICKET_RESOLVER",
-            resourceResolverName = "CREATE_TICKET_GRANTING_TICKET_RESOURCE_RESOLVER")
+        action = "TICKET_GRANTING_TICKET",
+        actionResolverName = "CREATE_TICKET_GRANTING_TICKET_RESOLVER",
+        resourceResolverName = "CREATE_TICKET_GRANTING_TICKET_RESOURCE_RESOLVER")
     @Timed(name = "CREATE_TICKET_GRANTING_TICKET_TIMER")
     @Metered(name = "CREATE_TICKET_GRANTING_TICKET_METER")
     @Counted(name = "CREATE_TICKET_GRANTING_TICKET_COUNTER", monotonic = true)
     @Override
     public TicketGrantingTicket createTicketGrantingTicket(final AuthenticationResult authenticationResult)
-            throws AuthenticationException, AbstractTicketException {
+        throws AuthenticationException, AbstractTicketException {
 
         final Authentication authentication = authenticationResult.getAuthentication();
         final Service service = authenticationResult.getService();
@@ -386,11 +360,11 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
             LOGGER.debug("Resolved service [{}] from the authentication request", selectedService);
 
             final RegisteredService registeredService = this.servicesManager.findServiceBy(selectedService);
-            RegisteredServiceAccessStrategyUtils.ensurePrincipalAccessIsAllowedForService(selectedService, registeredService, authentication);
+            RegisteredServiceAccessStrategyUtils.ensurePrincipalAccessIsAllowedForService(selectedService, registeredService, authentication, false);
         }
 
-        final TicketGrantingTicketFactory factory = this.ticketFactory.get(TicketGrantingTicket.class);
-        final TicketGrantingTicket ticketGrantingTicket = factory.create(authentication);
+        final TicketGrantingTicketFactory factory = (TicketGrantingTicketFactory) this.ticketFactory.get(TicketGrantingTicket.class);
+        final TicketGrantingTicket ticketGrantingTicket = factory.create(authentication, TicketGrantingTicket.class);
 
         this.ticketRegistry.addTicket(ticketGrantingTicket);
         doPublishEvent(new CasTicketGrantingTicketCreatedEvent(this, ticketGrantingTicket));
@@ -398,7 +372,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
     }
 
     private static Authentication evaluatePossibilityOfMixedPrincipals(final AuthenticationResult context, final TicketGrantingTicket ticketGrantingTicket)
-            throws MixedPrincipalException {
+        throws MixedPrincipalException {
         Authentication currentAuthentication = null;
         if (context != null) {
             currentAuthentication = context.getAuthentication();
@@ -406,7 +380,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
                 final Authentication original = ticketGrantingTicket.getAuthentication();
                 if (!currentAuthentication.getPrincipal().equals(original.getPrincipal())) {
                     throw new MixedPrincipalException(
-                            currentAuthentication, currentAuthentication.getPrincipal(), original.getPrincipal());
+                        currentAuthentication, currentAuthentication.getPrincipal(), original.getPrincipal());
                 }
             }
         }

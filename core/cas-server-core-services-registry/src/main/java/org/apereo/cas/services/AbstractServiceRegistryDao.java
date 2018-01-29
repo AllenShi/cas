@@ -1,13 +1,10 @@
 package org.apereo.cas.services;
 
-import org.apereo.cas.support.events.AbstractCasEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
-
-import java.util.function.Consumer;
+import lombok.Setter;
 
 /**
  * This is {@link AbstractServiceRegistryDao}, that acts as the base parent class
@@ -16,34 +13,23 @@ import java.util.function.Consumer;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
+@Setter
 public abstract class AbstractServiceRegistryDao implements ServiceRegistryDao {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractServiceRegistryDao.class);
-
-    /** Event consumer. */
-    protected final Consumer<AbstractCasEvent> casEventConsumer = this::publishEvent;
 
     @Autowired
     private transient ApplicationEventPublisher eventPublisher;
-
-    @Override
-    public RegisteredService findServiceByExactServiceId(final String id) {
-        return load().stream().filter(r -> r.getServiceId().equals(id)).findFirst().orElse(null);
-    }
 
     /**
      * Publish event.
      *
      * @param event the event
      */
-    protected void publishEvent(final ApplicationEvent event) {
+    public void publishEvent(final ApplicationEvent event) {
         if (this.eventPublisher != null) {
             LOGGER.debug("Publishing event [{}]", event);
             this.eventPublisher.publishEvent(event);
         }
-    }
-
-    protected void setEventPublisher(final ApplicationEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
     }
 
     @Override

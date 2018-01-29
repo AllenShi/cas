@@ -96,6 +96,15 @@ public interface RegisteredService extends Cloneable, Serializable, Comparable<R
     String getDescription();
 
     /**
+     * Response determines how CAS should contact the matching service
+     * typically with a ticket id. By default, the strategy is a 302 redirect.
+     *
+     * @return the response type
+     * @see org.apereo.cas.authentication.principal.Response.ResponseType
+     */
+    String getResponseType();
+
+    /**
      * Gets the relative evaluation order of this service when determining
      * matches.
      *
@@ -112,11 +121,11 @@ public interface RegisteredService extends Cloneable, Serializable, Comparable<R
     void setEvaluationOrder(int evaluationOrder);
 
     /**
-     * Sets the identifer for this service. Use {@link #INITIAL_IDENTIFIER_VALUE} to indicate a branch new service definition.
+     * Sets the identifier for this service. Use {@link #INITIAL_IDENTIFIER_VALUE} to indicate a branch new service definition.
      * @param id the numeric identifier for the service.
      */
     void setId(long id);
-
+    
     /**
      * Get the name of the attribute this service prefers to consume as username.
      *

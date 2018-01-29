@@ -1,5 +1,6 @@
 package org.apereo.cas.influxdb;
 
+import lombok.extern.slf4j.Slf4j;
 import org.influxdb.annotation.Column;
 import org.influxdb.annotation.Measurement;
 import org.influxdb.dto.Point;
@@ -26,6 +27,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @IfProfileValue(name = "influxDbEnabled", value = "true")
+@Slf4j
 public class InfluxDbConnectionFactoryTests {
     private static final String CAS_EVENTS_DATABASE = "casEventsDatabase";
     private InfluxDbConnectionFactory factory;
@@ -52,8 +54,8 @@ public class InfluxDbConnectionFactoryTests {
         final InfluxDBResultMapper resultMapper = new InfluxDBResultMapper();
         final List<InfluxEvent> resultEvents = resultMapper.toPOJO(result, InfluxEvent.class);
         assertNotNull(resultEvents);
-        assertEquals(resultEvents.size(), 1);
-        assertEquals(resultEvents.iterator().next().hostname, "cas.example.org");
+        assertEquals(1, resultEvents.size());
+        assertEquals("cas.example.org", resultEvents.iterator().next().hostname);
     }
 
     @Measurement(name = "events")

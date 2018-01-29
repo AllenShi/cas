@@ -1,5 +1,7 @@
 package org.apereo.cas.support.saml.web.idp.profile;
 
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.xml.ParserPool;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -33,8 +35,6 @@ import org.opensaml.saml.saml2.core.Issuer;
 import org.opensaml.saml.saml2.core.NameIDPolicy;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.metadata.AssertionConsumerService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,8 +48,9 @@ import java.util.concurrent.TimeUnit;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class IdPInitiatedProfileHandlerController extends AbstractSamlProfileHandlerController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IdPInitiatedProfileHandlerController.class);
+
 
     /**
      * Instantiates a new idp-init saml profile handler controller.
@@ -111,14 +112,14 @@ public class IdPInitiatedProfileHandlerController extends AbstractSamlProfileHan
         String shire = CommonUtils.safeGetParameter(request, SamlIdPConstants.SHIRE);
         final SamlRegisteredServiceServiceProviderMetadataFacade facade = adaptor.get();
         if (StringUtils.isBlank(shire)) {
+            LOGGER.warn("Resolving service provider assertion consumer service URL for [{}] and binding [{}]",
+                providerId, SAMLConstants.SAML2_POST_BINDING_URI);
+            @NonNull
             final AssertionConsumerService acs = facade.getAssertionConsumerService(SAMLConstants.SAML2_POST_BINDING_URI);
-            if (acs == null) {
-                throw new MessageDecodingException("Unable to resolve SP ACS URL");
-            }
             shire = acs.getLocation();
         }
         if (StringUtils.isBlank(shire)) {
-            LOGGER.warn("Unable to resolve SP ACS URL for AuthnRequest construction for entityID: [{}]", providerId);
+            LOGGER.warn("Unable to resolve service provider assertion consumer service URL for AuthnRequest construction for entityID: [{}]", providerId);
             throw new MessageDecodingException("Unable to resolve SP ACS URL for AuthnRequest construction");
         }
 

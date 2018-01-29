@@ -1,5 +1,6 @@
 package org.apereo.cas.config;
 
+import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.bootstrap.BootstrapCacheLoader;
@@ -18,9 +19,8 @@ import org.apereo.cas.ticket.TicketDefinition;
 import org.apereo.cas.ticket.registry.EhCacheTicketRegistry;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.util.CoreTicketUtils;
 import org.apereo.cas.util.ResourceUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -41,8 +41,9 @@ import java.util.Collection;
  */
 @Configuration("ehcacheTicketRegistryConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class EhcacheTicketRegistryConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EhcacheTicketRegistryConfiguration.class);
+
 
     @Autowired
     private CasConfigurationProperties casProperties;
@@ -71,7 +72,7 @@ public class EhcacheTicketRegistryConfiguration {
                 cache.isReplicateUpdates(),
                 cache.isReplicateUpdatesViaCopy(),
                 cache.isReplicateRemovals(),
-                (int) cache.getReplicationInterval(),
+                (int) Beans.newDuration(cache.getReplicationInterval()).toMillis(),
                 cache.getMaximumBatchSize());
     }
 
@@ -166,6 +167,6 @@ public class EhcacheTicketRegistryConfiguration {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("The following caches are available: [{}]", (Object[]) manager.getCacheNames());
         }
-        return new EhCacheTicketRegistry(ticketCatalog, manager, Beans.newTicketRegistryCipherExecutor(crypto, "ehcache"));
+        return new EhCacheTicketRegistry(ticketCatalog, manager, CoreTicketUtils.newTicketRegistryCipherExecutor(crypto, "ehcache"));
     }
 }

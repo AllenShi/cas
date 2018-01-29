@@ -1,5 +1,8 @@
 package org.apereo.cas.ticket.query;
 
+import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.ServiceFactory;
 import org.apereo.cas.authentication.principal.WebApplicationService;
@@ -20,6 +23,8 @@ import java.io.StringWriter;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
+@AllArgsConstructor
 public class DefaultSamlAttributeQueryTicketFactory implements SamlAttributeQueryTicketFactory {
 
     /**
@@ -37,14 +42,8 @@ public class DefaultSamlAttributeQueryTicketFactory implements SamlAttributeQuer
      */
     protected final OpenSamlConfigBean configBean;
     
-    public DefaultSamlAttributeQueryTicketFactory(final ExpirationPolicy expirationPolicy, final OpenSamlConfigBean configBean,
-                                                  final ServiceFactory<WebApplicationService> webApplicationServiceFactory) {
-        this.expirationPolicy = expirationPolicy;
-        this.webApplicationServiceFactory = webApplicationServiceFactory;
-        this.configBean = configBean;
-    }
-
     @Override
+    @SneakyThrows
     public SamlAttributeQueryTicket create(final String id, final SAMLObject samlObject,
                                            final String relyingParty, final TicketGrantingTicket ticketGrantingTicket) {
         try (StringWriter w = SamlUtils.transformSamlObject(this.configBean, samlObject)) {
@@ -56,13 +55,11 @@ public class DefaultSamlAttributeQueryTicketFactory implements SamlAttributeQuer
                 ticketGrantingTicket.getDescendantTickets().add(at.getId());
             }
             return at;
-        } catch (final Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
         }
     }
 
     @Override
-    public <T extends TicketFactory> T get(final Class<? extends Ticket> clazz) {
-        return (T) this;
+    public TicketFactory get(final Class<? extends Ticket> clazz) {
+        return this;
     }
 }

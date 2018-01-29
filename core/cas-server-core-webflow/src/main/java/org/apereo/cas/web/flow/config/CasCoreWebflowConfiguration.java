@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.CipherExecutor;
@@ -46,12 +47,12 @@ import org.apereo.cas.web.flow.resolver.impl.mfa.PredicatedPrincipalAttributeMul
 import org.apereo.cas.web.flow.resolver.impl.mfa.PrincipalAttributeMultifactorAuthenticationPolicyEventResolver;
 import org.apereo.cas.web.flow.resolver.impl.mfa.RegisteredServiceMultifactorAuthenticationPolicyEventResolver;
 import org.apereo.cas.web.flow.resolver.impl.mfa.RegisteredServicePrincipalAttributeMultifactorAuthenticationPolicyEventResolver;
-import org.apereo.cas.web.flow.resolver.impl.mfa.RequestParameterMultifactorAuthenticationPolicyEventResolver;
+import org.apereo.cas.web.flow.resolver.impl.mfa.request.RequestHeaderMultifactorAuthenticationPolicyEventResolver;
+import org.apereo.cas.web.flow.resolver.impl.mfa.request.RequestParameterMultifactorAuthenticationPolicyEventResolver;
 import org.apereo.cas.web.flow.resolver.impl.mfa.RestEndpointMultifactorAuthenticationPolicyEventResolver;
 import org.apereo.cas.web.flow.resolver.impl.mfa.adaptive.AdaptiveMultifactorAuthenticationPolicyEventResolver;
 import org.apereo.cas.web.flow.resolver.impl.mfa.adaptive.TimedMultifactorAuthenticationPolicyEventResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apereo.cas.web.flow.resolver.impl.mfa.request.RequestSessionAttributeMultifactorAuthenticationPolicyEventResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -74,8 +75,9 @@ import java.util.Set;
  */
 @Configuration("casCoreWebflowConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class CasCoreWebflowConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CasCoreWebflowConfiguration.class);
+
 
     @Autowired(required = false)
     @Qualifier("geoLocationService")
@@ -196,6 +198,8 @@ public class CasCoreWebflowConfiguration {
         r.addDelegate(timedAuthenticationPolicyWebflowEventResolver());
         r.addDelegate(globalAuthenticationPolicyWebflowEventResolver());
         r.addDelegate(requestParameterAuthenticationPolicyWebflowEventResolver());
+        r.addDelegate(requestHeaderAuthenticationPolicyWebflowEventResolver());
+        r.addDelegate(requestSessionAttributeAuthenticationPolicyWebflowEventResolver());
         r.addDelegate(restEndpointAuthenticationPolicyWebflowEventResolver());
         r.addDelegate(groovyScriptAuthenticationPolicyWebflowEventResolver());
         r.addDelegate(registeredServicePrincipalAttributeAuthenticationPolicyWebflowEventResolver());
@@ -267,6 +271,26 @@ public class CasCoreWebflowConfiguration {
                 authenticationRequestServiceSelectionStrategies, selector, casProperties);
     }
 
+    @ConditionalOnMissingBean(name = "requestHeaderAuthenticationPolicyWebflowEventResolver")
+    @Bean
+    @RefreshScope
+    public CasWebflowEventResolver requestHeaderAuthenticationPolicyWebflowEventResolver() {
+        return new RequestHeaderMultifactorAuthenticationPolicyEventResolver(authenticationSystemSupport,
+            centralAuthenticationService, servicesManager,
+            ticketRegistrySupport, warnCookieGenerator,
+            authenticationRequestServiceSelectionStrategies, selector, casProperties);
+    }
+
+    @ConditionalOnMissingBean(name = "requestSessionAttributeAuthenticationPolicyWebflowEventResolver")
+    @Bean
+    @RefreshScope
+    public CasWebflowEventResolver requestSessionAttributeAuthenticationPolicyWebflowEventResolver() {
+        return new RequestSessionAttributeMultifactorAuthenticationPolicyEventResolver(authenticationSystemSupport,
+            centralAuthenticationService, servicesManager,
+            ticketRegistrySupport, warnCookieGenerator,
+            authenticationRequestServiceSelectionStrategies, selector, casProperties);
+    }
+    
     @ConditionalOnMissingBean(name = "registeredServicePrincipalAttributeAuthenticationPolicyWebflowEventResolver")
     @Bean
     @RefreshScope
@@ -367,15 +391,15 @@ public class CasCoreWebflowConfiguration {
 
     @RefreshScope
     @Bean
-    public Set<Class<? extends Exception>> handledAuthenticationExceptions() {
+    public Set<Class<? extends Throwable>> handledAuthenticationExceptions() {
         /*
          * Order is important here; We want the account policy exceptions to be handled
          * first before moving onto more generic errors. In the event that multiple handlers
-         * are defined, where one failed due to account policy restriction and one fails
+         * are defined, where one fails due to account policy restriction and one fails
          * due to a bad password, we want the error associated with the account policy
          * to be processed first, rather than presenting a more generic error associated
          */
-        final Set<Class<? extends Exception>> errors = new LinkedHashSet<>();
+        final Set<Class<? extends Throwable>> errors = new LinkedHashSet<>();
         errors.add(javax.security.auth.login.AccountLockedException.class);
         errors.add(javax.security.auth.login.CredentialExpiredException.class);
         errors.add(javax.security.auth.login.AccountExpiredException.class);

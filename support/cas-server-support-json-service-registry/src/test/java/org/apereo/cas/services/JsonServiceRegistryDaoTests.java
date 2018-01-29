@@ -1,5 +1,7 @@
 package org.apereo.cas.services;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apereo.cas.services.replication.NoOpRegisteredServiceReplicationStrategy;
 import org.apereo.cas.services.util.DefaultRegisteredServiceJsonSerializer;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,12 +20,15 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 4.1.0
  */
+@Slf4j
 public class JsonServiceRegistryDaoTests extends AbstractResourceBasedServiceRegistryDaoTests {
 
     @Before
     public void setUp() {
         try {
-            this.dao = new JsonServiceRegistryDao(RESOURCE, false, mock(ApplicationEventPublisher.class));
+            this.dao = new JsonServiceRegistryDao(RESOURCE, false, 
+                    mock(ApplicationEventPublisher.class),
+                    new NoOpRegisteredServiceReplicationStrategy());
         } catch (final Exception e) {
             throw new IllegalArgumentException(e);
         }
@@ -46,7 +51,7 @@ public class JsonServiceRegistryDaoTests extends AbstractResourceBasedServiceReg
         assertNotNull(service.getAttributeReleasePolicy());
         final ReturnMappedAttributeReleasePolicy policy = (ReturnMappedAttributeReleasePolicy) service.getAttributeReleasePolicy();
         assertNotNull(policy);
-        assertEquals(policy.getAllowedAttributes().size(), 2);
+        assertEquals(2, policy.getAllowedAttributes().size());
     }
 
     @Test
@@ -58,7 +63,7 @@ public class JsonServiceRegistryDaoTests extends AbstractResourceBasedServiceReg
         assertNotNull(service.getAttributeReleasePolicy());
         final ReturnMappedAttributeReleasePolicy policy = (ReturnMappedAttributeReleasePolicy) service.getAttributeReleasePolicy();
         assertNotNull(policy);
-        assertEquals(policy.getAllowedAttributes().size(), 2);
+        assertEquals(2, policy.getAllowedAttributes().size());
     }
     
 }

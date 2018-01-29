@@ -1,5 +1,7 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.authn;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
@@ -9,8 +11,6 @@ import org.opensaml.saml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.saml.saml2.core.RequestedAuthnContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -20,13 +20,11 @@ import java.util.List;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
+@AllArgsConstructor
 public class DefaultAuthnContextClassRefBuilder implements AuthnContextClassRefBuilder {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAuthnContextClassRefBuilder.class);
-    private final CasConfigurationProperties casProperties;
 
-    public DefaultAuthnContextClassRefBuilder(final CasConfigurationProperties casProperties) {
-        this.casProperties = casProperties;
-    }
+    private final CasConfigurationProperties casProperties;
 
     @Override
     public String build(final Object assertion,

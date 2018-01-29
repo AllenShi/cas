@@ -231,6 +231,48 @@ Remote endpoint access strategy authorizing service access based on response cod
 }
 ```
 
+## Groovy
+
+This strategy delegates to a Groovy script to dynamically decide the access rules requested by CAS at runtime:
+
+```json
+{
+  "@class" : "org.apereo.cas.services.RegexRegisteredService",
+  "serviceId" : "^https://.+",
+  "id" : 1,
+  "accessStrategy" : {
+    "@class" : "org.apereo.cas.services.GroovyRegisteredServiceAccessStrategy",
+    "groovyScript" : "file:///etc/cas/config/access-strategy.groovy"
+  }
+}
+```
+
+The script itself may be designed as such by overriding the needed operations where necessary:
+
+```groovy
+import org.apereo.cas.services.*
+import java.util.*
+
+class GroovyRegisteredAccessStrategy extends DefaultRegisteredServiceAccessStrategy {
+    @Override
+    boolean isServiceAccessAllowed() {
+        ...
+    }
+
+    @Override
+    boolean isServiceAccessAllowedForSso() {
+        ...
+    }
+
+    @Override
+    boolean doPrincipalAttributesAllowServiceAccess(String principal, Map<String, Object> attributes) {
+        ...
+    }
+}
+```
+
+Refer to the CAS API documentation to learn more about operations and expected behaviors.
+
 ## Grouper
 
 The grouper access strategy is enabled by including the following dependency in the WAR overlay:

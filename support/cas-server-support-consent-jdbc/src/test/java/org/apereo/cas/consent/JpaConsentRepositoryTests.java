@@ -1,5 +1,6 @@
 package org.apereo.cas.consent;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.config.CasConsentJdbcConfiguration;
@@ -27,6 +28,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {CasConsentJdbcConfiguration.class, RefreshAutoConfiguration.class})
+@Slf4j
 public class JpaConsentRepositoryTests {
 
     private static final DefaultConsentDecisionBuilder BUILDER = new DefaultConsentDecisionBuilder(NoOpCipherExecutor.getInstance());
@@ -52,7 +54,7 @@ public class JpaConsentRepositoryTests {
 
         ConsentDecision d = this.repository.findConsentDecision(SVC, REG_SVC, CoreAuthenticationTestUtils.getAuthentication("casuser"));
         assertNotNull(d);
-        assertEquals(d.getPrincipal(), "casuser");
+        assertEquals("casuser", d.getPrincipal());
         
         final boolean res = this.repository.deleteConsentDecision(d.getId(), d.getPrincipal());
         assertTrue(res);

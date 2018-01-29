@@ -1,6 +1,9 @@
 package org.apereo.cas.ticket.code;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.ticket.AbstractTicket;
@@ -8,7 +11,6 @@ import org.apereo.cas.ticket.ExpirationPolicy;
 import org.apereo.cas.ticket.TicketGrantingTicket;
 import org.apereo.cas.ticket.TicketGrantingTicketImpl;
 import org.apereo.cas.ticket.proxy.ProxyGrantingTicket;
-import org.springframework.util.Assert;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -17,6 +19,9 @@ import javax.persistence.Entity;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import java.util.Collection;
+import java.util.HashSet;
+import lombok.NoArgsConstructor;
 
 /**
  * An OAuth code implementation.
@@ -28,15 +33,21 @@ import javax.persistence.Table;
 @Table(name = "OAUTH_TOKENS")
 @DiscriminatorColumn(name = "TYPE")
 @DiscriminatorValue(OAuthCode.PREFIX)
+@Slf4j
+@NoArgsConstructor
 public class OAuthCodeImpl extends AbstractTicket implements OAuthCode {
 
     private static final long serialVersionUID = -8072724186202305800L;
+
+    @Lob
+    @Column(name = "scopes", length = Integer.MAX_VALUE)
+    private HashSet<String> scopes = new HashSet<>();
 
     /**
      * The {@link TicketGrantingTicket} this is associated with.
      */
     @ManyToOne(targetEntity = TicketGrantingTicketImpl.class)
-    @JsonProperty("grantingTicket")
+    @JsonProperty("ticketGrantingTicket")
     private TicketGrantingTicket ticketGrantingTicket;
 
     /**
@@ -54,13 +65,6 @@ public class OAuthCodeImpl extends AbstractTicket implements OAuthCode {
     private Authentication authentication;
 
     /**
-     * Instantiates a new OAuth code impl.
-     */
-    public OAuthCodeImpl() {
-        // exists for JPA purposes
-    }
-
-    /**
      * Constructs a new OAuth code with unique id for a service and authentication.
      *
      * @param id                   the unique identifier for the ticket.
@@ -68,17 +72,16 @@ public class OAuthCodeImpl extends AbstractTicket implements OAuthCode {
      * @param authentication       the authentication.
      * @param expirationPolicy     the expiration policy.
      * @param ticketGrantingTicket the ticket granting ticket
+     * @param scopes               the scopes
      * @throws IllegalArgumentException if the service or authentication are null.
      */
-    public OAuthCodeImpl(final String id, final Service service, final Authentication authentication,
-                         final ExpirationPolicy expirationPolicy, final TicketGrantingTicket ticketGrantingTicket) {
+    public OAuthCodeImpl(final String id, @NonNull final Service service, @NonNull final Authentication authentication, final ExpirationPolicy expirationPolicy,
+                         final TicketGrantingTicket ticketGrantingTicket, final Collection<String> scopes) {
         super(id, expirationPolicy);
-
-        Assert.notNull(service, "service cannot be null");
-        Assert.notNull(authentication, "authentication cannot be null");
         this.service = service;
         this.authentication = authentication;
         this.ticketGrantingTicket = ticketGrantingTicket;
+        this.scopes.addAll(scopes);
     }
 
     @Override
@@ -98,9 +101,7 @@ public class OAuthCodeImpl extends AbstractTicket implements OAuthCode {
     }
 
     @Override
-    public ProxyGrantingTicket grantProxyGrantingTicket(
-            final String id, final Authentication authentication,
-            final ExpirationPolicy expirationPolicy) {
+    public ProxyGrantingTicket grantProxyGrantingTicket(final String id, final Authentication authentication, final ExpirationPolicy expirationPolicy) {
         throw new UnsupportedOperationException("No PGT grant is available in OAuth");
     }
 
@@ -115,12 +116,17 @@ public class OAuthCodeImpl extends AbstractTicket implements OAuthCode {
     }
 
     @Override
-    public TicketGrantingTicket getGrantingTicket() {
+    public TicketGrantingTicket getTicketGrantingTicket() {
         return this.ticketGrantingTicket;
     }
 
     @Override
     public String getPrefix() {
         return OAuthCode.PREFIX;
+    }
+
+    @Override
+    public Collection<String> getScopes() {
+        return ObjectUtils.defaultIfNull(this.scopes, new HashSet<>());
     }
 }

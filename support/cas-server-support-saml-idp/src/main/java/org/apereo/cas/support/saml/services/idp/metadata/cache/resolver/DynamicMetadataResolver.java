@@ -1,9 +1,11 @@
 package org.apereo.cas.support.saml.services.idp.metadata.cache.resolver;
 
 import com.google.common.base.Function;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apereo.cas.configuration.model.support.saml.idp.SamlIdPProperties;
+import org.apereo.cas.configuration.model.support.saml.idp.metadata.SamlIdPMetadataProperties;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
 import org.apereo.cas.util.CollectionUtils;
@@ -11,8 +13,6 @@ import org.apereo.cas.util.EncodingUtils;
 import org.apereo.cas.util.http.HttpClient;
 import org.opensaml.saml.metadata.resolver.MetadataResolver;
 import org.opensaml.saml.metadata.resolver.impl.FunctionDrivenDynamicHTTPMetadataResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -25,8 +25,9 @@ import java.util.concurrent.TimeUnit;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class DynamicMetadataResolver extends BaseSamlRegisteredServiceMetadataResolver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicMetadataResolver.class);
+
 
     /**
      * The Http client.
@@ -44,9 +45,9 @@ public class DynamicMetadataResolver extends BaseSamlRegisteredServiceMetadataRe
     public List<MetadataResolver> resolve(final SamlRegisteredService service) {
         LOGGER.info("Loading metadata dynamically for [{}]", service.getName());
 
-        final SamlIdPProperties.Metadata md = samlIdPProperties.getMetadata();
+        final SamlIdPMetadataProperties md = samlIdPProperties.getMetadata();
         final FunctionDrivenDynamicHTTPMetadataResolver resolver =
-                new FunctionDrivenDynamicHTTPMetadataResolver(this.httpClient.getWrappedHttpClient());
+            new FunctionDrivenDynamicHTTPMetadataResolver(this.httpClient.getWrappedHttpClient());
         resolver.setMinCacheDuration(TimeUnit.MILLISECONDS.convert(md.getCacheExpirationMinutes(), TimeUnit.MINUTES));
         resolver.setRequireValidMetadata(md.isRequireValidMetadata());
 
@@ -61,20 +62,16 @@ public class DynamicMetadataResolver extends BaseSamlRegisteredServiceMetadataRe
             @Nullable
             @Override
             public String apply(@Nullable final String input) {
-                try {
-                    if (StringUtils.isNotBlank(input)) {
-                        final String metadataLocation = service.getMetadataLocation().replace("{0}", EncodingUtils.urlEncode(input));
-                        LOGGER.info("Constructed dynamic metadata query [{}] for [{}]", metadataLocation, service.getName());
-                        return metadataLocation;
-                    }
-                    return null;
-                } catch (final Exception e) {
-                    throw new IllegalArgumentException(e.getMessage(), e);
+                if (StringUtils.isNotBlank(input)) {
+                    final String metadataLocation = service.getMetadataLocation().replace("{0}", EncodingUtils.urlEncode(input));
+                    LOGGER.info("Constructed dynamic metadata query [{}] for [{}]", metadataLocation, service.getName());
+                    return metadataLocation;
                 }
+                return null;
             }
         });
         try {
-            buildSingleMetadataResolver(resolver, service);
+            configureAndInitializeSingleMetadataResolver(resolver, service);
             return CollectionUtils.wrap(resolver);
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);

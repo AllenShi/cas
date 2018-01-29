@@ -2,9 +2,10 @@ package org.apereo.cas.web.report.config;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.CentralAuthenticationService;
-import org.apereo.cas.audit.spi.DelegatingAuditTrailManager;
+import org.apereo.cas.audit.AuditTrailExecutionPlan;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.PrincipalResolver;
@@ -19,12 +20,12 @@ import org.apereo.cas.support.events.CasEventRepository;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.trusted.authentication.api.MultifactorAuthenticationTrustStorage;
 import org.apereo.cas.web.report.AuthenticationEventsController;
+import org.apereo.cas.web.report.CasInfoEndpointContributor;
 import org.apereo.cas.web.report.CasServerDiscoveryProfileController;
 import org.apereo.cas.web.report.ConfigurationStateController;
 import org.apereo.cas.web.report.DashboardController;
-import org.apereo.cas.web.report.HealthCheckController;
 import org.apereo.cas.web.report.LoggingConfigController;
-import org.apereo.cas.web.report.LoggingOutputSocketMessagingController;
+import org.apereo.cas.web.report.LoggingOutputTailingService;
 import org.apereo.cas.web.report.MetricsController;
 import org.apereo.cas.web.report.PersonDirectoryAttributeResolutionController;
 import org.apereo.cas.web.report.RegisteredServicesReportController;
@@ -32,11 +33,14 @@ import org.apereo.cas.web.report.SingleSignOnSessionStatusController;
 import org.apereo.cas.web.report.SingleSignOnSessionsReportController;
 import org.apereo.cas.web.report.SpringWebflowReportController;
 import org.apereo.cas.web.report.StatisticsController;
+import org.apereo.cas.web.report.StatusController;
 import org.apereo.cas.web.report.TrustedDevicesController;
 import org.apereo.cas.web.support.CookieRetrievingCookieGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.actuate.endpoint.HealthEndpoint;
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
+import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
@@ -44,7 +48,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.servlet.View;
 import org.springframework.web.socket.config.annotation.AbstractWebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -63,7 +70,10 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 @Configuration("casReportsConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @EnableWebSocketMessageBroker
+@Slf4j
 public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfigurer {
+    private static final int LOG_TAILING_CORE_POOL_SIZE =5;
+    private static final int LOG_TAILING_QUEUE_CAPACITY = 25;
 
     @Autowired
     @Qualifier("personDirectoryPrincipalResolver")
@@ -116,8 +126,7 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
     private ServerProperties serverProperties;
 
     @Autowired
-    @Qualifier("healthCheckMonitor")
-    private Monitor<HealthStatus> healthCheckMonitor;
+    private HealthEndpoint healthEndpoint;
 
     @Autowired
     @Qualifier("centralAuthenticationService")
@@ -139,8 +148,8 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
     @Bean
     public MvcEndpoint personDirectoryAttributeResolutionController() {
         return new PersonDirectoryAttributeResolutionController(casProperties, servicesManager,
-                authenticationSystemSupport, personDirectoryPrincipalResolver, webApplicationServiceFactory,
-                principalFactory, cas3ServiceSuccessView, cas3ServiceJsonView, cas2ServiceSuccessView, cas1ServiceSuccessView);
+            authenticationSystemSupport, personDirectoryPrincipalResolver, webApplicationServiceFactory,
+            principalFactory, cas3ServiceSuccessView, cas3ServiceJsonView, cas2ServiceSuccessView, cas1ServiceSuccessView);
     }
 
     @Profile("standalone")
@@ -151,8 +160,8 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
     }
 
     @Bean
-    public MvcEndpoint healthCheckController() {
-        return new HealthCheckController(healthCheckMonitor, casProperties);
+    public MvcEndpoint statusController() {
+        return new StatusController(casProperties, healthEndpoint);
     }
 
     @Bean
@@ -167,7 +176,7 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
 
     @Bean
     @Autowired
-    public MvcEndpoint loggingConfigController(@Qualifier("auditTrailManager") final DelegatingAuditTrailManager auditTrailManager) {
+    public MvcEndpoint loggingConfigController(@Qualifier("auditTrailExecutionPlan") final AuditTrailExecutionPlan auditTrailManager) {
         return new LoggingConfigController(auditTrailManager, casProperties);
     }
 
@@ -183,9 +192,9 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
 
     @Autowired
     @Bean
-    public MvcEndpoint statisticsController(@Qualifier("auditTrailManager") final DelegatingAuditTrailManager auditTrailManager) {
+    public MvcEndpoint statisticsController(@Qualifier("auditTrailExecutionPlan") final AuditTrailExecutionPlan auditTrailManager) {
         return new StatisticsController(auditTrailManager, centralAuthenticationService,
-                metricsRegistry, healthCheckRegistry, casProperties);
+            metricsRegistry, healthCheckRegistry, casProperties);
     }
 
     @Bean
@@ -193,11 +202,24 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
         return new MetricsController(casProperties);
     }
 
+
     @Bean
-    public LoggingOutputSocketMessagingController loggingOutputController() {
-        return new LoggingOutputSocketMessagingController();
+    public InfoContributor casInfoEndpointContributor() {
+        return new CasInfoEndpointContributor();
     }
 
+    @Bean
+    public TaskExecutor logTailingTaskExecutor() {
+        final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(LOG_TAILING_CORE_POOL_SIZE);
+        executor.setQueueCapacity(LOG_TAILING_QUEUE_CAPACITY);
+        return executor;
+    }
+
+    @Bean
+    public LoggingOutputTailingService loggingOutputTailingService(final SimpMessagingTemplate simpMessagingTemplate) {
+        return new LoggingOutputTailingService(logTailingTaskExecutor(), simpMessagingTemplate);
+    }
 
     /**
      * The type Trusted devices configuration.
@@ -229,7 +251,6 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
 
     /**
      * The type server discovery profile configuration.
-
     @ConditionalOnClass(value = CasServerProfileRegistrar.class)
     @Configuration("serverDiscoveryProfileConfiguration")
     public class ServerDiscoveryProfileConfiguration {
@@ -241,10 +262,10 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
         }
     }
      */
-    
+
     @Override
     public void configureMessageBroker(final MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/logs");
+        config.enableSimpleBroker("/topic");
         if (StringUtils.isNotBlank(serverProperties.getContextPath())) {
             config.setApplicationDestinationPrefixes(serverProperties.getContextPath());
         }
@@ -252,8 +273,8 @@ public class CasReportsConfiguration extends AbstractWebSocketMessageBrokerConfi
 
     @Override
     public void registerStompEndpoints(final StompEndpointRegistry registry) {
-        registry.addEndpoint("/logoutput")
-                .addInterceptors(new HttpSessionHandshakeInterceptor())
-                .withSockJS();
+        registry.addEndpoint("/reports-websocket")
+            .addInterceptors(new HttpSessionHandshakeInterceptor())
+            .withSockJS();
     }
 }

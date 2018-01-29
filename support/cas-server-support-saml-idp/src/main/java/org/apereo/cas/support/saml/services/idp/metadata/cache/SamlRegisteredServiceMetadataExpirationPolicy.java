@@ -1,6 +1,7 @@
 package org.apereo.cas.support.saml.services.idp.metadata.cache;
 
 import com.github.benmanes.caffeine.cache.Expiry;
+import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.support.Beans;
@@ -10,8 +11,6 @@ import org.opensaml.saml.criterion.EntityRoleCriterion;
 import org.opensaml.saml.metadata.resolver.MetadataResolver;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml.saml2.metadata.SPSSODescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
@@ -22,9 +21,8 @@ import java.util.concurrent.TimeUnit;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class SamlRegisteredServiceMetadataExpirationPolicy implements Expiry<SamlRegisteredService, MetadataResolver> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SamlRegisteredServiceMetadataExpirationPolicy.class);
-    
     private final long defaultExpiration;
     
     public SamlRegisteredServiceMetadataExpirationPolicy(final long metadataCacheExpirationMinutes) {
@@ -35,8 +33,6 @@ public class SamlRegisteredServiceMetadataExpirationPolicy implements Expiry<Sam
     public long expireAfterCreate(@Nonnull final SamlRegisteredService service, 
                                   @Nonnull final MetadataResolver chainingMetadataResolver, 
                                   final long currentTime) {
-        
-        
         final long duration = getCacheDurationForServiceProvider(service, chainingMetadataResolver);
         if (duration >= 0) {
             return duration;

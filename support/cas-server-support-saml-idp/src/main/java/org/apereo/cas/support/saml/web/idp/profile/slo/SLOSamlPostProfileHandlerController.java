@@ -1,6 +1,7 @@
 package org.apereo.cas.support.saml.web.idp.profile.slo;
 
 
+import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.xml.ParserPool;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
 import org.apereo.cas.authentication.principal.ServiceFactory;
@@ -13,10 +14,9 @@ import org.apereo.cas.support.saml.services.idp.metadata.cache.SamlRegisteredSer
 import org.apereo.cas.support.saml.web.idp.profile.builders.SamlProfileObjectBuilder;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.BaseSamlObjectSigner;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlObjectSignatureValidator;
+import org.apereo.cas.support.saml.web.idp.profile.sso.request.SSOSamlHttpRequestExtractor;
 import org.opensaml.saml.saml2.binding.decoding.impl.HTTPPostDecoder;
 import org.opensaml.saml.saml2.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,23 +29,9 @@ import javax.servlet.http.HttpServletResponse;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class SLOSamlPostProfileHandlerController extends AbstractSamlSLOProfileHandlerController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SLOSamlPostProfileHandlerController.class);
 
-    /**
-     * Instantiates a new slo saml profile handler controller.
-     *
-     * @param samlObjectSigner                             the saml object signer
-     * @param parserPool                                   the parser pool
-     * @param authenticationSystemSupport                  the authentication system support
-     * @param servicesManager                              the services manager
-     * @param webApplicationServiceFactory                 the web application service factory
-     * @param samlRegisteredServiceCachingMetadataResolver the saml registered service caching metadata resolver
-     * @param configBean                                   the config bean
-     * @param responseBuilder                              the response builder
-     * @param casProperties                                the cas properties
-     * @param samlObjectSignatureValidator                 the saml object signature validator
-     */
     public SLOSamlPostProfileHandlerController(final BaseSamlObjectSigner samlObjectSigner,
                                                final ParserPool parserPool,
                                                final AuthenticationSystemSupport authenticationSystemSupport,
@@ -55,17 +41,19 @@ public class SLOSamlPostProfileHandlerController extends AbstractSamlSLOProfileH
                                                final OpenSamlConfigBean configBean,
                                                final SamlProfileObjectBuilder<Response> responseBuilder,
                                                final CasConfigurationProperties casProperties,
-                                               final SamlObjectSignatureValidator samlObjectSignatureValidator) {
+                                               final SamlObjectSignatureValidator samlObjectSignatureValidator,
+                                               final SSOSamlHttpRequestExtractor samlHttpRequestExtractor) {
         super(samlObjectSigner,
-                parserPool,
-                authenticationSystemSupport,
-                servicesManager,
-                webApplicationServiceFactory,
-                samlRegisteredServiceCachingMetadataResolver,
-                configBean,
-                responseBuilder,
-                casProperties,
-                samlObjectSignatureValidator);
+            parserPool,
+            authenticationSystemSupport,
+            servicesManager,
+            webApplicationServiceFactory,
+            samlRegisteredServiceCachingMetadataResolver,
+            configBean,
+            responseBuilder,
+            casProperties,
+            samlObjectSignatureValidator,
+            samlHttpRequestExtractor);
     }
 
     /**

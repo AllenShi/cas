@@ -1,12 +1,14 @@
 package org.apereo.cas.config;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.core.services.ServiceRegistryProperties;
 import org.apereo.cas.services.JsonServiceRegistryDao;
 import org.apereo.cas.services.ServiceRegistryDao;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apereo.cas.services.replication.RegisteredServiceReplicationStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,8 +25,9 @@ import org.springframework.core.Ordered;
 @Configuration("jsonServiceRegistryConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE + 1)
+@Slf4j
 public class JsonServiceRegistryConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonServiceRegistryConfiguration.class);
+
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -32,13 +35,15 @@ public class JsonServiceRegistryConfiguration {
     @Autowired
     private CasConfigurationProperties casProperties;
 
+    @Autowired
+    @Qualifier("registeredServiceReplicationStrategy")
+    private RegisteredServiceReplicationStrategy registeredServiceReplicationStrategy;
+
     @Bean
+    @SneakyThrows
     public ServiceRegistryDao serviceRegistryDao() {
-        try {
-            final ServiceRegistryProperties registry = casProperties.getServiceRegistry();
-            return new JsonServiceRegistryDao(registry.getJson().getLocation(), registry.isWatcherEnabled(), eventPublisher);
-        } catch (final Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        final ServiceRegistryProperties registry = casProperties.getServiceRegistry();
+        return new JsonServiceRegistryDao(registry.getJson().getLocation(),
+            registry.isWatcherEnabled(), eventPublisher, registeredServiceReplicationStrategy);
     }
 }

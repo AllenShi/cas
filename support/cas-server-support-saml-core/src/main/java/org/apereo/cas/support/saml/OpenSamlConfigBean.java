@@ -1,17 +1,16 @@
 package org.apereo.cas.support.saml;
 
 
+import lombok.NonNull;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.xml.ParserPool;
 import org.opensaml.core.config.ConfigurationService;
-import org.opensaml.core.config.InitializationException;
 import org.opensaml.core.config.InitializationService;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistry;
 import org.opensaml.core.xml.io.MarshallerFactory;
 import org.opensaml.core.xml.io.UnmarshallerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.Assert;
 
 import javax.annotation.PostConstruct;
 
@@ -21,9 +20,10 @@ import javax.annotation.PostConstruct;
  * @author Misagh Moayyed
  * @since 4.1
  */
+@Slf4j
 public class OpenSamlConfigBean {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OpenSamlConfigBean.class);
 
+    @NonNull
     private final ParserPool parserPool;
 
     private XMLObjectBuilderFactory builderFactory;
@@ -34,6 +34,7 @@ public class OpenSamlConfigBean {
 
     /**
      * Instantiates the config bean.
+     *
      * @param parserPool the parser pool
      */
     public OpenSamlConfigBean(final ParserPool parserPool) {
@@ -65,15 +66,10 @@ public class OpenSamlConfigBean {
      * Initialize opensaml.
      */
     @PostConstruct
+    @SneakyThrows
     public void init() {
         LOGGER.debug("Initializing OpenSaml configuration...");
-        Assert.notNull(this.parserPool, "parserPool must not be null");
-
-        try {
-            InitializationService.initialize();
-        } catch (final InitializationException e) {
-            throw new IllegalArgumentException("Exception initializing OpenSAML", e);
-        }
+        InitializationService.initialize();
 
         XMLObjectProviderRegistry registry;
         synchronized (ConfigurationService.class) {

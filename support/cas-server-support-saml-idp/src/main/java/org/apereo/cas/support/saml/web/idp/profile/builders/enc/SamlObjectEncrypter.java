@@ -1,5 +1,7 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.enc;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.support.saml.idp.SamlIdPProperties;
@@ -32,8 +34,6 @@ import org.opensaml.xmlsec.keyinfo.impl.provider.DSAKeyValueProvider;
 import org.opensaml.xmlsec.keyinfo.impl.provider.InlineX509DataProvider;
 import org.opensaml.xmlsec.keyinfo.impl.provider.KeyInfoReferenceProvider;
 import org.opensaml.xmlsec.keyinfo.impl.provider.RSAKeyValueProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
@@ -47,8 +47,9 @@ import java.util.List;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class SamlObjectEncrypter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SamlObjectEncrypter.class);
+
     /**
      * The Override data encryption algorithms.
      */
@@ -91,32 +92,31 @@ public class SamlObjectEncrypter {
      * @return the t
      * @throws SamlException the saml exception
      */
+    @SneakyThrows
     public EncryptedAssertion encode(final Assertion samlObject,
                                      final SamlRegisteredService service,
                                      final SamlRegisteredServiceServiceProviderMetadataFacade adaptor,
                                      final HttpServletResponse response,
                                      final HttpServletRequest request) throws SamlException {
-        try {
-            final String className = samlObject.getClass().getName();
-            final String entityId = adaptor.getEntityId();
-            LOGGER.debug("Attempting to encrypt [{}] for [{}]", className, entityId);
-            final Credential credential = getKeyEncryptionCredential(entityId, adaptor, service);
-            LOGGER.info("Found encryption public key: [{}]", EncodingUtils.encodeBase64(credential.getPublicKey().getEncoded()));
 
-            final KeyEncryptionParameters keyEncParams = getKeyEncryptionParameters(samlObject, service, adaptor, credential);
-            LOGGER.debug("Key encryption algorithm for [{}] is [{}]", keyEncParams.getRecipient(), keyEncParams.getAlgorithm());
+        final String className = samlObject.getClass().getName();
+        final String entityId = adaptor.getEntityId();
+        LOGGER.debug("Attempting to encrypt [{}] for [{}]", className, entityId);
+        final Credential credential = getKeyEncryptionCredential(entityId, adaptor, service);
+        LOGGER.info("Found encryption public key: [{}]", EncodingUtils.encodeBase64(credential.getPublicKey().getEncoded()));
 
-            final DataEncryptionParameters dataEncParams = getDataEncryptionParameters(samlObject, service, adaptor);
-            LOGGER.debug("Data encryption algorithm for [{}] is [{}]", entityId, dataEncParams.getAlgorithm());
+        final KeyEncryptionParameters keyEncParams = getKeyEncryptionParameters(samlObject, service, adaptor, credential);
+        LOGGER.debug("Key encryption algorithm for [{}] is [{}]", keyEncParams.getRecipient(), keyEncParams.getAlgorithm());
 
-            final Encrypter encrypter = getEncrypter(samlObject, service, adaptor, keyEncParams, dataEncParams);
-            LOGGER.debug("Attempting to encrypt [{}] for [{}] with key placement of [{}]",
-                    className, entityId, encrypter.getKeyPlacement());
+        final DataEncryptionParameters dataEncParams = getDataEncryptionParameters(samlObject, service, adaptor);
+        LOGGER.debug("Data encryption algorithm for [{}] is [{}]", entityId, dataEncParams.getAlgorithm());
 
-            return encrypter.encrypt(samlObject);
-        } catch (final Exception e) {
-            throw new SamlException(e.getMessage(), e);
-        }
+        final Encrypter encrypter = getEncrypter(samlObject, service, adaptor, keyEncParams, dataEncParams);
+        LOGGER.debug("Attempting to encrypt [{}] for [{}] with key placement of [{}]",
+            className, entityId, encrypter.getKeyPlacement());
+
+        return encrypter.encrypt(samlObject);
+
     }
 
     /**
@@ -186,7 +186,7 @@ public class SamlObjectEncrypter {
                                                     final SamlRegisteredService service) throws Exception {
         final SamlIdPProperties idp = casProperties.getAuthn().getSamlIdp();
         final BasicEncryptionConfiguration config =
-                DefaultSecurityConfigurationBootstrap.buildDefaultEncryptionConfiguration();
+            DefaultSecurityConfigurationBootstrap.buildDefaultEncryptionConfiguration();
 
         if (this.overrideBlackListedEncryptionAlgorithms != null && !this.overrideBlackListedEncryptionAlgorithms.isEmpty()) {
             config.setBlacklistedAlgorithms(this.overrideBlackListedEncryptionAlgorithms);
@@ -221,8 +221,8 @@ public class SamlObjectEncrypter {
         final BasicProviderKeyInfoCredentialResolver keyInfoResolver = new BasicProviderKeyInfoCredentialResolver(providers);
         kekCredentialResolver.setKeyInfoCredentialResolver(keyInfoResolver);
 
-        final RoleDescriptorResolver roleDescriptorResolver = SamlIdPUtils.getRoleDescriptorResolver(adaptor, 
-                idp.getMetadata().isRequireValidMetadata());
+        final RoleDescriptorResolver roleDescriptorResolver = SamlIdPUtils.getRoleDescriptorResolver(adaptor,
+            idp.getMetadata().isRequireValidMetadata());
 
         kekCredentialResolver.setRoleDescriptorResolver(roleDescriptorResolver);
         kekCredentialResolver.initialize();

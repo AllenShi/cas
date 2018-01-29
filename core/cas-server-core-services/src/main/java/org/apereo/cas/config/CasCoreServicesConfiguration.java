@@ -1,5 +1,6 @@
 package org.apereo.cas.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.DefaultMultifactorTriggerSelectionStrategy;
 import org.apereo.cas.authentication.MultifactorTriggerSelectionStrategy;
 import org.apereo.cas.authentication.principal.DefaultWebApplicationResponseBuilderLocator;
@@ -19,10 +20,10 @@ import org.apereo.cas.services.RegisteredServiceCipherExecutor;
 import org.apereo.cas.services.RegisteredServicesEventListener;
 import org.apereo.cas.services.ServiceRegistryDao;
 import org.apereo.cas.services.ServicesManager;
+import org.apereo.cas.services.replication.NoOpRegisteredServiceReplicationStrategy;
+import org.apereo.cas.services.replication.RegisteredServiceReplicationStrategy;
 import org.apereo.cas.services.util.DefaultRegisteredServiceCipherExecutor;
 import org.apereo.cas.util.io.CommunicationsManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -44,16 +45,17 @@ import java.util.List;
  */
 @Configuration("casCoreServicesConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class CasCoreServicesConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CasCoreServicesConfiguration.class);
+
 
     @Autowired
     @Qualifier("communicationsManager")
     private CommunicationsManager communicationsManager;
-    
+
     @Autowired
     private ApplicationEventPublisher eventPublisher;
-    
+
     @Autowired
     private CasConfigurationProperties casProperties;
 
@@ -85,8 +87,10 @@ public class CasCoreServicesConfiguration {
 
     @ConditionalOnMissingBean(name = "webApplicationServiceResponseBuilder")
     @Bean
-    public ResponseBuilder<WebApplicationService> webApplicationServiceResponseBuilder() {
-        return new WebApplicationServiceResponseBuilder();
+    @Autowired
+    public ResponseBuilder<WebApplicationService> webApplicationServiceResponseBuilder(@Qualifier("servicesManager")
+                                                                                           final ServicesManager servicesManager) {
+        return new WebApplicationServiceResponseBuilder(servicesManager);
     }
 
     @ConditionalOnMissingBean(name = "registeredServiceCipherExecutor")
@@ -117,13 +121,20 @@ public class CasCoreServicesConfiguration {
         return new RegisteredServicesEventListener(servicesManager, casProperties, communicationsManager);
     }
 
+    @ConditionalOnMissingBean(name = "registeredServiceReplicationStrategy")
+    @Bean
+    @RefreshScope
+    public RegisteredServiceReplicationStrategy registeredServiceReplicationStrategy() {
+        return new NoOpRegisteredServiceReplicationStrategy();
+    }
+
     @ConditionalOnMissingBean(name = "serviceRegistryDao")
     @Bean
     @RefreshScope
     public ServiceRegistryDao serviceRegistryDao() {
         LOGGER.warn("Runtime memory is used as the persistence storage for retrieving and persisting service definitions. "
-                + "Changes that are made to service definitions during runtime WILL be LOST upon container restarts. "
-                + "Ideally for production, you need to choose a storage option (JDBC, etc) to store and track service definitions.");
+            + "Changes that are made to service definitions during runtime WILL be LOST when the web server is restarted. "
+            + "Ideally for production, you need to choose a storage option (JDBC, etc) to store and track service definitions.");
 
         final List<RegisteredService> services = new ArrayList<>();
         if (applicationContext.containsBean("inMemoryRegisteredServices")) {

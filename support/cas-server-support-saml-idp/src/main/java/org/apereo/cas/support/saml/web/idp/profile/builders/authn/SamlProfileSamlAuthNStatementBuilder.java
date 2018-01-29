@@ -1,5 +1,6 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.authn;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
@@ -18,6 +19,7 @@ import org.opensaml.saml.saml2.core.SubjectLocality;
 import org.opensaml.saml.saml2.metadata.AssertionConsumerService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.net.InetAddress;
 import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class SamlProfileSamlAuthNStatementBuilder extends AbstractSaml20ObjectBuilder implements SamlProfileObjectBuilder<AuthnStatement> {
 
     private static final long serialVersionUID = 8761566449790497226L;
@@ -99,9 +102,9 @@ public class SamlProfileSamlAuthNStatementBuilder extends AbstractSaml20ObjectBu
         final SubjectLocality subjectLocality = newSamlObject(SubjectLocality.class);
         final AssertionConsumerService acs = adaptor.getAssertionConsumerService(binding);
         if (acs != null && StringUtils.isNotBlank(acs.getLocation())) {
-            final String ip = InetAddressUtils.getByName(acs.getLocation());
-            if (StringUtils.isNotBlank(ip)) {
-                subjectLocality.setAddress(ip);
+            final InetAddress ip = InetAddressUtils.getByName(acs.getLocation());
+            if (ip != null) {
+                subjectLocality.setAddress(ip.getHostName());
             }
         }
         return subjectLocality;

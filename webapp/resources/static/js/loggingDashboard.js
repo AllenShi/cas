@@ -17,11 +17,11 @@ function setConnected(connected) {
 
 function connect() {
     $('#logoutputarea').empty();
-    var socket = new SockJS(urls.logOutput);
+    var socket = new SockJS(urls.reportsWebsocket);
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function () {
         setConnected(true);
-        stompClient.subscribe('/logs/logoutput', function (msg) {
+        stompClient.subscribe('/topic/logs', function (msg) {
             if (msg != null && msg.body != '') {
                 showLogs(msg.body);
             }
@@ -37,10 +37,6 @@ function disconnect() {
         stompClient.disconnect();
     }
     setConnected(false);
-}
-
-function getLogs() {
-    stompClient.send(urls.logOutput, {}, {});
 }
 
 function showLogs(message) {
@@ -101,7 +97,11 @@ var loggingDashboard = (function () {
 
     var getAuditData = function () {
         $.getJSON(urls.getAuditLog, function (data) {
-            loggerTableAudit(data);
+            if ($(data).length > 0) {
+                loggerTableAudit(data);
+            } else {
+                $('#auditLogTable').DataTable();
+            }
         });
     };
 
@@ -110,7 +110,7 @@ var loggingDashboard = (function () {
             'order': [[3, 'desc']],
             retrieve: true,
             columnDefs: [
-        
+
                 {'width': '5%', 'targets': 0},
                 {'width': '100%', 'targets': 1},
                 {
@@ -133,7 +133,7 @@ var loggingDashboard = (function () {
                         if (dd.indexOf('failed') != -1) {
                             return '<span class="glyphicon glyphicon-thumbs-down" aria-hidden="true">&nbsp;</span>' + data;
                         }
-                        
+
                         return data;
                     }
                 }
@@ -303,8 +303,8 @@ var loggingDashboard = (function () {
          */
         var table = $('#loggersTable').DataTable();
         var data = table.row($(el).closest('tr')[0]).data();
-        
-        if ( newLevel != data.level) {
+
+        if (newLevel != data.level) {
             var cell = table.cell($(el).closest('td')[0]);
 
             $.post(urls.updateLevel, {
@@ -321,10 +321,11 @@ var loggingDashboard = (function () {
     };
 
     // initialization *******
-    (function init() {})();
+    (function init() {
+    })();
 
     return {
-        init: function() {
+        init: function () {
             getData();
             addEventHandlers();
             getAuditData();

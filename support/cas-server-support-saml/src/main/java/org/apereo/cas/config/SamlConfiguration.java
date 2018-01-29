@@ -1,5 +1,6 @@
 package org.apereo.cas.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.AuthenticationContextValidator;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
@@ -8,7 +9,7 @@ import org.apereo.cas.authentication.ProtocolAttributeEncoder;
 import org.apereo.cas.authentication.principal.ResponseBuilder;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.ServicesManager;
-import org.apereo.cas.services.web.support.AuthenticationAttributeReleasePolicy;
+import org.apereo.cas.authentication.AuthenticationAttributeReleasePolicy;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.support.saml.authentication.principal.SamlServiceFactory;
 import org.apereo.cas.support.saml.authentication.principal.SamlServiceResponseBuilder;
@@ -18,7 +19,7 @@ import org.apereo.cas.support.saml.web.view.Saml10FailureResponseView;
 import org.apereo.cas.support.saml.web.view.Saml10SuccessResponseView;
 import org.apereo.cas.ticket.proxy.ProxyHandler;
 import org.apereo.cas.validation.CasProtocolValidationSpecification;
-import org.apereo.cas.validation.ValidationAuthorizer;
+import org.apereo.cas.validation.ServiceTicketValidationAuthorizersExecutionPlan;
 import org.apereo.cas.web.support.ArgumentExtractor;
 import org.apereo.cas.web.support.DefaultArgumentExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.View;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
 
 /**
  * This is {@link SamlConfiguration} that creates the necessary OpenSAML context and beans.
@@ -41,6 +41,7 @@ import java.util.Set;
  */
 @Configuration("samlConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class SamlConfiguration {
 
     @Autowired
@@ -92,7 +93,7 @@ public class SamlConfiguration {
 
     @Autowired
     @Qualifier("serviceValidationAuthorizers")
-    private Set<ValidationAuthorizer> validationAuthorizers;
+    private ServiceTicketValidationAuthorizersExecutionPlan validationAuthorizers;
             
     @ConditionalOnMissingBean(name = "casSamlServiceSuccessView")
     @RefreshScope
@@ -121,7 +122,7 @@ public class SamlConfiguration {
     @ConditionalOnMissingBean(name = "samlServiceResponseBuilder")
     @Bean
     public ResponseBuilder samlServiceResponseBuilder() {
-        return new SamlServiceResponseBuilder();
+        return new SamlServiceResponseBuilder(servicesManager);
     }
 
     @ConditionalOnMissingBean(name = "saml10ObjectBuilder")

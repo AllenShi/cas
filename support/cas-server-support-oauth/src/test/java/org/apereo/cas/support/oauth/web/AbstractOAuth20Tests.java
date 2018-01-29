@@ -1,5 +1,6 @@
 package org.apereo.cas.support.oauth.web;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
@@ -11,8 +12,8 @@ import org.apereo.cas.authentication.BasicIdentifiableCredential;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.authentication.CredentialMetaData;
 import org.apereo.cas.authentication.DefaultAuthenticationBuilder;
-import org.apereo.cas.authentication.DefaultHandlerResult;
-import org.apereo.cas.authentication.HandlerResult;
+import org.apereo.cas.authentication.DefaultAuthenticationHandlerExecutionResult;
+import org.apereo.cas.authentication.AuthenticationHandlerExecutionResult;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.WebApplicationServiceFactory;
@@ -38,6 +39,7 @@ import org.apereo.cas.config.CasDefaultServiceTicketIdGeneratorsConfiguration;
 import org.apereo.cas.config.CasOAuthAuthenticationServiceSelectionStrategyConfiguration;
 import org.apereo.cas.config.CasOAuthComponentSerializationConfiguration;
 import org.apereo.cas.config.CasOAuthConfiguration;
+import org.apereo.cas.config.CasOAuthThrottleConfiguration;
 import org.apereo.cas.config.CasPersonDirectoryConfiguration;
 import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguration;
 import org.apereo.cas.config.support.EnvironmentConversionServiceInitializer;
@@ -68,12 +70,14 @@ import org.pac4j.core.context.HttpConstants;
 import org.pac4j.springframework.web.SecurityInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -81,6 +85,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
@@ -102,41 +107,46 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-        classes = {
-                CasCoreAuthenticationConfiguration.class,
-                CasCoreServicesAuthenticationConfiguration.class,
-                CasCoreAuthenticationPrincipalConfiguration.class,
-                CasCoreAuthenticationPolicyConfiguration.class,
-                CasCoreAuthenticationMetadataConfiguration.class,
-                CasCoreAuthenticationSupportConfiguration.class,
-                CasCoreAuthenticationHandlersConfiguration.class,
-                CasOAuth20TestAuthenticationEventExecutionPlanConfiguration.class,
-                CasDefaultServiceTicketIdGeneratorsConfiguration.class,
-                CasCoreTicketIdGeneratorsConfiguration.class,
-                CasWebApplicationServiceFactoryConfiguration.class,
-                CasCoreHttpConfiguration.class,
-                CasCoreServicesConfiguration.class,
-                CasOAuthConfiguration.class,
-                CasCoreTicketsConfiguration.class,
-                CasCoreConfiguration.class,
-                CasCookieConfiguration.class,
-                CasOAuthComponentSerializationConfiguration.class,
-                CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-                CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-                CasOAuthAuthenticationServiceSelectionStrategyConfiguration.class,
-                CasCoreTicketCatalogConfiguration.class,
-                CasCoreComponentSerializationConfiguration.class,
-                CasOAuth20TestAuthenticationEventExecutionPlanConfiguration.class,
-                CasCoreUtilSerializationConfiguration.class,
-                CasPersonDirectoryConfiguration.class,
-                AbstractOAuth20Tests.OAuthTestConfiguration.class,
-                RefreshAutoConfiguration.class,
-                CasCoreLogoutConfiguration.class,
-                CasCoreUtilConfiguration.class,
-                CasCoreWebConfiguration.class})
+    classes = {
+        AopAutoConfiguration.class,
+        CasCoreAuthenticationConfiguration.class,
+        CasCoreServicesAuthenticationConfiguration.class,
+        CasCoreAuthenticationPrincipalConfiguration.class,
+        CasCoreAuthenticationPolicyConfiguration.class,
+        CasCoreAuthenticationMetadataConfiguration.class,
+        CasCoreAuthenticationSupportConfiguration.class,
+        CasCoreAuthenticationHandlersConfiguration.class,
+        CasOAuth20TestAuthenticationEventExecutionPlanConfiguration.class,
+        CasDefaultServiceTicketIdGeneratorsConfiguration.class,
+        CasCoreTicketIdGeneratorsConfiguration.class,
+        CasWebApplicationServiceFactoryConfiguration.class,
+        CasCoreHttpConfiguration.class,
+        CasCoreServicesConfiguration.class,
+        CasOAuthConfiguration.class,
+        CasCoreTicketsConfiguration.class,
+        CasCoreConfiguration.class,
+        CasCookieConfiguration.class,
+        CasOAuthComponentSerializationConfiguration.class,
+        CasOAuthThrottleConfiguration.class,
+        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+        CasOAuthAuthenticationServiceSelectionStrategyConfiguration.class,
+        CasCoreTicketCatalogConfiguration.class,
+        CasCoreComponentSerializationConfiguration.class,
+        CasOAuth20TestAuthenticationEventExecutionPlanConfiguration.class,
+        CasCoreUtilSerializationConfiguration.class,
+        CasPersonDirectoryConfiguration.class,
+        AbstractOAuth20Tests.OAuthTestConfiguration.class,
+        RefreshAutoConfiguration.class,
+        CasCoreLogoutConfiguration.class,
+        CasCoreUtilConfiguration.class,
+        CasCoreWebConfiguration.class})
 @DirtiesContext
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @ContextConfiguration(initializers = EnvironmentConversionServiceInitializer.class)
+@EnableTransactionManagement(proxyTargetClass = true)
+@EnableAspectJAutoProxy(proxyTargetClass = true)
+@Slf4j
 public abstract class AbstractOAuth20Tests {
 
     public static final String CONTEXT = "/oauth2.0/";
@@ -235,7 +245,8 @@ public abstract class AbstractOAuth20Tests {
         final Authentication authentication = getAuthentication(principal);
         final WebApplicationServiceFactory factory = new WebApplicationServiceFactory();
         final Service service = factory.createService(registeredService.getServiceId());
-        final OAuthCode code = oAuthCodeFactory.create(service, authentication, new MockTicketGrantingTicket("casuser"));
+        final OAuthCode code = oAuthCodeFactory.create(service, authentication,
+            new MockTicketGrantingTicket("casuser"), new ArrayList<>());
         this.ticketRegistry.addTicket(code);
         return code;
     }
@@ -244,7 +255,8 @@ public abstract class AbstractOAuth20Tests {
         final Authentication authentication = getAuthentication(principal);
         final WebApplicationServiceFactory factory = new WebApplicationServiceFactory();
         final Service service = factory.createService(registeredService.getServiceId());
-        final RefreshToken refreshToken = oAuthRefreshTokenFactory.create(service, authentication, new MockTicketGrantingTicket("casuser"));
+        final RefreshToken refreshToken = oAuthRefreshTokenFactory.create(service, authentication,
+            new MockTicketGrantingTicket("casuser"), new ArrayList<>());
         this.ticketRegistry.addTicket(refreshToken);
         return refreshToken;
     }
@@ -267,16 +279,16 @@ public abstract class AbstractOAuth20Tests {
 
     protected static Authentication getAuthentication(final Principal principal) {
         final CredentialMetaData metadata = new BasicCredentialMetaData(
-                new BasicIdentifiableCredential(principal.getId()));
-        final HandlerResult handlerResult = new DefaultHandlerResult(principal.getClass().getCanonicalName(),
-                metadata, principal, new ArrayList<>());
+            new BasicIdentifiableCredential(principal.getId()));
+        final AuthenticationHandlerExecutionResult handlerResult = new DefaultAuthenticationHandlerExecutionResult(principal.getClass().getCanonicalName(),
+            metadata, principal, new ArrayList<>());
 
         return DefaultAuthenticationBuilder.newInstance()
-                .setPrincipal(principal)
-                .setAuthenticationDate(ZonedDateTime.now())
-                .addCredential(metadata)
-                .addSuccess(principal.getClass().getCanonicalName(), handlerResult)
-                .build();
+            .setPrincipal(principal)
+            .setAuthenticationDate(ZonedDateTime.now())
+            .addCredential(metadata)
+            .addSuccess(principal.getClass().getCanonicalName(), handlerResult)
+            .build();
     }
 
     protected Pair<String, String> internalVerifyClientOK(final RegisteredService service,
@@ -294,7 +306,7 @@ public abstract class AbstractOAuth20Tests {
 
         mockRequest.setParameter(OAuth20Constants.CLIENT_ID, CLIENT_ID);
         mockRequest.setParameter(OAuth20Constants.CLIENT_SECRET, CLIENT_SECRET);
-        
+
         mockRequest.setParameter(OAuth20Constants.CODE, code.getId());
         final MockHttpServletResponse mockResponse = new MockHttpServletResponse();
         requiresAuthenticationInterceptor.preHandle(mockRequest, mockResponse, null);
@@ -321,10 +333,10 @@ public abstract class AbstractOAuth20Tests {
             if (refreshToken) {
                 assertTrue(body.contains(OAuth20Constants.REFRESH_TOKEN + "=RT-"));
                 refreshTokenId = Arrays.stream(body.split("&"))
-                        .filter(f -> f.startsWith(OAuth20Constants.REFRESH_TOKEN))
-                        .map(f -> StringUtils.remove(f, OAuth20Constants.REFRESH_TOKEN + "="))
-                        .findFirst()
-                        .get();
+                    .filter(f -> f.startsWith(OAuth20Constants.REFRESH_TOKEN))
+                    .map(f -> StringUtils.remove(f, OAuth20Constants.REFRESH_TOKEN + "="))
+                    .findFirst()
+                    .get();
             }
             assertTrue(body.contains(OAuth20Constants.EXPIRES_IN + '='));
             accessTokenId = StringUtils.substringBetween(body, OAuth20Constants.ACCESS_TOKEN + '=', "&");
@@ -350,7 +362,7 @@ public abstract class AbstractOAuth20Tests {
         } else {
             if (refreshToken) {
                 timeLeft = Integer.parseInt(StringUtils.substringBetween(body, '&' + OAuth20Constants.EXPIRES_IN + '=',
-                        '&' + OAuth20Constants.REFRESH_TOKEN));
+                    '&' + OAuth20Constants.REFRESH_TOKEN));
             } else {
                 timeLeft = Integer.parseInt(StringUtils.substringAfter(body, '&' + OAuth20Constants.EXPIRES_IN + '='));
             }
