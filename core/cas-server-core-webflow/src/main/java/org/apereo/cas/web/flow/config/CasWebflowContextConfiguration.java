@@ -141,7 +141,7 @@ public class CasWebflowContextConfiguration {
         final FlowHandlerAdapter handler = new FlowHandlerAdapter() {
             @Override
             public boolean supports(final Object handler) {
-                if (casProperties.getServer().getImpersonate()) {
+                if (casProperties.getServer().isImpersonate()) {
                     return super.supports(handler) && ( ((FlowHandler) handler)
                             .getFlowId().equals(CasWebflowConfigurer.FLOW_ID_LOGIN) ||
                             ((FlowHandler) handler)
@@ -208,7 +208,7 @@ public class CasWebflowContextConfiguration {
         final FlowDefinitionRegistryBuilder builder = new FlowDefinitionRegistryBuilder(this.applicationContext, builder());
         builder.setBasePath(BASE_CLASSPATH_WEBFLOW);
         builder.addFlowLocationPattern("/login/*-webflow.xml");
-        if (casProperties.getServer().getImpersonate()) {
+        if (casProperties.getServer().isImpersonate()) {
             builder.addFlowLocationPattern("/impersonate/*-webflow.xml");
         }
         return builder.build();
@@ -236,6 +236,11 @@ public class CasWebflowContextConfiguration {
         final DefaultLoginWebflowConfigurer c = new DefaultLoginWebflowConfigurer(builder(), loginFlowRegistry(), applicationContext, casProperties);
         c.setLogoutFlowDefinitionRegistry(logoutFlowRegistry());
         c.initialize();
+
+        if(casProperties.getServer().isImpersonate()) {
+            c.setImpersonateFlow();
+        }
+
         return c;
     }
 
@@ -246,11 +251,6 @@ public class CasWebflowContextConfiguration {
             applicationContext, casProperties);
         c.setLogoutFlowDefinitionRegistry(logoutFlowRegistry());
         c.initialize();
-
-        if(casProperties.getServer().getImpersonate()) {
-            c.setImpersonateFlow();
-        }
-
         return c;
     }
 

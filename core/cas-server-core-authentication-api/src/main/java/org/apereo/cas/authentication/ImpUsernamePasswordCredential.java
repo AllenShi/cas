@@ -1,10 +1,7 @@
 package org.apereo.cas.authentication;
 
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.io.Serializable;
 
 /**
  * Credential for authenticating with a username and password.

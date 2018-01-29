@@ -36,12 +36,9 @@ public class SessionMonitor extends AbstractHealthIndicator {
     @Override
     protected void doHealthCheck(final Health.Builder builder) {
 
-    @Override
-    public SessionStatus observe() {
-        try {
-            final long sessionCount = this.registryState.sessionCount();
-            final long ticketCount = this.registryState.serviceTicketCount();
-            final long userCount = this.registryState.userCount();
+        final long sessionCount = this.registryState.sessionCount();
+        final long ticketCount = this.registryState.serviceTicketCount();
+        final long userCount = this.registryState.userCount();
 
         if (sessionCount == Integer.MIN_VALUE || ticketCount == Integer.MIN_VALUE) {
             final String msg = String.format("Ticket registry %s reports unknown session and/or ticket counts.", this.registryState.getClass().getName());

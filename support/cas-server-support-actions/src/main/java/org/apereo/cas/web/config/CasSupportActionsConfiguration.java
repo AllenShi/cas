@@ -134,13 +134,13 @@ public class CasSupportActionsConfiguration {
 
     @Bean
     public Impersonators impersonators() {
-        return new Impersonators(casProperties.getServer().getImpersonate(),
+        return new Impersonators(casProperties.getServer().isImpersonate(),
                                  casProperties.getServer().getImpersonateFile());
     }
 
     @Bean
     public Action doJaasCheck() {
-        return new JaasCheck(casProperties.getServer().getJaasCheck());
+        return new JaasCheck(casProperties.getServer().isJaasCheck());
     }
 
     @Bean

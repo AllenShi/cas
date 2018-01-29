@@ -208,7 +208,7 @@ public class CasCoreWebflowConfiguration {
         r.addDelegate(authenticationAttributeAuthenticationPolicyWebflowEventResolver());
         r.addDelegate(registeredServiceAuthenticationPolicyWebflowEventResolver());
         r.setSelectiveResolver(selectiveAuthenticationProviderWebflowEventResolver());
-        r.setJaasCheck(casProperties.getServer().getJaasCheck());
+        r.setJaasCheck(casProperties.getServer().isJaasCheck());
         return r;
     }
 

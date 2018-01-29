@@ -66,12 +66,6 @@ public class ServiceTicketImpl extends AbstractTicket implements ServiceTicket {
 
     @Column(name = "FROM_IMPERSONATION", nullable = false)
     private boolean fromImpersonation;
-    /**
-     * Instantiates a new service ticket impl.
-     */
-    public ServiceTicketImpl() {
-        // exists for JPA purposes
-    }
 
     public ServiceTicketImpl(final String id,
                              final TicketGrantingTicket ticket, final Service service,

@@ -149,7 +149,8 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
         final Principal principal = latestAuthentication.getPrincipal();
         final ServiceTicketFactory factory = (ServiceTicketFactory) this.ticketFactory.get(ServiceTicket.class);
         final ServiceTicket serviceTicket = factory.create(ticketGrantingTicket, service,
-                authenticationResult != null && authenticationResult.isCredentialProvided(),fromImpersonation);
+                authenticationResult != null && authenticationResult.isCredentialProvided(),
+                ServiceTicket.class,fromImpersonation);
         this.ticketRegistry.updateTicket(ticketGrantingTicket);
         this.ticketRegistry.addTicket(serviceTicket);
 
@@ -323,7 +324,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
 
             final Assertion assertion = new DefaultAssertionBuilder(finalAuthentication)
                     .with(selectedService)
-                    .with(serviceTicket.getGrantingTicket().getChainedAuthentications())
+                    .with(serviceTicket.getTicketGrantingTicket().getChainedAuthentications())
                     .with(serviceTicket.isFromNewLogin())
                     .withImpersonation(serviceTicket.isFromImpersonation())
                     .build();

@@ -44,8 +44,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Setter
 public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCasWebflowEventResolver implements CasDelegatingWebflowEventResolver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(InitialAuthenticationAttemptWebflowEventResolver.class);
-    private static final Logger TRAP = LoggerFactory.getLogger("edu.ucdavis.trap");
 
     private final List<CasWebflowEventResolver> orderedResolvers = new ArrayList<>();
 

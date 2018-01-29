@@ -229,6 +229,6 @@ public class OidcProfileScopeToAttributesFilter extends DefaultOAuth20ProfileSco
             LOGGER.debug("No changes detected in service [{}] after scope/claim reconciliation", service.getId());
         }
 
-        policy.getPolicies().forEach(p -> ((BaseOidcScopeAttributeReleasePolicy)p).setSupportedClaims(casProperties.getAuthn().getOidc().getClaims()));
+        //policy.getPolicies().forEach(p -> ((BaseOidcScopeAttributeReleasePolicy)p).setSupportedClaims(casProperties.getAuthn().getOidc().getClaims()));
     }
 }

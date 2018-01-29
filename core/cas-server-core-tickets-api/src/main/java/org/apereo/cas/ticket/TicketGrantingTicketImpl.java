@@ -135,11 +135,6 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
     }
 
     @Override
-    public TicketGrantingTicket getGrantingTicket() {
-        return this.ticketGrantingTicket;
-    }
-
-    @Override
     public Authentication getAuthentication() {
         return this.authentication;
     }

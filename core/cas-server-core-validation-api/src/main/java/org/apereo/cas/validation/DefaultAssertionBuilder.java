@@ -92,6 +92,6 @@ public class DefaultAssertionBuilder {
      * @return the assertion
      */
     public Assertion build() {
-        return new ImmutableAssertion(this.auth, this.authentications, this.service, this.newLogin, this.fromImpersonation);
+        return new ImmutableAssertion(this.auth, this.authentications, this.newLogin, this.service, this.fromImpersonation);
     }
 }

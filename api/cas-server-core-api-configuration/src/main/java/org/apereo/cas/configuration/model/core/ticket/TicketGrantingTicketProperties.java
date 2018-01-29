@@ -36,6 +36,11 @@ public class TicketGrantingTicketProperties implements Serializable {
     private int timeToKillInSeconds = 7_200;
 
     /**
+     * Max number of uses.
+     */
+    private int numberOfUses = -1;
+
+    /**
      * Flag to control whether to track most recent SSO sessions.
      * As multiple tickets may be issued for the same application, this impacts
      * how session information is tracked for every ticket which then

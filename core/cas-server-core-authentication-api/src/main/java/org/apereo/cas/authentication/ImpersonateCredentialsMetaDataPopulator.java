@@ -1,8 +1,5 @@
 package org.apereo.cas.authentication;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 /**
  * Created by tschmidt on 6/6/16.
  */

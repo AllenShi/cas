@@ -30,7 +30,7 @@ public class ImmutableAssertionTests {
         list.add(CoreAuthenticationTestUtils.getAuthentication("test2"));
 
         final ImmutableAssertion assertion = new ImmutableAssertion(
-                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService());
+                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService(), false);
 
         assertEquals(list.toArray(new Authentication[0]).length, assertion.getChainedAuthentications().size());
     }
@@ -42,7 +42,7 @@ public class ImmutableAssertionTests {
         list.add(CoreAuthenticationTestUtils.getAuthentication());
 
         final ImmutableAssertion assertion = new ImmutableAssertion(
-                CoreAuthenticationTestUtils.getAuthentication(), list, false, RegisteredServiceTestUtils.getService());
+                CoreAuthenticationTestUtils.getAuthentication(), list, false, RegisteredServiceTestUtils.getService(), false);
 
         assertFalse(assertion.isFromNewLogin());
     }
@@ -54,7 +54,7 @@ public class ImmutableAssertionTests {
         list.add(CoreAuthenticationTestUtils.getAuthentication());
 
         final ImmutableAssertion assertion = new ImmutableAssertion(
-                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService());
+                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService(), false);
 
         assertTrue(assertion.isFromNewLogin());
     }
@@ -65,7 +65,7 @@ public class ImmutableAssertionTests {
         list.add(CoreAuthenticationTestUtils.getAuthentication());
 
         final ImmutableAssertion assertion = new ImmutableAssertion(
-                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService());
+                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService(), false);
 
         assertNotEquals(assertion, null);
     }
@@ -76,7 +76,7 @@ public class ImmutableAssertionTests {
         list.add(CoreAuthenticationTestUtils.getAuthentication());
 
         final ImmutableAssertion assertion = new ImmutableAssertion(
-                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService());
+                CoreAuthenticationTestUtils.getAuthentication(), list, true, RegisteredServiceTestUtils.getService(), false);
 
         assertFalse("test".equals(assertion));
     }
@@ -90,8 +90,8 @@ public class ImmutableAssertionTests {
         list1.add(auth);
         list2.add(auth);
 
-        final ImmutableAssertion assertion1 = new ImmutableAssertion(auth, list1, true, RegisteredServiceTestUtils.getService());
-        final ImmutableAssertion assertion2 = new ImmutableAssertion(auth, list2, true, RegisteredServiceTestUtils.getService());
+        final ImmutableAssertion assertion1 = new ImmutableAssertion(auth, list1, true, RegisteredServiceTestUtils.getService(), false);
+        final ImmutableAssertion assertion2 = new ImmutableAssertion(auth, list2, true, RegisteredServiceTestUtils.getService(), false);
 
         assertTrue(assertion1.equals(assertion2));
     }
@@ -104,7 +104,7 @@ public class ImmutableAssertionTests {
         list.add(CoreAuthenticationTestUtils.getAuthentication());
 
         final Assertion assertion = new ImmutableAssertion(
-                CoreAuthenticationTestUtils.getAuthentication(), list, false, service);
+                CoreAuthenticationTestUtils.getAuthentication(), list, false, service, false);
 
         assertEquals(service, assertion.getService());
     }

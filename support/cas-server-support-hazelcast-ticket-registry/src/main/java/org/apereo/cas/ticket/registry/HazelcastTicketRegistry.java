@@ -54,7 +54,7 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements C
      * @param plan     the plan
      * @param pageSize the page size
      */
-    public HazelcastTicketRegistry(final HazelcastInstance hz, final TicketCatalog plan, final int pageSize) {
+    public HazelcastTicketRegistry(final HazelcastInstance hz, final TicketCatalog plan, final long pageSize) {
         this.hazelcastInstance = hz;
         this.pageSize = pageSize;
         this.ticketCatalog = plan;

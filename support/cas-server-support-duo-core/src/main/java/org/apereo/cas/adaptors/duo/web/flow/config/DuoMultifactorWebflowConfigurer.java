@@ -65,7 +65,7 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
             final ConfigurableListableBeanFactory cfg = (ConfigurableListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
             cfg.registerSingleton(p.getId(), duoFlowRegistry);
             registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), p.getId(), duoFlowRegistry);
-            if (casProperties.getServer().getImpersonate()) {
+            if (casProperties.getServer().isImpersonate()) {
                 registerMultifactorProviderAuthenticationWebflow(getImpersonateFlow(), p.getId(), duoFlowRegistry);
             }
         });
@@ -130,12 +130,12 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
     }
 
     private void createDuoAuthenticationWebflowAction(final List<AbstractStateModel> states) {
-        final ActionStateModel actModel = new ActionStateModel(CasWebflowConstants.STATE_ID_REAL_SUBMIT);
-        final LinkedList<AbstractActionModel> actions = new LinkedList<>();
+        ActionStateModel actModel = new ActionStateModel(CasWebflowConstants.STATE_ID_REAL_SUBMIT);
+        LinkedList<AbstractActionModel> actions = new LinkedList<>();
         actions.add(new EvaluateModel("duoAuthenticationWebflowAction"));
         actModel.setActions(actions);
 
-        final LinkedList<TransitionModel> trans = new LinkedList<>();
+        LinkedList<TransitionModel> trans = new LinkedList<>();
 
         TransitionModel transModel = new TransitionModel();
         transModel.setOn(CasWebflowConstants.TRANSITION_ID_SUCCESS);
@@ -376,7 +376,6 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
         states.add(new EndStateModel("duoUnavailable"));
 
         ////////////////////
-        modelBuilder.setStates(states);
         return actions;
     }
 
