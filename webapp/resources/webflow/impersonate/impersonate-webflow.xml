@@ -7,7 +7,6 @@
     <var name="credential" class="org.apereo.cas.authentication.ImpUsernamePasswordCredential"/>
 
     <on-start>
-        <evaluate expression="initialFlowSetupAction"/>
         <evaluate expression="true" result="conversationScope.impersonation"/>
     </on-start>
 

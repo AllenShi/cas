@@ -125,7 +125,7 @@ public class JaasAuthenticationHandler extends AbstractUsernamePasswordAuthentic
             if (principals != null && !principals.isEmpty()) {
                 final java.security.Principal secPrincipal = principals.iterator().next();
                 LOGGER.debug("JAAS principal detected from subject login context is [{}}", secPrincipal.getName());
-                principal = this.principalFactory.createPrincipal(secPrincipal.getName());
+                principal = this.principalFactory.createPrincipal(secPrincipal.getName().replace("@UCDAVIS.EDU", ""));
             }
         } finally {
             lc.logout();
