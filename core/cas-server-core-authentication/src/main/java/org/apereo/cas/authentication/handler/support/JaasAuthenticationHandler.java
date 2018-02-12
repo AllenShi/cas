@@ -125,7 +125,7 @@ public class JaasAuthenticationHandler extends AbstractUsernamePasswordAuthentic
             final Set<java.security.Principal> principals = lc.getSubject().getPrincipals();
             if (principals != null && !principals.isEmpty()) {
                 final java.security.Principal secPrincipal = principals.iterator().next();
-                principal = this.principalFactory.createPrincipal(secPrincipal.getName());
+                principal = this.principalFactory.createPrincipal(secPrincipal.getName().replace("@UCDAVIS.EDU", ""));
             }
         } finally {
             lc.logout();
