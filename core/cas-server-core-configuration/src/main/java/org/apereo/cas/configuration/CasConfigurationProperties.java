@@ -14,6 +14,7 @@ import org.apereo.cas.configuration.model.core.rest.RestProperties;
 import org.apereo.cas.configuration.model.core.services.ServiceRegistryProperties;
 import org.apereo.cas.configuration.model.core.slo.SloProperties;
 import org.apereo.cas.configuration.model.core.sso.SsoProperties;
+import org.apereo.cas.configuration.model.core.standalone.StandaloneConfigurationProperties;
 import org.apereo.cas.configuration.model.core.util.TicketProperties;
 import org.apereo.cas.configuration.model.core.web.MessageBundleProperties;
 import org.apereo.cas.configuration.model.core.web.security.AdminPagesSecurityProperties;
@@ -54,7 +55,7 @@ import java.io.Serializable;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
-@ConfigurationProperties(value = "cas")
+@ConfigurationProperties(value = "cas", ignoreUnknownFields = false)
 public class CasConfigurationProperties implements Serializable {
     /**
      * Prefix used for all CAS-specific settings.
@@ -320,6 +321,12 @@ public class CasConfigurationProperties implements Serializable {
      */
     @NestedConfigurationProperty
     private WebflowProperties webflow = new WebflowProperties();
+
+    /**
+     * Standalone configuration settings.
+     */
+    @NestedConfigurationProperty
+    private StandaloneConfigurationProperties standalone = new StandaloneConfigurationProperties();
 
     public ConsentProperties getConsent() {
         return consent;
@@ -663,5 +670,13 @@ public class CasConfigurationProperties implements Serializable {
 
     public void setInterrupt(final InterruptProperties interrupt) {
         this.interrupt = interrupt;
+    }
+
+    public StandaloneConfigurationProperties getStandalone() {
+        return standalone;
+    }
+
+    public void setStandalone(StandaloneConfigurationProperties standalone) {
+        this.standalone = standalone;
     }
 }
