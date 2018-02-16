@@ -22,6 +22,8 @@ import org.apereo.cas.web.flow.CasWebflowConstants;
 import org.apereo.cas.web.flow.resolver.CasDelegatingWebflowEventResolver;
 import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
 import org.apereo.cas.web.support.WebUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.util.CookieGenerator;
 import org.springframework.webflow.execution.Event;
@@ -45,6 +47,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Setter
 public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCasWebflowEventResolver implements CasDelegatingWebflowEventResolver {
+
+    private final Logger TRAP = LoggerFactory.getLogger("trap.ucdavis.edu");
 
     private final List<CasWebflowEventResolver> orderedResolvers = new ArrayList<>();
 
@@ -83,6 +87,11 @@ public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCa
                 }
             }
             final RegisteredService registeredService = determineRegisteredServiceForEvent(context, service);
+            if (TRAP.isTraceEnabled()) {
+                if (registeredService.getName().startsWith("HTTPS")) {
+                    TRAP.debug(service.getId());
+                }
+            }
             LOGGER.debug("Attempting to resolve candidate authentication events for service [{}]", service);
             final Set<Event> resolvedEvents = resolveCandidateAuthenticationEvents(context, service, registeredService);
             if (!resolvedEvents.isEmpty()) {
