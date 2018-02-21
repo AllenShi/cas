@@ -22,21 +22,22 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 
 /**
- * The {@link Pac4jWebflowConfigurer} is responsible for
+ * The {@link DelegatedAuthenticationWebflowConfigurer} is responsible for
  * adjusting the CAS webflow context for pac4j integration.
  *
  * @author Misagh Moayyed
  * @since 4.2
  */
 @Slf4j
-public class Pac4jWebflowConfigurer extends AbstractCasWebflowConfigurer {
+public class DelegatedAuthenticationWebflowConfigurer extends AbstractCasWebflowConfigurer {
     private final Action saml2ClientLogoutAction;
     
-    public Pac4jWebflowConfigurer(final FlowBuilderServices flowBuilderServices, 
-                                  final FlowDefinitionRegistry loginFlowDefinitionRegistry,
-                                  final FlowDefinitionRegistry logoutFlowDefinitionRegistry,
-                                  final Action saml2ClientLogoutAction, final ApplicationContext applicationContext,
-                                  final CasConfigurationProperties casProperties) {
+    public DelegatedAuthenticationWebflowConfigurer(final FlowBuilderServices flowBuilderServices,
+                                                    final FlowDefinitionRegistry loginFlowDefinitionRegistry,
+                                                    final FlowDefinitionRegistry logoutFlowDefinitionRegistry,
+                                                    final Action saml2ClientLogoutAction,
+                                                    final ApplicationContext applicationContext,
+                                                    final CasConfigurationProperties casProperties) {
         super(flowBuilderServices, loginFlowDefinitionRegistry, applicationContext, casProperties);
         setLogoutFlowDefinitionRegistry(logoutFlowDefinitionRegistry);
         this.saml2ClientLogoutAction = saml2ClientLogoutAction;
@@ -59,19 +60,19 @@ public class Pac4jWebflowConfigurer extends AbstractCasWebflowConfigurer {
     }
 
     private void createClientActionActionState(final Flow flow) {
-        final ActionState actionState = createActionState(flow, DelegatedClientAuthenticationAction.CLIENT_ACTION,
-                createEvaluateAction(DelegatedClientAuthenticationAction.CLIENT_ACTION));
+        final ActionState actionState = createActionState(flow, CasWebflowConstants.STATE_ID_CLIENT_ACTION,
+                createEvaluateAction(CasWebflowConstants.STATE_ID_CLIENT_ACTION));
         actionState.getTransitionSet().add(createTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS,
                 CasWebflowConstants.STATE_ID_SEND_TICKET_GRANTING_TICKET));
         actionState.getTransitionSet().add(createTransition(CasWebflowConstants.TRANSITION_ID_ERROR, getStartState(flow).getId()));
-        actionState.getTransitionSet().add(createTransition(DelegatedClientAuthenticationAction.STOP,
-                DelegatedClientAuthenticationAction.STOP_WEBFLOW));
+        actionState.getTransitionSet().add(createTransition(CasWebflowConstants.TRANSITION_ID_STOP,
+            CasWebflowConstants.STATE_ID_STOP_WEBFLOW));
         setStartState(flow, actionState);
     }
 
     private void createStopWebflowViewState(final Flow flow) {
-        final ViewState state = createViewState(flow, DelegatedClientAuthenticationAction.STOP_WEBFLOW,
-                DelegatedClientAuthenticationAction.VIEW_ID_STOP_WEBFLOW);
+        final ViewState state = createViewState(flow, CasWebflowConstants.STATE_ID_STOP_WEBFLOW,
+            CasWebflowConstants.VIEW_ID_PAC4J_STOP_WEBFLOW);
         state.getEntryActionList().add(new AbstractAction() {
             @Override
             protected Event doExecute(final RequestContext requestContext) {

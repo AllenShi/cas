@@ -2,6 +2,7 @@ package org.apereo.cas.web.flow.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
+import org.apereo.cas.audit.AuditableExecution;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.ServicesManager;
@@ -9,7 +10,7 @@ import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
 import org.apereo.cas.web.flow.DelegatedClientAuthenticationAction;
 import org.apereo.cas.web.flow.Pac4jErrorViewResolver;
-import org.apereo.cas.web.flow.Pac4jWebflowConfigurer;
+import org.apereo.cas.web.flow.DelegatedAuthenticationWebflowConfigurer;
 import org.apereo.cas.web.flow.SAML2ClientLogoutAction;
 import org.apereo.cas.web.saml2.Saml2ClientMetadataController;
 import org.pac4j.core.client.Clients;
@@ -38,6 +39,10 @@ import org.springframework.webflow.execution.Action;
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @Slf4j
 public class Pac4jWebflowConfiguration {
+
+    @Autowired
+    @Qualifier("registeredServiceDelegatedAuthenticationPolicyAuditableEnforcer")
+    private AuditableExecution registeredServiceDelegatedAuthenticationPolicyAuditableEnforcer;
 
     @Autowired
     @Qualifier("builtClients")
@@ -97,14 +102,15 @@ public class Pac4jWebflowConfiguration {
             casProperties.getTheme().getParamName(),
             casProperties.getLocale().getParamName(),
             casProperties.getAuthn().getPac4j().isAutoRedirect(),
-            servicesManager);
+            servicesManager,
+            registeredServiceDelegatedAuthenticationPolicyAuditableEnforcer);
     }
 
-    @ConditionalOnMissingBean(name = "pac4jWebflowConfigurer")
+    @ConditionalOnMissingBean(name = "delegatedAuthenticationWebflowConfigurer")
     @Bean
     @DependsOn("defaultWebflowConfigurer")
-    public CasWebflowConfigurer pac4jWebflowConfigurer() {
-        final CasWebflowConfigurer w = new Pac4jWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry,
+    public CasWebflowConfigurer delegatedAuthenticationWebflowConfigurer() {
+        final CasWebflowConfigurer w = new DelegatedAuthenticationWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry,
             logoutFlowDefinitionRegistry, saml2ClientLogoutAction, applicationContext, casProperties);
         w.initialize();
         return w;

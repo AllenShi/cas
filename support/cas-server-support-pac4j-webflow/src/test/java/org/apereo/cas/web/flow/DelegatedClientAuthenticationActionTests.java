@@ -3,6 +3,8 @@ package org.apereo.cas.web.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.CentralAuthenticationService;
+import org.apereo.cas.audit.AuditableExecution;
+import org.apereo.cas.audit.AuditableExecutionResult;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.AuthenticationManager;
 import org.apereo.cas.authentication.AuthenticationResultBuilder;
@@ -87,10 +89,13 @@ public class DelegatedClientAuthenticationActionTests {
         final FacebookClient facebookClient = new FacebookClient(MY_KEY, MY_SECRET);
         final TwitterClient twitterClient = new TwitterClient("3nJPbVTVRZWAyUgoUKQ8UA", "h6LZyZJmcW46Vu8R47MYfeXTSYGI30EqnWaSwVhFkbA");
         final Clients clients = new Clients(MY_LOGIN_URL, facebookClient, twitterClient);
+        final AuditableExecution enforcer = mock(AuditableExecution.class);
+        when(enforcer.execute(any())).thenReturn(new AuditableExecutionResult());
         final DelegatedClientAuthenticationAction action = new DelegatedClientAuthenticationAction(clients,
             null, mock(CentralAuthenticationService.class),
             ThemeChangeInterceptor.DEFAULT_PARAM_NAME, LocaleChangeInterceptor.DEFAULT_PARAM_NAME,
-            false, getServicesManagerWith(service));
+            false, getServicesManagerWith(service),
+            enforcer);
 
         final Event event = action.execute(mockRequestContext);
         assertEquals("error", event.getId());
@@ -148,9 +153,11 @@ public class DelegatedClientAuthenticationActionTests {
         final AuthenticationSystemSupport support = mock(AuthenticationSystemSupport.class);
         when(support.getAuthenticationTransactionManager()).thenReturn(transManager);
 
+        final AuditableExecution enforcer = mock(AuditableExecution.class);
+        when(enforcer.execute(any())).thenReturn(new AuditableExecutionResult());
         final DelegatedClientAuthenticationAction action = new DelegatedClientAuthenticationAction(clients, support, casImpl,
             "theme", "locale", false,
-            getServicesManagerWith(service));
+            getServicesManagerWith(service), enforcer);
 
         final Event event = action.execute(mockRequestContext);
         assertEquals("success", event.getId());
