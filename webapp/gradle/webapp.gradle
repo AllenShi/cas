@@ -154,6 +154,7 @@ dependencies {
 
     implementation project(":webapp:cas-server-webapp-config")
     implementation project(":webapp:cas-server-webapp-init")
+    implementation project(":support:cas-server-support-saml")
 //    compile project(":webapp:cas-server-webapp-config-security")
 
     implementation libraries.pac4j
