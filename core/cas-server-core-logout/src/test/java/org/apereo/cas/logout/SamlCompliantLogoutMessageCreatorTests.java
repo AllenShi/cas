@@ -32,7 +32,7 @@ public class SamlCompliantLogoutMessageCreatorTests {
         final WebApplicationService service = mock(WebApplicationService.class);
         when(service.getOriginalUrl()).thenReturn(RegisteredServiceTestUtils.CONST_TEST_URL);
         final URL logoutUrl = new URL(service.getOriginalUrl());
-        final DefaultLogoutRequest request = new DefaultLogoutRequest("TICKET-ID", service, logoutUrl);
+        final DefaultLogoutRequest request = new DefaultLogoutRequest("TICKET-ID", service, logoutUrl,"");
 
         final String msg = builder.create(request);
 

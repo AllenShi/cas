@@ -142,7 +142,7 @@ dependencies {
     //compile project(":support:cas-server-support-gauth")11
     //compile project(":support:cas-server-support-grouper")
     //compile project(":support:cas-server-support-shibboleth-attributes")
-
+    implementation project(":support:cas-server-support-saml")
     implementation project(":webapp:cas-server-webapp-config")
     implementation project(":webapp:cas-server-webapp-init")
 //    compile project(":webapp:cas-server-webapp-config-security")

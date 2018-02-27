@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout}">
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
 
 <head>
     <title th:text="#{cas.login.pagetitle}"></title>
@@ -15,9 +16,6 @@
             <div id="cookiesDisabled" class="errors" style="display: none;"></div>
             <div id="emailAddressTyped" style="display: none;"></div>
             <div th:replace="fragments/loginform" />
-            <div>
-                <a href="https://ucdavisit.service-now.com/ess/knowledge_detail.do?sysparm_article=KB0000527" target="_blank"><span th:text="#{screen.help}"/></a>
-            </div>
     </div>
 </body>
 </html>

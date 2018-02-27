@@ -27,6 +27,8 @@ public class DefaultLogoutRequest implements LogoutRequest {
 
     private final URL logoutUrl;
 
+    private final String name;
+
     /**
      * Build a logout request from ticket identifier and service.
      * Default status is {@link LogoutRequestStatus#NOT_ATTEMPTED}.
@@ -35,10 +37,12 @@ public class DefaultLogoutRequest implements LogoutRequest {
      * @param service the service.
      * @param logoutUrl the logout url
      */
-    public DefaultLogoutRequest(final String ticketId, final WebApplicationService service, final URL logoutUrl) {
+    public DefaultLogoutRequest(final String ticketId, final WebApplicationService service, final URL logoutUrl,
+                                final String name) {
         this.ticketId = ticketId;
         this.service = service;
         this.logoutUrl = logoutUrl;
+        this.name = name;
     }
 
     @Override
@@ -67,11 +71,17 @@ public class DefaultLogoutRequest implements LogoutRequest {
     }
 
     @Override
+    public String getName() {
+        return this.name;
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .append("ticketId", this.ticketId)
                 .append("service", this.service)
                 .append("status", this.status)
+                .append("name",this.name)
                 .toString();
     }
 }
