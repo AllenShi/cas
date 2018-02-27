@@ -63,7 +63,7 @@ public class DefaultSingleLogoutServiceMessageHandler implements SingleLogoutSer
         }
 
         LOGGER.debug("Creating logout request for [{}] and ticket id [{}]", selectedService, ticketId);
-        final DefaultLogoutRequest logoutRequest = new DefaultLogoutRequest(ticketId, selectedService, logoutUrl);
+        final DefaultLogoutRequest logoutRequest = new DefaultLogoutRequest(ticketId, selectedService, logoutUrl, registeredService.getName());
         LOGGER.debug("Logout request [{}] created for [{}] and ticket id [{}]", logoutRequest, selectedService, ticketId);
 
         final RegisteredService.LogoutType type = registeredService.getLogoutType() == null
