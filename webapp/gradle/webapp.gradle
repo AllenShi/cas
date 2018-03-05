@@ -141,7 +141,7 @@ dependencies {
     implementation project(":support:cas-server-support-validation")
     implementation project(":support:cas-server-support-pm-webflow")
 
-    implementation project(":support:cas-server-support-duo")
+    //implementation project(":support:cas-server-support-duo")
     implementation project(":support:cas-server-support-ldap")
     implementation project(":support:cas-server-support-hazelcast-monitor")
     implementation project(":support:cas-server-support-hazelcast-ticket-registry")

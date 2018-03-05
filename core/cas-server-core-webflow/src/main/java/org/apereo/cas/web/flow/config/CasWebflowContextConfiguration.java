@@ -41,6 +41,7 @@ import org.springframework.webflow.engine.builder.support.FlowBuilderServices;
 import org.springframework.webflow.executor.FlowExecutor;
 import org.springframework.webflow.expression.spel.WebFlowSpringELExpressionParser;
 import org.springframework.webflow.mvc.builder.MvcViewFactoryCreator;
+import org.springframework.webflow.mvc.servlet.FlowHandler;
 import org.springframework.webflow.mvc.servlet.FlowHandlerAdapter;
 import org.springframework.webflow.mvc.servlet.FlowHandlerMapping;
 
@@ -115,8 +116,8 @@ public class CasWebflowContextConfiguration {
     @Bean
     public HandlerAdapter logoutHandlerAdapter() {
         final FlowHandlerAdapter handler = new CasFlowHandlerAdapter(CasWebflowConfigurer.FLOW_ID_LOGOUT);
-        handler.setFlowExecutor(loginFlowExecutor());
-        handler.setFlowUrlHandler(loginFlowUrlHandler());
+        handler.setFlowExecutor(logoutFlowExecutor());
+        handler.setFlowUrlHandler(logoutFlowUrlHandler());
         return handler;
     }
 
