@@ -6,15 +6,17 @@ gradle="sudo ./gradlew $@"
 gradleBuild=""
 gradleBuildOptions="--stacktrace --build-cache --configure-on-demand -DskipNestedConfigMetadataGen=true "
 
+isActiveBranchCommit=[ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "$branchName" ]
+
 if [ "$MATRIX_JOB_TYPE" == "BUILD" ]; then
     gradleBuild="$gradleBuild build -x test -x javadoc -x check -DskipNpmLint=true --parallel -DenableIncremental=true "
 elif [ "$MATRIX_JOB_TYPE" == "SNAPSHOT" ]; then
-    if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "$branchName" ]; then
+    if [ isActiveBranchCommit ]; then
         if [[ "${TRAVIS_COMMIT_MESSAGE}" == *"[skip snapshots]"* ]]; then
-            echo -e "The build will skip deploying snapshot artifacts to Sonatype under Travis job ${TRAVIS_JOB_NUMBER}"
+            echo -e "The build will skip deploying SNAPSHOT artifacts to Sonatype under Travis job ${TRAVIS_JOB_NUMBER}"
             gradleBuild=""
         else
-            echo -e "The build will deploy snapshot artifacts to Sonatype under Travis job ${TRAVIS_JOB_NUMBER}"
+            echo -e "The build will deploy SNAPSHOT artifacts to Sonatype under Travis job ${TRAVIS_JOB_NUMBER}"
             gradleBuild="$gradleBuild assemble uploadArchives -x test -x javadoc -x check \
                 -DenableIncremental=true -DskipNpmLint=true 
                 -DpublishSnapshots=true -DsonatypeUsername=${SONATYPE_USER} \
@@ -22,7 +24,7 @@ elif [ "$MATRIX_JOB_TYPE" == "SNAPSHOT" ]; then
         fi
     else
         echo -e "*************************************************************"
-        echo -e "Publishing snapshots to Sonatype will be skipped. The changeset is either a pull request, or not targeted at branch $branchName.\n"
+        echo -e "Publishing SNAPSHOTs to Sonatype will be skipped. The change-set is either a pull request, or not targeted at branch $branchName.\n"
         echo -e "*************************************************************"
     fi
 elif [ "$MATRIX_JOB_TYPE" == "STYLE" ]; then
@@ -37,7 +39,7 @@ elif [ "$MATRIX_JOB_TYPE" == "TEST" ]; then
     gradleBuild="$gradleBuild test coveralls -x javadoc -x check  \
     -DskipNpmLint=true -DskipGradleLint=true -DskipSass=true -DskipNpmLint=true \
     -DskipNodeModulesCleanUp=true -DskipNpmCache=true "
-elif [ "$MATRIX_JOB_TYPE" == "DEPUPDATE" ]; then
+elif [ "$MATRIX_JOB_TYPE" == "DEPUPDATE" ] && [ isActiveBranchCommit ]; then
     gradleBuild="$gradleBuild dependencyUpdates -Drevision=release -x javadoc -x check  \
     -DskipNpmLint=true -DskipGradleLint=true -DskipSass=true \
     -DskipNodeModulesCleanUp=true -DskipNpmCache=true --parallel "
