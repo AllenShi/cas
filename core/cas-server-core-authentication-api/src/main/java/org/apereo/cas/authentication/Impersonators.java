@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
@@ -68,7 +69,11 @@ public class Impersonators {
 
     private JsonNode getJson(File file) throws Exception {
         StringBuilder builder = new StringBuilder();
-        Files.lines(file.toPath()).forEach(l -> builder.append(l));
+        try (Stream<String> stream = Files.lines(file.toPath())) {
+            stream.forEach(l -> builder.append(l));
+        } catch (final Exception e) {
+            throw e;
+        }
         return MAPPER.readTree(builder.toString());
     }
 
