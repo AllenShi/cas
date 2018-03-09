@@ -17,7 +17,8 @@ import org.apereo.cas.configuration.model.support.oauth.OAuthRefreshTokenPropert
 import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.services.DenyAllAttributeReleasePolicy;
 import org.apereo.cas.services.RegexRegisteredService;
-import org.apereo.cas.services.RegisteredService;
+import org.apereo.cas.services.ServiceRegistryExecutionPlan;
+import org.apereo.cas.services.ServiceRegistryExecutionPlanConfigurer;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.oauth.authenticator.Authenticators;
 import org.apereo.cas.support.oauth.authenticator.OAuth20CasAuthenticationBuilder;
@@ -27,6 +28,7 @@ import org.apereo.cas.support.oauth.profile.DefaultOAuth20ProfileScopeToAttribut
 import org.apereo.cas.support.oauth.profile.DefaultOAuth2UserProfileDataCreator;
 import org.apereo.cas.support.oauth.profile.OAuth20ProfileScopeToAttributesFilter;
 import org.apereo.cas.support.oauth.profile.OAuth2UserProfileDataCreator;
+import org.apereo.cas.support.oauth.services.OAuth20ServiceRegistry;
 import org.apereo.cas.support.oauth.util.OAuth20Utils;
 import org.apereo.cas.support.oauth.validator.OAuth20AuthorizationCodeResponseTypeRequestValidator;
 import org.apereo.cas.support.oauth.validator.OAuth20ClientCredentialsGrantTypeRequestValidator;
@@ -87,7 +89,7 @@ import org.pac4j.cas.config.CasConfiguration;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.credentials.UsernamePasswordCredentials;
 import org.pac4j.core.credentials.authenticator.Authenticator;
-import org.pac4j.core.http.UrlResolver;
+import org.pac4j.core.http.url.UrlResolver;
 import org.pac4j.http.client.direct.DirectBasicAuthClient;
 import org.pac4j.http.client.direct.DirectFormClient;
 import org.pac4j.springframework.web.SecurityInterceptor;
@@ -101,7 +103,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -124,7 +125,7 @@ import static org.apereo.cas.support.oauth.OAuth20Constants.CLIENT_SECRET;
 @Configuration("oauthConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @Slf4j
-public class CasOAuthConfiguration implements AuditTrailRecordResolutionPlanConfigurer {
+public class CasOAuthConfiguration implements AuditTrailRecordResolutionPlanConfigurer, ServiceRegistryExecutionPlanConfigurer {
 
     @Autowired
     @Qualifier("registeredServiceAccessStrategyEnforcer")
@@ -320,10 +321,15 @@ public class CasOAuthConfiguration implements AuditTrailRecordResolutionPlanConf
     @RefreshScope
     public OAuth20CallbackAuthorizeEndpointController callbackAuthorizeController() {
         return new OAuth20CallbackAuthorizeEndpointController(servicesManager, ticketRegistry,
-            oAuthValidator(), defaultAccessTokenFactory(), oauthPrincipalFactory(),
+            oAuthValidator(),
+            defaultAccessTokenFactory(),
+            oauthPrincipalFactory(),
             webApplicationServiceFactory,
-            oauthSecConfig(), callbackAuthorizeViewResolver(),
-            profileScopeToAttributesFilter(), casProperties, ticketGrantingTicketCookieGenerator);
+            oauthSecConfig(),
+            callbackAuthorizeViewResolver(),
+            profileScopeToAttributesFilter(),
+            casProperties,
+            ticketGrantingTicketCookieGenerator);
     }
 
     @ConditionalOnMissingBean(name = "oauthTokenGenerator")
@@ -565,10 +571,12 @@ public class CasOAuthConfiguration implements AuditTrailRecordResolutionPlanConf
             new AccessTokenGrantRequestAuditResourceResolver());
     }
 
-    @PostConstruct
-    public void initializeServletApplicationContext() {
+    @Bean
+    public Service oauthCallbackService() {
         final String oAuthCallbackUrl = casProperties.getServer().getPrefix()
             + BASE_OAUTH20_URL + '/' + CALLBACK_AUTHORIZE_URL_DEFINITION;
+        return this.webApplicationServiceFactory.createService(oAuthCallbackUrl);
+    }
 
         final Service callbackService = this.webApplicationServiceFactory.createService(oAuthCallbackUrl);
         final RegisteredService svc = servicesManager.findServiceBy(callbackService);

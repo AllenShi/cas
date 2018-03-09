@@ -18,9 +18,10 @@ import org.apereo.cas.trusted.authentication.storage.BaseMultifactorAuthenticati
 import org.apereo.cas.trusted.authentication.storage.InMemoryMultifactorAuthenticationTrustStorage;
 import org.apereo.cas.trusted.authentication.storage.JsonMultifactorAuthenticationTrustStorage;
 import org.apereo.cas.trusted.authentication.storage.MultifactorAuthenticationTrustStorageCleaner;
+import org.apereo.cas.trusted.web.flow.DeviceFingerprintStrategy;
+import org.apereo.cas.trusted.web.flow.GeographyDeviceFingerprintStrategy;
 import org.apereo.cas.trusted.web.flow.MultifactorAuthenticationSetTrustAction;
 import org.apereo.cas.trusted.web.flow.MultifactorAuthenticationVerifyTrustAction;
-import org.apereo.cas.util.cipher.NoOpCipherExecutor;
 import org.apereo.inspektr.audit.spi.AuditActionResolver;
 import org.apereo.inspektr.audit.spi.AuditResourceResolver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,16 +61,24 @@ public class MultifactorAuthnTrustConfiguration implements AuditTrailRecordResol
     @Autowired
     private CasConfigurationProperties casProperties;
 
+    @ConditionalOnMissingBean(name = "deviceFingerprintStrategy")
+    @Bean
+    public DeviceFingerprintStrategy deviceFingerprintStrategy() {
+        return new GeographyDeviceFingerprintStrategy();
+    }
+
     @Bean
     @RefreshScope
     public Action mfaSetTrustAction(@Qualifier("mfaTrustEngine") final MultifactorAuthenticationTrustStorage storage) {
-        return new MultifactorAuthenticationSetTrustAction(storage, casProperties.getAuthn().getMfa().getTrusted());
+        return new MultifactorAuthenticationSetTrustAction(storage, deviceFingerprintStrategy(),
+                casProperties.getAuthn().getMfa().getTrusted());
     }
 
     @Bean
     @RefreshScope
     public Action mfaVerifyTrustAction(@Qualifier("mfaTrustEngine") final MultifactorAuthenticationTrustStorage storage) {
-        return new MultifactorAuthenticationVerifyTrustAction(storage, casProperties.getAuthn().getMfa().getTrusted());
+        return new MultifactorAuthenticationVerifyTrustAction(storage, deviceFingerprintStrategy(),
+                casProperties.getAuthn().getMfa().getTrusted());
     }
 
     @ConditionalOnMissingBean(name = "mfaTrustEngine")
@@ -119,7 +128,7 @@ public class MultifactorAuthnTrustConfiguration implements AuditTrailRecordResol
                 + "MAY NOT be safe in a production environment. "
                 + "Consider using other choices to handle encryption, signing and verification of "
                 + "trusted authentication records for MFA");
-        return NoOpCipherExecutor.getInstance();
+        return CipherExecutor.noOp();
     }
 
     @ConditionalOnMissingBean(name = "mfaTrustStorageCleaner")

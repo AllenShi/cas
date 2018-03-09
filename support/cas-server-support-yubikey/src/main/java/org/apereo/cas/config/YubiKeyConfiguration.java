@@ -2,6 +2,8 @@ package org.apereo.cas.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
+import org.apereo.cas.CipherExecutor;
+import org.apereo.cas.adaptors.yubikey.YubikeyAccountCipherExecutor;
 import org.apereo.cas.adaptors.yubikey.web.flow.YubiKeyAuthenticationWebflowAction;
 import org.apereo.cas.adaptors.yubikey.web.flow.YubiKeyAuthenticationWebflowEventResolver;
 import org.apereo.cas.adaptors.yubikey.web.flow.YubiKeyMultifactorTrustWebflowConfigurer;
@@ -9,11 +11,14 @@ import org.apereo.cas.adaptors.yubikey.web.flow.YubiKeyMultifactorWebflowConfigu
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.configuration.model.core.util.EncryptionJwtSigningJwtCryptographyProperties;
 import org.apereo.cas.services.MultifactorAuthenticationProviderSelector;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.trusted.authentication.api.MultifactorAuthenticationTrustStorage;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlan;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlanConfigurer;
 import org.apereo.cas.web.flow.authentication.RankedMultifactorAuthenticationProviderSelector;
 import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,12 +42,13 @@ import org.springframework.webflow.execution.Action;
  * This is {@link YubiKeyConfiguration}.
  *
  * @author Misagh Moayyed
+ * @author Dmitriy Kopylenko
  * @since 5.0.0
  */
 @Configuration("yubikeyConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @Slf4j
-public class YubiKeyConfiguration {
+public class YubiKeyConfiguration implements CasWebflowExecutionPlanConfigurer {
 
     @Autowired
     @Qualifier("loginFlowRegistry")
@@ -104,10 +110,8 @@ public class YubiKeyConfiguration {
     @Bean
     @DependsOn("defaultWebflowConfigurer")
     public CasWebflowConfigurer yubikeyMultifactorWebflowConfigurer() {
-        final CasWebflowConfigurer w = new YubiKeyMultifactorWebflowConfigurer(flowBuilderServices,
+        return new YubiKeyMultifactorWebflowConfigurer(flowBuilderServices,
             loginFlowDefinitionRegistry, yubikeyFlowRegistry(), applicationContext, casProperties);
-        w.initialize();
-        return w;
     }
 
     @Bean
@@ -116,23 +120,49 @@ public class YubiKeyConfiguration {
             warnCookieGenerator, authenticationRequestServiceSelectionStrategies, multifactorAuthenticationProviderSelector);
     }
 
+    @Override
+    public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
+        plan.registerWebflowConfigurer(yubikeyMultifactorWebflowConfigurer());
+    }
+
+    @Bean
+    @RefreshScope
+    public CipherExecutor yubikeyAccountCipherExecutor() {
+        final EncryptionJwtSigningJwtCryptographyProperties crypto = casProperties.getAuthn().getMfa().getYubikey().getCrypto();
+        if (crypto.isEnabled()) {
+            return new YubikeyAccountCipherExecutor(
+                crypto.getEncryption().getKey(),
+                crypto.getSigning().getKey(),
+                crypto.getAlg());
+        }
+        LOGGER.info("YubiKey account encryption/signing is turned off and "
+            + "MAY NOT be safe in a production environment. "
+            + "Consider using other choices to handle encryption, signing and verification of "
+            + "YubiKey accounts for MFA");
+        return CipherExecutor.noOp();
+    }
+
+
     /**
-     * The Authy multifactor trust configuration.
+     * The Yubikey multifactor trust configuration.
      */
     @ConditionalOnClass(value = MultifactorAuthenticationTrustStorage.class)
     @ConditionalOnProperty(prefix = "cas.authn.mfa.yubikey", name = "trustedDeviceEnabled", havingValue = "true", matchIfMissing = true)
     @Configuration("yubiMultifactorTrustConfiguration")
-    public class YubiKeyMultifactorTrustConfiguration {
+    public class YubiKeyMultifactorTrustConfiguration implements CasWebflowExecutionPlanConfigurer {
 
         @ConditionalOnMissingBean(name = "yubiMultifactorTrustConfiguration")
         @Bean
         @DependsOn("defaultWebflowConfigurer")
         public CasWebflowConfigurer yubiMultifactorTrustConfiguration() {
             final boolean deviceRegistrationEnabled = casProperties.getAuthn().getMfa().getTrusted().isDeviceRegistrationEnabled();
-            final CasWebflowConfigurer w = new YubiKeyMultifactorTrustWebflowConfigurer(flowBuilderServices,
+            return new YubiKeyMultifactorTrustWebflowConfigurer(flowBuilderServices,
                 deviceRegistrationEnabled, loginFlowDefinitionRegistry, applicationContext, casProperties);
-            w.initialize();
-            return w;
+        }
+
+        @Override
+        public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
+            plan.registerWebflowConfigurer(yubiMultifactorTrustConfiguration());
         }
     }
 }

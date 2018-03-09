@@ -49,33 +49,33 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    classes = {
-        JpaYubiKeyConfiguration.class,
-        JpaYubiKeyAccountRegistryTests.JpaYubiKeyAccountRegistryTestConfiguration.class,
-        YubiKeyAuthenticationEventExecutionPlanConfiguration.class,
-        YubiKeyConfiguration.class,
-        CasCoreServicesConfiguration.class,
-        CasWebflowContextConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        AopAutoConfiguration.class,
-        CasThemesConfiguration.class,
-        CasCoreTicketsConfiguration.class,
-        CasCoreLogoutConfiguration.class,
-        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-        CasCoreAuthenticationPrincipalConfiguration.class,
-        CasCoreWebflowConfiguration.class,
-        CasCoreConfiguration.class,
-        CasPersonDirectoryTestConfiguration.class,
-        CasCoreAuthenticationSupportConfiguration.class,
-        CasCookieConfiguration.class,
-        CasCoreUtilConfiguration.class,
-        CasCoreWebConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        CasCoreTicketCatalogConfiguration.class,
-        CasDefaultServiceTicketIdGeneratorsConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class,
-        RefreshAutoConfiguration.class
-    })
+        classes = {
+                YubiKeyConfiguration.class,
+                JpaYubiKeyConfiguration.class,
+                JpaYubiKeyAccountRegistryTests.JpaYubiKeyAccountRegistryTestConfiguration.class,
+                YubiKeyAuthenticationEventExecutionPlanConfiguration.class,
+                CasCoreServicesConfiguration.class,
+                CasWebflowContextConfiguration.class,
+                CasCoreHttpConfiguration.class,
+                AopAutoConfiguration.class,
+                CasThemesConfiguration.class,
+                CasCoreTicketsConfiguration.class,
+                CasCoreLogoutConfiguration.class,
+                CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+                CasCoreAuthenticationPrincipalConfiguration.class,
+                CasCoreWebflowConfiguration.class,
+                CasCoreConfiguration.class,
+                CasPersonDirectoryTestConfiguration.class,
+                CasCoreAuthenticationSupportConfiguration.class,
+                CasCookieConfiguration.class,
+                CasCoreUtilConfiguration.class,
+                CasCoreWebConfiguration.class,
+                CasCoreHttpConfiguration.class,
+                CasCoreTicketCatalogConfiguration.class,
+                CasDefaultServiceTicketIdGeneratorsConfiguration.class,
+                CasWebApplicationServiceFactoryConfiguration.class,
+                RefreshAutoConfiguration.class
+        })
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @Slf4j
 @TestPropertySource(locations = {"classpath:/yubikey-jpa.properties"})
