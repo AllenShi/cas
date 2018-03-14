@@ -163,7 +163,7 @@ public abstract class AbstractCentralAuthenticationService implements CentralAut
     }
 
 
-    @Transactional(transactionManager = "ticketTransactionManager", readOnly = false)
+    @Transactional(transactionManager = "ticketTransactionManager")
     @Timed(name = "DELETE_TICKET_TIMER")
     @Metered(name = "DELETE_TICKET_METER")
     @Counted(name = "DELETE_TICKET_COUNTER", monotonic = true)
