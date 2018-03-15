@@ -16,14 +16,14 @@ if [ "$MATRIX_JOB_TYPE" == "TEST" ]; then
     fi
 
     echo "Waiting for Cassandra server to come online..."
-    until $(curl --output /dev/null --silent --head --fail http://localhost:9042); do
-        printf '.'
-        sleep 1
-    done
-
+    sleep 30
+    
     echo "Creating Cassandra keyspace: cas"
     docker exec -it cassandra cqlsh -e "CREATE KEYSPACE cas WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 1}"
 
     echo "Creating Cassandra users table"
     docker exec -it cassandra cqlsh -e "CREATE TABLE cas.users_table ( id UUID PRIMARY KEY, user_attr text, pwd_attr text )"
+
+    echo "Creating Cassandra user record"
+    docker exec -it cassandra cqlsh -e "INSERT INTO cas.users_table (id,user_attr,pwd_attr) VALUES (6ab09bec-e68e-48d9-a5f8-97e6fb4c9b47, 'casuser','Mellon') USING TTL 86400 AND TIMESTAMP 123456789;"
 fi
