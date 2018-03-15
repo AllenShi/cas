@@ -79,11 +79,11 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_SUCCESS, CasWebflowConstants.STATE_ID_SUCCESS);
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS,
                         CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS);
-                ensureEndStateTransitionExists(submit, flow,
+                ensureEndStateTransitionExists(state, flow,
                         "deniedByDuo", "deniedByDuo");
-                ensureEndStateTransitionExists(submit, flow,
+                ensureEndStateTransitionExists(state, flow,
                         "duoEnrollUser", "duoEnrollUser");
-                ensureEndStateTransitionExists(submit, flow,
+                ensureEndStateTransitionExists(state, flow,
                         "duoUnavailable", "duoUnavailable");
                 });
             }

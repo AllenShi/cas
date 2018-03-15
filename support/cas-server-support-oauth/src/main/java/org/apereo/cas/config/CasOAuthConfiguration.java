@@ -17,6 +17,7 @@ import org.apereo.cas.configuration.model.support.oauth.OAuthRefreshTokenPropert
 import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.services.DenyAllAttributeReleasePolicy;
 import org.apereo.cas.services.RegexRegisteredService;
+import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.ServiceRegistryExecutionPlan;
 import org.apereo.cas.services.ServiceRegistryExecutionPlanConfigurer;
 import org.apereo.cas.services.ServicesManager;
@@ -575,8 +576,6 @@ public class CasOAuthConfiguration implements AuditTrailRecordResolutionPlanConf
     public Service oauthCallbackService() {
         final String oAuthCallbackUrl = casProperties.getServer().getPrefix()
             + BASE_OAUTH20_URL + '/' + CALLBACK_AUTHORIZE_URL_DEFINITION;
-        return this.webApplicationServiceFactory.createService(oAuthCallbackUrl);
-    }
 
         final Service callbackService = this.webApplicationServiceFactory.createService(oAuthCallbackUrl);
         final RegisteredService svc = servicesManager.findServiceBy(callbackService);
@@ -593,5 +592,6 @@ public class CasOAuthConfiguration implements AuditTrailRecordResolutionPlanConf
             servicesManager.save(service);
             servicesManager.load();
         }
+        return callbackService;
     }
 }

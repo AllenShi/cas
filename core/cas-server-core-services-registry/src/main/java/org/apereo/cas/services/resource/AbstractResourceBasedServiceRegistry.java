@@ -246,6 +246,9 @@ public abstract class AbstractResourceBasedServiceRegistry extends AbstractServi
      */
     @Override
     public Collection<RegisteredService> load(final File file) {
+        if (!file.getName().endsWith(getExtension())) {
+            return new ArrayList<>(0);
+        }
         if (!file.canRead()) {
             LOGGER.warn("[{}] is not readable. Check file permissions", file.getName());
             return new ArrayList<>(0);
@@ -352,7 +355,7 @@ public abstract class AbstractResourceBasedServiceRegistry extends AbstractServi
     }
 
     private String buildServiceDefinitionFileName(final RegisteredService service) {
-        return service.getName() + '-' + service.getId() + '.' + getExtension();
+        return "service-" + service.getId() + '.' + getExtension();
     }
 
     /**
