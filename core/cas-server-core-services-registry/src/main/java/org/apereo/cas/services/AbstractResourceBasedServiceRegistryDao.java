@@ -359,7 +359,7 @@ public abstract class AbstractResourceBasedServiceRegistryDao extends AbstractSe
     }
 
     private String getServiceDefinitionFileName(final RegisteredService service) {
-        return service.getName() + '-' + service.getId() + '.' + getExtension();
+        return "service" + '-' + service.getId() + '.' + getExtension();
     }
 
     /**
