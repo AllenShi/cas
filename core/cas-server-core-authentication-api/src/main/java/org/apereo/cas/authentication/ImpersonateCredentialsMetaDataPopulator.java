@@ -15,6 +15,6 @@ public class ImpersonateCredentialsMetaDataPopulator implements AuthenticationMe
 
     @Override
     public void populateAttributes(AuthenticationBuilder builder, AuthenticationTransaction transaction) {
-        builder.addAttribute("imp", ((ImpUsernamePasswordCredential) transaction.getCredential().get()).getImpname());
+        builder.addAttribute("imp", ((ImpUsernamePasswordCredential) transaction.getPrimaryCredential().get()).getImpname());
     }
 }
