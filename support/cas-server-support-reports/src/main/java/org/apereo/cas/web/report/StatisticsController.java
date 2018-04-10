@@ -7,6 +7,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import org.apereo.cas.CentralAuthenticationService;;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.springframework.stereotype.Controller;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.audit.AuditTrailExecutionPlan;
@@ -162,7 +163,7 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
                 .collect(Collectors.toList());
 
             final Duration steps = Duration.parse(scale);
-            final Map<Integer, LocalDateTime> buckets = new LinkedHashMap<>();
+            final Map<Integer, LocalDateTime> buckets = Maps.newLinkedHashMapWithExpectedSize(authnEvents.size());
 
             LocalDateTime dt = startDate;
             Integer index = 0;

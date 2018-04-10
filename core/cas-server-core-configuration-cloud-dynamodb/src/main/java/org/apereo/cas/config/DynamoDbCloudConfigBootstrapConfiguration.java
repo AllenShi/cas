@@ -5,6 +5,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
@@ -21,6 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -34,8 +36,6 @@ import org.springframework.core.env.PropertySource;
 import java.net.InetAddress;
 import java.util.Map;
 import java.util.Properties;
-
-import lombok.Getter;
 
 /**
  * This is {@link DynamoDbCloudConfigBootstrapConfiguration}.
@@ -67,7 +67,10 @@ public class DynamoDbCloudConfigBootstrapConfiguration implements PropertySource
     @Override
     public PropertySource<?> locate(final Environment environment) {
         final AmazonDynamoDB amazonDynamoDBClient = getAmazonDynamoDbClient(environment);
-        createSettingsTable(amazonDynamoDBClient, false);
+        final Boolean preventTableCreationOnStartup = Boolean.valueOf(getSetting(environment, "preventTableCreationOnStartup"));
+        if (!preventTableCreationOnStartup) {
+            createSettingsTable(amazonDynamoDBClient, false);
+        }
         final ScanRequest scan = new ScanRequest(TABLE_NAME);
         LOGGER.debug("Scanning table with request [{}]", scan);
         final ScanResult result = amazonDynamoDBClient.scan(scan);
@@ -101,12 +104,13 @@ public class DynamoDbCloudConfigBootstrapConfiguration implements PropertySource
         final String secret = getSetting(environment, "credentialSecretKey");
         final AWSCredentials credentials = new BasicAWSCredentials(key, secret);
         String region = getSetting(environment, "region");
+        final Region currentRegion = Regions.getCurrentRegion();
         if (StringUtils.isBlank(region)) {
-            region = Regions.getCurrentRegion().getName();
+            region = currentRegion.getName();
         }
         String regionOverride = getSetting(environment, "regionOverride");
         if (StringUtils.isNotBlank(regionOverride)) {
-            regionOverride = Regions.getCurrentRegion().getName();
+            regionOverride = currentRegion.getName();
         }
         final String endpoint = getSetting(environment, "endpoint");
         final AmazonDynamoDB client = AmazonDynamoDBClient.builder().withCredentials(new AWSStaticCredentialsProvider(credentials))
@@ -118,7 +122,8 @@ public class DynamoDbCloudConfigBootstrapConfiguration implements PropertySource
     @SneakyThrows
     private static void createSettingsTable(final AmazonDynamoDB amazonDynamoDBClient, final boolean deleteTables) {
         final String name = ColumnNames.ID.getColumnName();
-        final CreateTableRequest request = new CreateTableRequest().withAttributeDefinitions(new AttributeDefinition(name, ScalarAttributeType.S))
+        final CreateTableRequest request = new CreateTableRequest()
+            .withAttributeDefinitions(new AttributeDefinition(name, ScalarAttributeType.S))
             .withKeySchema(new KeySchemaElement(name, KeyType.HASH))
             .withProvisionedThroughput(new ProvisionedThroughput(PROVISIONED_THROUGHPUT, PROVISIONED_THROUGHPUT))
             .withTableName(TABLE_NAME);

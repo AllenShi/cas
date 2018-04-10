@@ -41,7 +41,7 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
                     instance.getOriginal().node.isMaster()));
 
         });
-        return statsList.toArray(new CacheStatistics[statsList.size()]);
+        return statsList.toArray(new CacheStatistics[0]);
     }
 
     /**
