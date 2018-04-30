@@ -19,6 +19,7 @@ import org.apereo.cas.web.flow.FrontChannelLogoutAction;
 import org.apereo.cas.web.flow.GatewayServicesManagementCheck;
 import org.apereo.cas.web.flow.GenerateServiceTicketAction;
 import org.apereo.cas.web.flow.GenericSuccessViewAction;
+import org.apereo.cas.web.flow.TlsCheck;
 import org.apereo.cas.web.flow.actions.InitialAuthenticationAction;
 import org.apereo.cas.web.flow.InitialAuthenticationRequestValidationAction;
 import org.apereo.cas.web.flow.InitialFlowSetupAction;
@@ -138,6 +139,11 @@ public class CasSupportActionsConfiguration {
     @Bean
     public Action doJaasCheck() {
         return new JaasCheck(casProperties.getServer().getJaasCheck());
+    }
+
+    @Bean
+    public Action doTlsCheck() {
+        return new TlsCheck(casProperties.getServer().getTlsCheck());
     }
 
     @Bean

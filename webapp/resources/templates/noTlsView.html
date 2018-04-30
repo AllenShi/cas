@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="layout">
+
+<head>
+    <title th:text="#{screen.confirmation.message}"></title>
+</head>
+
+<body id="cas">
+<div layout:fragment="content" class="confirmView">
+    <div id="msg" class="warn">
+        <p>You are authenticating to a site using an insecure URL (http://). This puts you at risk for your credentials being intercepted and an attacker impersonating you.<br><br>
+          Please contact the site administrator to fix this vulnerability, i.e. ensure all traffic is via secure URL (https://). Instructions on how to obtain a no-cost security certificate for the affected site may be found at https://software.ucdavis.edu<br><br>
+          To continue, press Proceed.
+        </p>
+
+        <form method="post" id="form" class="fm-v clearfix">
+            <input type="hidden" name="execution" th:value="${flowExecutionKey}"/>
+
+            <input class="form-element form-button" name="_eventId_success" accesskey="l"
+                   th:value="#{screen.button.continue}" tabindex="4" type="submit"/>
+        </form>
+
+    </div>
+</div>
+</body>
+</html>
