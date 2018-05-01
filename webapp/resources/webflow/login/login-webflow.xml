@@ -50,11 +50,21 @@
     <action-state id="jaasCheck">
         <evaluate expression="doJaasCheck"/>
         <transition on="yes" to="jaasView"/>
-        <transition on="no" to="sendTicketGrantingTicket"/>
+        <transition on="no" to="noTlsCheck"/>
     </action-state>
 
     <view-state id="jaasView" view="jaasView">
-        <transition on="success" to="sendTicketGrantingTicket"/>
+        <transition on="success" to="noTlsCheck"/>
+    </view-state>
+
+    <action-state id="noTlsCheck">
+      <evaluate expression="doTlsCheck"/>
+      <transition on="yes" to="noTlsView"/>
+      <transition on="no" to="sendTicketGrantingTicket"/>
+    </action-state>
+
+    <view-state id="noTlsView" view="noTlsView">
+      <transition on="success" to="sendTicketGrantingTicket"/>
     </view-state>
 
     <view-state id="showAuthenticationWarningMessages" view="casLoginMessageView">

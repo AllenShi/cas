@@ -64,7 +64,10 @@ public class CasServerProperties implements Serializable {
      * Configuration properties for access logging beyond defaults.
      */
     private ExtendedAccessLog extAccessLog = new ExtendedAccessLog();
+
     private boolean jaasCheck;
+
+    private boolean tlsCheck;
 
 
     public HttpProxy getHttpProxy() {
@@ -162,6 +165,14 @@ public class CasServerProperties implements Serializable {
 
     public void setJaasCheck(boolean jaasCheck) {
         this.jaasCheck = jaasCheck;
+    }
+
+    public boolean getTlsCheck() {
+        return tlsCheck;
+    }
+
+    public void setTlsCheck(boolean tlsCheck) {
+        this.tlsCheck = tlsCheck;
     }
 
     public static class Ajp implements Serializable {
