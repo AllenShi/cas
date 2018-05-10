@@ -34,9 +34,15 @@ public class CachingTicketRegistry extends AbstractMapBasedTicketRegistry {
 
     private final LogoutManager logoutManager;
 
+    public CachingTicketRegistry(final LogoutManager logoutManager) {
+        this(CipherExecutor.noOp(), logoutManager);
+    }
+
     public CachingTicketRegistry(final CipherExecutor cipherExecutor, final LogoutManager logoutManager) {
         super(cipherExecutor);
-        this.storage = Caffeine.newBuilder().initialCapacity(INITIAL_CACHE_SIZE).maximumSize(MAX_CACHE_SIZE)
+        this.storage = Caffeine.newBuilder()
+            .initialCapacity(INITIAL_CACHE_SIZE)
+            .maximumSize(MAX_CACHE_SIZE)
             .expireAfter(new CachedTicketExpirationPolicy()).removalListener(new CachedTicketRemovalListener()).build(s -> {
                 LOGGER.error("Load operation of the cache is not supported.");
                 return null;

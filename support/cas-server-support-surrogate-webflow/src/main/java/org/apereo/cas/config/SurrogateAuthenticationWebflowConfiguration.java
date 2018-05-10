@@ -5,6 +5,7 @@ import org.apereo.cas.audit.AuditableExecution;
 import org.apereo.cas.authentication.SurrogateAuthenticationException;
 import org.apereo.cas.authentication.adaptive.AdaptiveAuthenticationPolicy;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.services.MultifactorAuthenticationProviderSelector;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
 import org.apereo.cas.web.flow.CasWebflowExecutionPlan;
@@ -44,6 +45,10 @@ import java.util.Set;
 public class SurrogateAuthenticationWebflowConfiguration implements CasWebflowExecutionPlanConfigurer {
 
     @Autowired
+    @Qualifier("multifactorAuthenticationProviderSelector")
+    private MultifactorAuthenticationProviderSelector multifactorAuthenticationProviderSelector;
+    
+    @Autowired
     @Qualifier("registeredServiceAccessStrategyEnforcer")
     private AuditableExecution registeredServiceAccessStrategyEnforcer;
 
@@ -75,7 +80,7 @@ public class SurrogateAuthenticationWebflowConfiguration implements CasWebflowEx
 
     @Autowired
     @Qualifier("handledAuthenticationExceptions")
-    private Set<Class<? extends Exception>> handledAuthenticationExceptions;
+    private Set<Class<? extends Throwable>> handledAuthenticationExceptions;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -84,7 +89,8 @@ public class SurrogateAuthenticationWebflowConfiguration implements CasWebflowEx
     @Bean
     @DependsOn("defaultWebflowConfigurer")
     public CasWebflowConfigurer surrogateWebflowConfigurer() {
-        return new SurrogateWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry, selectSurrogateAction(), applicationContext, casProperties);
+        return new SurrogateWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry,
+            selectSurrogateAction(), applicationContext, casProperties);
     }
 
     @ConditionalOnMissingBean(name = "selectSurrogateAction")

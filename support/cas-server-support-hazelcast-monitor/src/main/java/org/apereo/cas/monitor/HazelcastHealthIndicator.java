@@ -5,6 +5,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.monitor.LocalMapStats;
+import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
@@ -32,6 +33,7 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         final List<CacheStatistics> statsList = new ArrayList<>();
         final HazelcastTicketRegistryProperties hz = casProperties.getTicket().getRegistry().getHazelcast();
         LOGGER.debug("Locating hazelcast instance [{}]...", hz.getCluster().getInstanceName());
+        @NonNull
         final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
             final IMap map = instance.getMap(key);
@@ -115,7 +117,7 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         }
 
         @Override
-        public void toString(final StringBuilder builder) {
+        public String toString(final StringBuilder builder) {
             final LocalMapStats localMapStats = map.getLocalMapStats();
              builder.append("\n\t  ")
                     .append("Map: "+map.getName())
@@ -145,6 +147,7 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
             if (localMapStats.getNearCacheStats() != null) {
                 builder.append(", Misses: ").append(localMapStats.getNearCacheStats().getMisses());
             }
+            return builder.toString();
         }
 
         @Override

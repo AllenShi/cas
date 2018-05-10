@@ -1,14 +1,15 @@
 package org.apereo.cas.pm.web.flow.actions;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.configuration.model.support.email.EmailProperties;
 import org.apereo.cas.configuration.model.support.pm.PasswordManagementProperties;
 import org.apereo.cas.pm.PasswordManagementService;
 import org.apereo.cas.util.io.CommunicationsManager;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
 import org.apereo.cas.web.support.WebUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
@@ -22,27 +23,21 @@ import javax.servlet.http.HttpServletRequest;
  * @since 5.0.0
  */
 @Slf4j
+@RequiredArgsConstructor
 public class SendPasswordResetInstructionsAction extends AbstractAction {
-    /** Param name for the token. */
+    /**
+     * Param name for the token.
+     */
     public static final String PARAMETER_NAME_TOKEN = "pswdrst";
-    
-    @Autowired
-    private CasConfigurationProperties casProperties;
 
+    private final CasConfigurationProperties casProperties;
     private final CommunicationsManager communicationsManager;
-
     private final PasswordManagementService passwordManagementService;
-
-    public SendPasswordResetInstructionsAction(final CommunicationsManager communicationsManager, 
-                                               final PasswordManagementService passwordManagementService) {
-        this.communicationsManager = communicationsManager;
-        this.passwordManagementService = passwordManagementService;
-    }
 
     @Override
     protected Event doExecute(final RequestContext requestContext) {
+        communicationsManager.validate();
         if (!communicationsManager.isMailSenderDefined()) {
-            LOGGER.warn("CAS is unable to send password-reset emails given no settings are defined to account for email servers");
             return error();
         }
         final PasswordManagementProperties pm = casProperties.getAuthn().getPm();
@@ -58,11 +53,11 @@ public class SendPasswordResetInstructionsAction extends AbstractAction {
             LOGGER.warn("No recipient is provided");
             return error();
         }
-        
+
         final String url = buildPasswordResetUrl(username, passwordManagementService, casProperties);
-        
+
         LOGGER.debug("Generated password reset URL [{}]; Link is only active for the next [{}] minute(s)", url,
-                pm.getReset().getExpirationMinutes());
+            pm.getReset().getExpirationMinutes());
         if (sendPasswordResetEmailToAccount(to, url)) {
             return success();
         }
@@ -73,16 +68,17 @@ public class SendPasswordResetInstructionsAction extends AbstractAction {
     /**
      * Utility method to generate a password reset URL.
      *
-     * @param username username
+     * @param username                  username
      * @param passwordManagementService passwordManagementService
-     * @param casProperties casProperties
+     * @param casProperties             casProperties
      * @return URL a user can use to start the password reset process
      */
     public static String buildPasswordResetUrl(final String username,
-            final PasswordManagementService passwordManagementService, final CasConfigurationProperties casProperties) {
+                                               final PasswordManagementService passwordManagementService,
+                                               final CasConfigurationProperties casProperties) {
         final String token = passwordManagementService.createToken(username);
         return casProperties.getServer().getPrefix()
-                .concat('/' + CasWebflowConfigurer.FLOW_ID_LOGIN + '?' + PARAMETER_NAME_TOKEN + '=').concat(token);
+            .concat('/' + CasWebflowConfigurer.FLOW_ID_LOGIN + '?' + PARAMETER_NAME_TOKEN + '=').concat(token);
     }
 
     /**
@@ -93,8 +89,12 @@ public class SendPasswordResetInstructionsAction extends AbstractAction {
      * @return true/false
      */
     protected boolean sendPasswordResetEmailToAccount(final String to, final String url) {
-        final PasswordManagementProperties.Reset reset = casProperties.getAuthn().getPm().getReset();
+        final EmailProperties reset = casProperties.getAuthn().getPm().getReset().getMail();
         final String text = String.format(reset.getText(), url);
-        return this.communicationsManager.email(text, reset.getFrom(), reset.getSubject(), to, null, null);
+        return this.communicationsManager.email(text, reset.getFrom(),
+            reset.getSubject(),
+            to,
+            reset.getCc(),
+            reset.getBcc());
     }
 }

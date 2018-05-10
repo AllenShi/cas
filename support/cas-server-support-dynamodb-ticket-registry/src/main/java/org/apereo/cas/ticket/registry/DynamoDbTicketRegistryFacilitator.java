@@ -19,8 +19,8 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apereo.cas.configuration.model.support.dynamodb.DynamoDbTicketRegistryProperties;
@@ -30,6 +30,7 @@ import org.apereo.cas.ticket.TicketDefinition;
 import org.apereo.cas.util.CollectionUtils;
 import org.jooq.lambda.Unchecked;
 
+import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,14 +47,42 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Getter
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DynamoDbTicketRegistryFacilitator {
+    /**
+     * Column names for tables holding tickets.
+     */
     @Getter
-    private enum ColumnNames {
+    public enum ColumnNames {
 
-        ID("id"), PREFIX("prefix"), CREATION_TIME("creationTime"),
-        COUNT_OF_USES("countOfUses"), TIME_TO_LIVE("timeToLive"),
-        TIME_TO_IDLE("timeToIdle"), ENCODED("encoded");
+        /**
+         * id column.
+         */
+        ID("id"),
+        /**
+         * prefix column.
+         */
+        PREFIX("prefix"),
+        /**
+         * creationTime column.
+         */
+        CREATION_TIME("creationTime"),
+        /**
+         * countOfUses column.
+         */
+        COUNT_OF_USES("countOfUses"),
+        /**
+         * timeToLive column.
+         */
+        TIME_TO_LIVE("timeToLive"),
+        /**
+         * timeToIdle column.
+         */
+        TIME_TO_IDLE("timeToIdle"),
+        /**
+         * encoded column.
+         */
+        ENCODED("encoded");
 
         private final String columnName;
 
@@ -156,7 +185,12 @@ public class DynamoDbTicketRegistryFacilitator {
     private static Ticket deserializeTicket(final Map<String, AttributeValue> returnItem) {
         final ByteBuffer bb = returnItem.get(ColumnNames.ENCODED.getColumnName()).getB();
         LOGGER.debug("Located binary encoding of ticket item [{}]. Transforming item into ticket object", returnItem);
-        return SerializationUtils.deserialize(bb.array());
+        try (ByteArrayInputStream is = new ByteArrayInputStream(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining())) {
+            return SerializationUtils.deserialize(is);
+        } catch (final Exception e){
+            LOGGER.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     /**

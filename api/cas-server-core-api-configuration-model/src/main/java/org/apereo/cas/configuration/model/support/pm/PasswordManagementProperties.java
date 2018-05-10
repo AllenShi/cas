@@ -1,19 +1,20 @@
 package org.apereo.cas.configuration.model.support.pm;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apereo.cas.configuration.model.core.authentication.PasswordEncoderProperties;
 import org.apereo.cas.configuration.model.core.util.EncryptionJwtSigningJwtCryptographyProperties;
+import org.apereo.cas.configuration.model.support.email.EmailProperties;
 import org.apereo.cas.configuration.model.support.jpa.AbstractJpaProperties;
 import org.apereo.cas.configuration.model.support.ldap.AbstractLdapSearchProperties;
 import org.apereo.cas.configuration.support.RequiresModule;
 import org.apereo.cas.configuration.support.SpringResourceProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
+
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 
 /**
  * This is {@link PasswordManagementProperties}.
@@ -22,7 +23,7 @@ import lombok.NoArgsConstructor;
  * @since 5.0.0
  */
 @RequiresModule(name = "cas-server-support-pm-webflow")
-@Slf4j
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -71,6 +72,11 @@ public class PasswordManagementProperties implements Serializable {
      * Settings related to resetting password.
      */
     private Reset reset = new Reset();
+
+    /**
+     * Handle password policy via Groovy script.
+     */
+    private Groovy groovy = new Groovy();
 
     @RequiresModule(name = "cas-server-support-pm-jdbc")
     @Getter
@@ -159,24 +165,10 @@ public class PasswordManagementProperties implements Serializable {
         private EncryptionJwtSigningJwtCryptographyProperties crypto = new EncryptionJwtSigningJwtCryptographyProperties();
 
         /**
-         * Text one might receive as a notification to reset the password.
+         * Email settings for notifications.
          */
-        private String text = "Reset your password via this link: %s";
-
-        /**
-         * The subject of the notification for password resets.
-         */
-        private String subject = "Password Reset";
-
-        /**
-         * From address of the notification.
-         */
-        private String from;
-
-        /**
-         * Attribute indicating the an email address where notification is sent.
-         */
-        private String emailAttribute = "mail";
+        @NestedConfigurationProperty
+        private EmailProperties mail = new EmailProperties();
 
         /**
          * Whether reset operations require security questions,
@@ -188,6 +180,19 @@ public class PasswordManagementProperties implements Serializable {
          * How long in minutes should the password expiration link remain valid.
          */
         private float expirationMinutes = 1;
+
+        public Reset() {
+            this.mail.setAttributeName("mail");
+            this.mail.setText("Reset your password via this link: %s");
+            this.mail.setSubject("Password Reset");
+        }
+    }
+
+    @RequiresModule(name = "cas-server-support-pm")
+    @Getter
+    @Setter
+    public static class Groovy extends SpringResourceProperties {
+        private static final long serialVersionUID = 8079027843747126083L;
     }
 
     @RequiresModule(name = "cas-server-support-pm")

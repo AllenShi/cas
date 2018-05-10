@@ -80,7 +80,7 @@ public class AuthenticationExceptionHandlerAction extends AbstractAction {
         if (e instanceof AbstractTicketException) {
             return handleAbstractTicketException((AbstractTicketException) e, requestContext);
         }
-        
+
         LOGGER.trace("Unable to translate errors of the authentication exception [{}]. Returning [{}]", e, UNKNOWN);
         final String messageCode = this.messageBundlePrefix + UNKNOWN;
         messageContext.addMessage(new MessageBuilder().error().code(messageCode).build());
@@ -149,12 +149,14 @@ public class AuthenticationExceptionHandlerAction extends AbstractAction {
         final Event currentEvent = requestContext.getCurrentEvent();
         LOGGER.debug("Located current event [{}]", currentEvent);
 
-        final Exception error = currentEvent.getAttributes().get("error", Exception.class);
-        LOGGER.debug("Located error attribute [{}] with message [{}] from the current event", error.getClass(), error.getMessage());
+        final Exception error = currentEvent.getAttributes().get(CasWebflowConstants.TRANSITION_ID_ERROR, Exception.class);
+        if (error != null) {
+            LOGGER.debug("Located error attribute [{}] with message [{}] from the current event", error.getClass(), error.getMessage());
 
-        final String event = handle(error, requestContext);
-        LOGGER.debug("Final event id resolved from the error is [{}]", event);
-
-        return new EventFactorySupport().event(this, event);
+            final String event = handle(error, requestContext);
+            LOGGER.debug("Final event id resolved from the error is [{}]", event);
+            return new EventFactorySupport().event(this, event, currentEvent.getAttributes());
+        }
+        return new EventFactorySupport().event(this, "error");
     }
 }

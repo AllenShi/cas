@@ -15,6 +15,7 @@ import org.apereo.cas.web.flow.configurer.DefaultLogoutWebflowConfigurer;
 import org.apereo.cas.web.flow.configurer.GroovyWebflowConfigurer;
 import org.apereo.cas.web.flow.configurer.plan.DefaultCasWebflowExecutionPlan;
 import org.apereo.cas.web.flow.executor.WebflowExecutorFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.binding.convert.ConversionService;
@@ -63,7 +64,7 @@ import java.util.List;
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @Slf4j
-public class CasWebflowContextConfiguration implements CasWebflowExecutionPlanConfigurer {
+public class CasWebflowContextConfiguration {
 
     private static final int LOGOUT_FLOW_HANDLER_ORDER = 3;
 
@@ -74,7 +75,7 @@ public class CasWebflowContextConfiguration implements CasWebflowExecutionPlanCo
 
     @Autowired
     @Qualifier("registeredServiceViewResolver")
-    private ViewResolver registeredServiceViewResolver;
+    private ObjectProvider<ViewResolver> registeredServiceViewResolver;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -97,7 +98,7 @@ public class CasWebflowContextConfiguration implements CasWebflowExecutionPlanCo
     @Bean
     public ViewFactoryCreator viewFactoryCreator() {
         final MvcViewFactoryCreator resolver = new MvcViewFactoryCreator();
-        resolver.setViewResolvers(CollectionUtils.wrap(this.registeredServiceViewResolver));
+        resolver.setViewResolvers(CollectionUtils.wrap(this.registeredServiceViewResolver.getIfAvailable()));
         return resolver;
     }
 
@@ -271,11 +272,17 @@ public class CasWebflowContextConfiguration implements CasWebflowExecutionPlanCo
         return plan;
     }
 
-    @Override
-    public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
-        plan.registerWebflowConfigurer(defaultWebflowConfigurer());
-        plan.registerWebflowConfigurer(defaultLogoutWebflowConfigurer());
-        plan.registerWebflowConfigurer(groovyWebflowConfigurer());
+    @ConditionalOnMissingBean(name = "casDefaultWebflowExecutionPlanConfigurer")
+    @Bean
+    public CasWebflowExecutionPlanConfigurer casDefaultWebflowExecutionPlanConfigurer() {
+        return new CasWebflowExecutionPlanConfigurer() {
+            @Override
+            public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
+                plan.registerWebflowConfigurer(defaultWebflowConfigurer());
+                plan.registerWebflowConfigurer(defaultLogoutWebflowConfigurer());
+                plan.registerWebflowConfigurer(groovyWebflowConfigurer());
+            }
+        };
     }
 }
 
