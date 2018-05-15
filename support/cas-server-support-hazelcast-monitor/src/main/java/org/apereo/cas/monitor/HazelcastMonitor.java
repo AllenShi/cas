@@ -11,6 +11,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This is {@link HazelcastMonitor}.
@@ -31,15 +37,36 @@ public class HazelcastMonitor extends AbstractCacheMonitor {
         final HazelcastTicketRegistryProperties hz = casProperties.getTicket().getRegistry().getHazelcast();
         LOGGER.debug("Locating hazelcast instance [{}]...", hz.getCluster().getInstanceName());
         final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
+        final int clusterSize = getClusterSize(instance);
+        final boolean isMaster = instance.getOriginal().node.isMaster();
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
             final IMap map = instance.getMap(key);
             LOGGER.debug("Starting to collect hazelcast statistics for map [{}] identified by key [{}]...", map, key);
-            statsList.add(new HazelcastStatistics(map,
-                    instance.getOriginal().node.clusterService.getSize(),
-                    instance.getOriginal().node.isMaster()));
+            statsList.add(new HazelcastStatistics(map, clusterSize, isMaster));
 
         });
         return statsList.toArray(new CacheStatistics[statsList.size()]);
+    }
+
+    private int getClusterSize(HazelcastInstanceProxy instance) {
+        Callable<Integer> callForSize = new Callable<Integer>() {
+            @Override
+            public Integer call() {
+                return instance.getOriginal().node.getClusterService().getSize();
+            }
+        };
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future<Integer> future =  executorService.submit(callForSize);
+        int val = -1;
+        try {
+           val = future.get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+           future.cancel(true);
+        } catch (Exception e) {
+           LOGGER.error(e.getMessage(), e);
+        }
+        executorService.shutdownNow();
+        return val;
     }
 
     /**
@@ -161,5 +188,6 @@ public class HazelcastMonitor extends AbstractCacheMonitor {
             return String.format("%.2fMB", mem / BYTES_PER_MB);
         }
     }
+
 
 }

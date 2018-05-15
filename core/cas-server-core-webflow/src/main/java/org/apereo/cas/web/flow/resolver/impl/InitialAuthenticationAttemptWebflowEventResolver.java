@@ -84,7 +84,7 @@ public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCa
 
             final RegisteredService registeredService = determineRegisteredServiceForEvent(context, service);
             if (TRAP.isTraceEnabled()) {
-                if (registeredService.getName().startsWith("HTTPS")) {
+                if (registeredService != null && registeredService.getName().startsWith("HTTPS")) {
                     TRAP.debug(service.getId());
                 }
             }
