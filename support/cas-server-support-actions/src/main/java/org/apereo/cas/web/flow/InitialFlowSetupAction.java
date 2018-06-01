@@ -36,6 +36,7 @@ import java.util.List;
 public class InitialFlowSetupAction extends AbstractAction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialFlowSetupAction.class);
+    private static final Logger TRAP = LoggerFactory.getLogger("edu.ucdavis.trap");
 
     private final CasConfigurationProperties casProperties;
     private final ServicesManager servicesManager;
@@ -73,6 +74,11 @@ public class InitialFlowSetupAction extends AbstractAction {
 
             final Service selectedService = authenticationRequestServiceSelectionStrategies.resolveService(service);
             final RegisteredService registeredService = this.servicesManager.findServiceBy(selectedService);
+            if (TRAP.isTraceEnabled()) {
+                if (registeredService != null && registeredService.getName().startsWith("HTTPS")) {
+                    TRAP.debug(service.getId());
+                }
+            }
             if (registeredService != null && registeredService.getAccessStrategy().isServiceAccessAllowed()) {
                 LOGGER.debug("Placing registered service [{}] with id [{}] in context scope",
                         registeredService.getServiceId(),

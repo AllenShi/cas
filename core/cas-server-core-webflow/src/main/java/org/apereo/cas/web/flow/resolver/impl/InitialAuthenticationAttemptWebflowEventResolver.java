@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  */
 public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCasWebflowEventResolver implements CasDelegatingWebflowEventResolver {
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialAuthenticationAttemptWebflowEventResolver.class);
-    private static final Logger TRAP = LoggerFactory.getLogger("edu.ucdavis.trap");
+    //private static final Logger TRAP = LoggerFactory.getLogger("edu.ucdavis.trap");
 
     private final List<CasWebflowEventResolver> orderedResolvers = new ArrayList<>();
 
@@ -83,11 +83,13 @@ public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCa
             }
 
             final RegisteredService registeredService = determineRegisteredServiceForEvent(context, service);
+            /*
             if (TRAP.isTraceEnabled()) {
-                if (registeredService != null && registeredService.getName().startsWith("HTTPS")) {
+                if (registeredService == null || registeredService.getName().startsWith("HTTPS")) {
                     TRAP.debug(service.getId());
                 }
             }
+            */
             LOGGER.debug("Attempting to resolve candidate authentication events for service [{}]", service);
             final Set<Event> resolvedEvents = resolveCandidateAuthenticationEvents(context, service, registeredService);
             if (!resolvedEvents.isEmpty()) {
