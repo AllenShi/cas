@@ -21,7 +21,6 @@ import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.HttpUtils;
-import org.apereo.cas.util.http.HttpClient;
 import org.opensaml.saml.metadata.resolver.MetadataResolver;
 import org.opensaml.saml.metadata.resolver.impl.AbstractMetadataResolver;
 import org.springframework.core.io.AbstractResource;
@@ -29,9 +28,10 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -45,17 +45,13 @@ import java.util.UUID;
  */
 @Slf4j
 public class UrlResourceMetadataResolver extends BaseSamlRegisteredServiceMetadataResolver {
-    private final HttpClient httpClient;
-
     private File metadataBackupDirectory;
 
     @SneakyThrows
     public UrlResourceMetadataResolver(final SamlIdPProperties samlIdPProperties,
-                                       final OpenSamlConfigBean configBean,
-                                       final HttpClient httpClient) {
+                                       final OpenSamlConfigBean configBean) {
         super(samlIdPProperties, configBean);
 
-        this.httpClient = httpClient;
         final SamlIdPMetadataProperties md = samlIdPProperties.getMetadata();
         this.metadataBackupDirectory = new File(md.getLocation().getFile(), "metadata-backups");
         try {
@@ -117,7 +113,7 @@ public class UrlResourceMetadataResolver extends BaseSamlRegisteredServiceMetada
      */
     protected AbstractMetadataResolver getMetadataResolverFromResponse(final HttpResponse response, final File backupFile) throws Exception {
         final String result = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-        try (FileWriter output = new FileWriter(backupFile)) {
+        try (Writer output = Files.newBufferedWriter(backupFile.toPath(), StandardCharsets.UTF_8)) {
             IOUtils.write(result, output);
             output.flush();
         }

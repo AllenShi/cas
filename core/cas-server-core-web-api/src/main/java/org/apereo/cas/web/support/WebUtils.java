@@ -816,4 +816,104 @@ public class WebUtils {
     public static boolean hasPasswordlessAuthenticationAccount(final RequestContext requestContext) {
         return requestContext.getFlowScope().contains("passwordlessAccount");
     }
+
+    /**
+     * Put request surrogate authentication.
+     *
+     * @param context the context
+     * @param value   the value
+     */
+    public static void putRequestSurrogateAuthentication(final RequestContext context, final Boolean value) {
+        context.getFlowScope().put("requestSurrogateAccount", value);
+    }
+
+    /**
+     * Has request surrogate authentication request.
+     *
+     * @param requestContext the request context
+     * @return the boolean
+     */
+    public static boolean hasRequestSurrogateAuthenticationRequest(final RequestContext requestContext) {
+        return requestContext.getFlowScope().getBoolean("requestSurrogateAccount", Boolean.FALSE);
+    }
+
+    /**
+     * Has request surrogate authentication request.
+     *
+     * @param requestContext the request context
+     */
+    public static void removeRequestSurrogateAuthenticationRequest(final RequestContext requestContext) {
+        requestContext.getFlowScope().remove("requestSurrogateAccount");
+    }
+
+    /**
+     * Put surrogate authentication accounts.
+     *
+     * @param requestContext the request context
+     * @param surrogates     the surrogates
+     */
+    public static void putSurrogateAuthenticationAccounts(final RequestContext requestContext, final List<String> surrogates) {
+        requestContext.getFlowScope().put("surrogates", surrogates);
+    }
+
+    /**
+     * Gets surrogate authentication accounts.
+     *
+     * @param requestContext the request context
+     * @return the surrogate authentication accounts
+     */
+    public static List<String> getSurrogateAuthenticationAccounts(final RequestContext requestContext) {
+        return requestContext.getFlowScope().get("surrogates", List.class);
+    }
+
+    /**
+     * Put graphical user authentication enabled.
+     *
+     * @param requestContext the request context
+     * @param value          the value
+     */
+    public static void putGraphicalUserAuthenticationEnabled(final RequestContext requestContext, final Boolean value) {
+        requestContext.getFlowScope().put("guaEnabled", value);
+    }
+
+    /**
+     * Put graphical user authentication username.
+     *
+     * @param requestContext the request context
+     * @param username       the username
+     */
+    public static void putGraphicalUserAuthenticationUsername(final RequestContext requestContext, final String username) {
+        requestContext.getFlowScope().put("guaUsername", username);
+    }
+
+    /**
+     * Contains graphical user authentication username.
+     *
+     * @param requestContext the request context
+     * @return the boolean
+     */
+    public static boolean containsGraphicalUserAuthenticationUsername(final RequestContext requestContext) {
+        return requestContext.getFlowScope().contains("guaUsername");
+    }
+
+    /**
+     * Put graphical user authentication image.
+     *
+     * @param requestContext the request context
+     * @param image          the image
+     */
+    public static void putGraphicalUserAuthenticationImage(final RequestContext requestContext, final String image) {
+        requestContext.getFlowScope().put("guaUserImage", image);
+    }
+
+    /**
+     * Contains graphical user authentication image boolean.
+     *
+     * @param requestContext the request context
+     * @return the boolean
+     */
+    public static boolean containsGraphicalUserAuthenticationImage(final RequestContext requestContext) {
+        return requestContext.getFlowScope().contains("guaUserImage");
+    }
+
 }

@@ -5,6 +5,7 @@ import org.apereo.cas.authentication.Impersonators;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
+import org.apereo.cas.authentication.PrincipalElectionStrategy;
 import org.apereo.cas.authentication.adaptive.AdaptiveAuthenticationPolicy;
 import org.apereo.cas.authentication.principal.ServiceFactory;
 import org.apereo.cas.configuration.CasConfigurationProperties;
@@ -22,6 +23,7 @@ import org.apereo.cas.web.flow.GenerateServiceTicketAction;
 import org.apereo.cas.web.flow.ServiceAuthorizationCheck;
 import org.apereo.cas.web.flow.SingleSignOnParticipationStrategy;
 import org.apereo.cas.web.flow.actions.InitialAuthenticationAction;
+import org.apereo.cas.web.flow.login.CreateTicketGrantingTicketAction;
 import org.apereo.cas.web.flow.login.GenericSuccessViewAction;
 import org.apereo.cas.web.flow.login.InitialAuthenticationRequestValidationAction;
 import org.apereo.cas.web.flow.login.InitialFlowSetupAction;
@@ -121,6 +123,10 @@ public class CasSupportActionsConfiguration {
     @Qualifier("singleSignOnParticipationStrategy")
     private SingleSignOnParticipationStrategy webflowSingleSignOnParticipationStrategy;
 
+    @Autowired
+    @Qualifier("principalElectionStrategy")
+    private PrincipalElectionStrategy principalElectionStrategy;
+
     @Bean
     @RefreshScope
     public HandlerExceptionResolver errorHandlerResolver() {
@@ -158,6 +164,14 @@ public class CasSupportActionsConfiguration {
     public Action sendTicketGrantingTicketAction() {
         return new SendTicketGrantingTicketAction(centralAuthenticationService,
             ticketGrantingTicketCookieGenerator.getIfAvailable(), webflowSingleSignOnParticipationStrategy);
+    }
+
+    @RefreshScope
+    @ConditionalOnMissingBean(name = "createTicketGrantingTicketAction")
+    @Bean
+    public Action createTicketGrantingTicketAction() {
+        return new CreateTicketGrantingTicketAction(centralAuthenticationService,
+            authenticationSystemSupport, ticketRegistrySupport);
     }
 
     @RefreshScope
@@ -218,7 +232,8 @@ public class CasSupportActionsConfiguration {
             centralAuthenticationService,
             ticketRegistrySupport,
             authenticationRequestServiceSelectionStrategies,
-            servicesManager);
+            servicesManager,
+            principalElectionStrategy);
     }
 
     @Bean
@@ -265,6 +280,6 @@ public class CasSupportActionsConfiguration {
     @RefreshScope
     public Action serviceWarningAction() {
         return new ServiceWarningAction(centralAuthenticationService, authenticationSystemSupport,
-            ticketRegistrySupport, warnCookieGenerator.getIfAvailable());
+            ticketRegistrySupport, warnCookieGenerator.getIfAvailable(), principalElectionStrategy);
     }
 }

@@ -112,10 +112,9 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
 
             LOGGER.debug("Locating transition id [{}] to process multifactor authentication for state [{}", CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS, s);
             final String targetWarningsId = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS).getTargetStateId();
-        final String targetDeniedByDuo = actionState.getTransition("deniedByDuo").getTargetStateId();
+final String targetDeniedByDuo = actionState.getTransition("deniedByDuo").getTargetStateId();
         final String targetDuoEnrollUser = actionState.getTransition("duoEnrollUser").getTargetStateId();
         final String targetDuoUnavailable = actionState.getTransition("duoUnavailable").getTargetStateId();
-
             final List<DefaultMapping> mappings = new ArrayList<>();
             final Mapper inputMapper = createMapperToSubflowState(mappings);
             final SubflowAttributeMapper subflowMapper = createSubflowAttributeMapper(inputMapper, null);
@@ -128,7 +127,7 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
         subflowState.getTransitionSet().add(createTransition("deniedByDuo",targetDeniedByDuo));
         subflowState.getTransitionSet().add(createTransition("duoEnrollUser", targetDuoEnrollUser));
         subflowState.getTransitionSet().add(createTransition("duoUnavailable", targetDuoUnavailable));
-            LOGGER.debug("Creating transition [{}] fpr state [{}]", subflowId, actionState.getId());
+            LOGGER.debug("Creating transition [{}] for state [{}]", subflowId, actionState.getId());
             createTransitionForState(actionState, subflowId, subflowId);
 
             registerMultifactorFlowDefinitionIntoLoginFlowRegistry(mfaProviderFlowRegistry);

@@ -11,10 +11,9 @@ import org.junit.runners.Suite;
  * @author Misagh Moayyed
  * @since 4.2.0
  */
-
 @RunWith(Suite.class)
-@Suite.SuiteClasses({CentralAuthenticationServiceImplTests.class, 
-        CentralAuthenticationServiceImplWithMockitoTests.class,
+@Suite.SuiteClasses({DefaultCentralAuthenticationServiceTests.class,
+        DefaultCentralAuthenticationServiceMockitoTests.class,
         DefaultCasAttributeEncoderTests.class,
         DefaultPrincipalAttributesRepositoryTests.class,
         MultifactorAuthenticationTests.class})

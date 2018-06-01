@@ -3,7 +3,7 @@
       xmlns="http://www.springframework.org/schema/webflow"
       xsi:schemaLocation="http://www.springframework.org/schema/webflow
                           http://www.springframework.org/schema/webflow/spring-webflow.xsd">
-
+    
     <action-state id="initialAuthenticationRequestValidationCheck">
         <evaluate expression="initialAuthenticationRequestValidationAction"/>
         <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
@@ -35,7 +35,7 @@
     <action-state id="realSubmit">
         <evaluate expression="authenticationViaFormAction"/>
         <transition on="warn" to="warn"/>
-        <!--<transition on="success" to="sendTicketGrantingTicket"/>-->
+        <!--<transition on="success" to="createTicketGrantingTicket"/>-->
         <transition on="success" to="jaasCheck"/>
         <transition on="successWithWarnings" to="showMessages"/>
         <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
