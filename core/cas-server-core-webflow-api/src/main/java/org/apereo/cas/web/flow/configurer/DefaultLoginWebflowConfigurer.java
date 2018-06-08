@@ -78,10 +78,12 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
         final Flow flow = getImpersonateFlow();
 
         if (flow != null) {
+            createInitialFlowActions(flow);
             createDefaultGlobalExceptionHandlers(flow);
             createDefaultEndStates(flow);
             createDefaultDecisionStates(flow);
             createDefaultActionStates(flow);
+            createDefaultViewStates(flow);
             createFlowVariable(flow, CasWebflowConstants.VAR_ID_CREDENTIAL, ImpUsernamePasswordCredential.class);
         }
 

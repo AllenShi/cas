@@ -53,6 +53,11 @@ public class CasServerProperties implements Serializable {
     private boolean jaasCheck = false;
 
     /**
+     * Flag to dp TLS Check.
+     */
+    private boolean tlsCheck = false;
+
+    /**
      * Flag to allow impersonation.
      */
     private boolean impersonate = false;

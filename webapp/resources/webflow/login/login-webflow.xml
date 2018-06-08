@@ -76,7 +76,7 @@
      -->
     <end-state id="duoEnrollUser" view="enrollmentView">
         <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
+            <evaluate expression="createTicketGrantingTicketAction"/>
         </on-entry>
     </end-state>
 
@@ -86,7 +86,7 @@
     -->
     <end-state id="duoUnavailable" view="duoUnavailable">
         <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
+            <evaluate expression="createTicketGrantingTicketAction"/>
         </on-entry>
     </end-state>
 

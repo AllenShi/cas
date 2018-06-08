@@ -140,7 +140,7 @@ public class CasWebflowContextConfiguration {
 
     @Bean
     public HandlerAdapter loginHandlerAdapter() {
-        final FlowHandlerAdapter handler = new CasFlowHandlerAdapter(CasWebflowConfigurer.FLOW_ID_LOGIN) {
+        final FlowHandlerAdapter handler = new FlowHandlerAdapter() {
             @Override
             public boolean supports(final Object handler) {
                 if (casProperties.getServer().isImpersonate()) {

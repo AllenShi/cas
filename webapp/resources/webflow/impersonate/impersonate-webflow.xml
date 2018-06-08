@@ -15,6 +15,7 @@
         <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
         <transition on="error" to="initializeLoginForm"/>
         <transition on="success" to="ticketGrantingTicketCheck"/>
+        <transition on="successWithWarnings" to="ticketGrantingTicketCheck"/>
     </action-state>
 
     <action-state id="ticketGrantingTicketCheck">
@@ -56,7 +57,7 @@
     </decision-state>
 
     <decision-state id="checkByURL">
-        <if test="impersonators.canImpersonate(credential.username,flowScope.service.getOriginalUrl())"
+        <if test="impersonators.canImpersonate(credential.username,requestParameters.service)"
             then="realSubmit"
             else="notAllowedImpersonation"/>
     </decision-state>
@@ -75,9 +76,6 @@
         <transition on="duoUnavailable" to="duoUnavailable"/>
     </action-state>
 
-    <view-state id="jaasView" view="jaasView">
-        <transition on="success" to="createTicketGrantingTicket"/>
-    </view-state>
 
     <!--
         <action-state id="redirect">
@@ -95,7 +93,7 @@
      -->
     <end-state id="duoEnrollUser" view="enrollmentView">
         <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
+            <evaluate expression="TicketGrantingTicketAction"/>
         </on-entry>
     </end-state>
 
@@ -111,6 +109,4 @@
 
     <end-state id="notAllowedImpersonation" view="notAllowedImpersonationView"/>
 
-
-    -->
 </flow>

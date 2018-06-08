@@ -156,7 +156,7 @@ public class CasSupportActionsConfiguration {
 
     @Bean
     public Action doTlsCheck() {
-        return new TlsCheck(casProperties.getServer().getTlsCheck());
+        return new TlsCheck(casProperties.getServer().isTlsCheck());
     }
 
     @Bean
