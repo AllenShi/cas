@@ -64,7 +64,7 @@
     <action-state id="realSubmit">
         <evaluate expression="authenticationViaFormAction"/>
         <transition on="warn" to="warn"/>
-        <transition on="success" to="sendTicketGrantingTicket"/>
+        <transition on="success" to="createTicketGrantingTicket"/>
         <!--<transition on="success" to="jaasView"/>-->
         <transition on="successWithWarnings" to="showMessages"/>
         <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
@@ -76,30 +76,9 @@
     </action-state>
 
     <view-state id="jaasView" view="jaasView">
-        <transition on="success" to="sendTicketGrantingTicket"/>
+        <transition on="success" to="createTicketGrantingTicket"/>
     </view-state>
 
-    <view-state id="showAuthenticationWarningMessages" view="casLoginMessageView">
-        <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
-            <set name="requestScope.messages" value="messageContext.allMessages"/>
-        </on-entry>
-        <transition on="proceed" to="serviceCheck"/>
-    </view-state>
-
-    <action-state id="sendTicketGrantingTicket">
-        <evaluate expression="sendTicketGrantingTicketAction"/>
-        <transition on="success" to="serviceCheck"/>
-    </action-state>
-
-    <action-state id="generateServiceTicket">
-        <evaluate expression="generateServiceTicketAction"/>
-        <transition on="success" to="redirect"/>
-        <transition on="warn" to="warn"/>
-        <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
-        <transition on="error" to="initializeLoginForm"/>
-        <transition on="gateway" to="gatewayServicesManagementCheck"/>
-    </action-state>
     <!--
         <action-state id="redirect">
             <evaluate expression="flowScope.service.getResponse(requestScope.serviceTicketId)"
@@ -132,12 +111,6 @@
 
     <end-state id="notAllowedImpersonation" view="notAllowedImpersonationView"/>
 
-    <!--
-        <end-state id="postView" view="protocol/casPostResponseView">
-            <on-entry>
-                <set name="requestScope.parameters" value="requestScope.response.attributes"/>
-                <set name="requestScope.originalUrl" value="flowScope.service.id"/>
-       q     </on-entry>
-        </end-state>
+
     -->
 </flow>

@@ -50,34 +50,12 @@
     <action-state id="jaasCheck">
         <evaluate expression="doJaasCheck"/>
         <transition on="yes" to="jaasView"/>
-        <transition on="no" to="sendTicketGrantingTicket"/>
+        <transition on="no" to="createTicketGrantingTicket"/>
     </action-state>
 
     <view-state id="jaasView" view="jaasView">
-        <transition on="success" to="sendTicketGrantingTicket"/>
+        <transition on="success" to="createTicketGrantingTicket"/>
     </view-state>
-
-    <view-state id="showAuthenticationWarningMessages" view="casLoginMessageView">
-        <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
-            <set name="requestScope.messages" value="messageContext.allMessages"/>
-        </on-entry>
-        <transition on="proceed" to="serviceCheck"/>
-    </view-state>
-
-    <action-state id="sendTicketGrantingTicket">
-        <evaluate expression="sendTicketGrantingTicketAction"/>
-        <transition on="success" to="serviceCheck"/>
-    </action-state>
-
-    <action-state id="generateServiceTicket">
-        <evaluate expression="generateServiceTicketAction"/>
-        <transition on="success" to="redirect"/>
-        <transition on="warn" to="warn"/>
-        <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
-        <transition on="error" to="initializeLoginForm"/>
-        <transition on="gateway" to="gatewayServicesManagementCheck"/>
-    </action-state>
 
     <!--  This state is reached when Duo Preauth Denies a user-->
     <end-state id="deniedByDuo" view="duoDeniedView"/>

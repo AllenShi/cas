@@ -72,6 +72,10 @@
         <Logger name="edu.ucdavis.trap" level="off" includeLocation="true" additivity="false">
             <AppenderRef ref="casTrap"/>
         </Logger>
+        <Logger name="org.apereo" level="info" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+            <AppenderRef ref="casFile"/>
+        </Logger>
         <Logger name="com.couchbase" level="off" additivity="false" includeLocation="true"/>
         <Logger name="org.apereo.cas.web.CasWebApplication" level="off" additivity="false" includeLocation="true">
             <AppenderRef ref="casFile"/>
