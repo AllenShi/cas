@@ -27,6 +27,7 @@ import org.apereo.cas.config.SamlIdPEndpointsConfiguration;
 import org.apereo.cas.config.SamlIdPMetadataConfiguration;
 import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguration;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
+import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.saml.idp.metadata.locator.DefaultSamlIdPMetadataLocator;
 import org.apereo.cas.support.saml.idp.metadata.locator.SamlIdPMetadataLocator;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
@@ -34,6 +35,7 @@ import org.apereo.cas.support.saml.services.idp.metadata.cache.SamlRegisteredSer
 import org.apereo.cas.support.saml.web.idp.profile.builders.SamlProfileObjectBuilder;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlIdPObjectSigner;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlObjectSignatureValidator;
+import org.apereo.cas.util.junit.ConditionalSpringRunner;
 import org.apereo.cas.validation.config.CasCoreValidationConfiguration;
 import org.apereo.cas.web.config.CasCookieConfiguration;
 import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
@@ -52,8 +54,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.mockito.Mockito.*;
 
@@ -63,7 +63,7 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
-@RunWith(SpringRunner.class)
+@RunWith(ConditionalSpringRunner.class)
 @SpringBootTest(classes = {
     BaseSamlIdPConfigurationTests.SamlIdPMetadataTestConfiguration.class,
     CasDefaultServiceTicketIdGeneratorsConfiguration.class,
@@ -98,9 +98,10 @@ import static org.mockito.Mockito.*;
     CoreSamlConfiguration.class,
     CasPersonDirectoryConfiguration.class,
     CasCoreUtilConfiguration.class})
-@TestPropertySource(properties = "cas.authn.samlIdp.metadata.location=classpath:/metadata")
 @Slf4j
 public abstract class BaseSamlIdPConfigurationTests {
+    protected static final FileSystemResource METADATA_DIRECTORY = new FileSystemResource("src/test/resources/metadata");
+
     @Autowired
     @Qualifier("shibboleth.OpenSAMLConfig")
     protected OpenSamlConfigBean openSamlConfigBean;
@@ -114,6 +115,10 @@ public abstract class BaseSamlIdPConfigurationTests {
     protected SamlRegisteredServiceCachingMetadataResolver samlRegisteredServiceCachingMetadataResolver;
 
     @Autowired
+    @Qualifier("servicesManager")
+    protected ServicesManager servicesManager;
+
+    @Autowired
     @Qualifier("samlProfileSamlResponseBuilder")
     protected SamlProfileObjectBuilder<Response> samlProfileSamlResponseBuilder;
 
@@ -121,13 +126,21 @@ public abstract class BaseSamlIdPConfigurationTests {
     @Qualifier("samlObjectSignatureValidator")
     protected SamlObjectSignatureValidator samlObjectSignatureValidator;
 
-    protected SamlRegisteredService getSamlRegisteredServiceForTestShib(final boolean signAssertion, final boolean signResponses) {
+    protected SamlRegisteredService getSamlRegisteredServiceForTestShib(final boolean signAssertion,
+                                                                        final boolean signResponses) {
+        return getSamlRegisteredServiceForTestShib(signAssertion, signResponses, false);
+    }
+
+    protected SamlRegisteredService getSamlRegisteredServiceForTestShib(final boolean signAssertion,
+                                                                        final boolean signResponses,
+                                                                        final boolean encryptAssertions) {
         final SamlRegisteredService service = new SamlRegisteredService();
         service.setName("TestShib");
         service.setServiceId("https://sp.testshib.org/shibboleth-sp");
         service.setId(100);
         service.setSignAssertions(signAssertion);
         service.setSignResponses(signResponses);
+        service.setEncryptAssertions(encryptAssertions);
         service.setDescription("SAML Service");
         service.setMetadataLocation("classpath:metadata/testshib-providers.xml");
         return service;
@@ -150,9 +163,8 @@ public abstract class BaseSamlIdPConfigurationTests {
     @TestConfiguration
     public static class SamlIdPMetadataTestConfiguration {
         @Bean
-        public SamlIdPMetadataLocator samlIdPTestClasspathMetadataLocator() {
-            final FileSystemResource resource = new FileSystemResource("src/test/resources/metadata");
-            return new DefaultSamlIdPMetadataLocator(resource);
+        public SamlIdPMetadataLocator samlMetadataLocator() {
+            return new DefaultSamlIdPMetadataLocator(METADATA_DIRECTORY);
         }
     }
 }

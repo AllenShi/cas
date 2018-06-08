@@ -49,7 +49,7 @@ public class OidcServerDiscoverySettings {
     @JsonIgnore
     private final CasConfigurationProperties casProperties;
 
-    @JsonIgnore
+    @JsonProperty
     private final String issuer;
 
     @JsonIgnore
@@ -94,5 +94,10 @@ public class OidcServerDiscoverySettings {
     @JsonProperty("introspection_endpoint")
     public String getIntrospectionEndpoint() {
         return this.serverPrefix.concat('/' + OidcConstants.BASE_OIDC_URL + '/' + OidcConstants.INTROSPECTION_URL);
+    }
+
+    @JsonProperty("revocation_endpoint")
+    public String getRevocationEndpoint() {
+        return this.serverPrefix.concat('/' + OidcConstants.BASE_OIDC_URL + '/' + OidcConstants.REVOCATION_URL);
     }
 }

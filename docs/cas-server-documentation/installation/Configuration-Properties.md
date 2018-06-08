@@ -3093,7 +3093,7 @@ a local truststore is provided by CAS to improve portability of configuration ac
 # cas.httpClient.connectionTimeout=5000
 # cas.httpClient.asyncTimeout=5000
 # cas.httpClient.readTimeout=5000
-# cas.httpClient.hostnameVerifier=NONE|DEFAULT
+# cas.httpClient.hostNameVerifier=NONE|DEFAULT
 # cas.httpClient.allowLocalLogoutUrls=false
 # cas.httpClient.authorityValidationRegEx=
 # cas.httpClient.authorityValidationRegExCaseSensitive=true
@@ -3566,6 +3566,8 @@ Display Google's reCAPTCHA widget on the CAS login page.
 # cas.googleRecaptcha.verifyUrl=https://www.google.com/recaptcha/api/siteverify
 # cas.googleRecaptcha.siteKey=
 # cas.googleRecaptcha.secret=
+# cas.googleRecaptcha.invisible=
+# cas.googleRecaptcha.position=bottomright
 ```
 
 ## Google Analytics Integration
