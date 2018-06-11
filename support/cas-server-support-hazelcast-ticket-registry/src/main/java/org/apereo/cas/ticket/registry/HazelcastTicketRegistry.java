@@ -6,9 +6,11 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
-import lombok.AllArgsConstructor;
+import jdk.nashorn.internal.objects.annotations.Constructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.ticket.Ticket;
 import org.apereo.cas.ticket.TicketCatalog;
 import org.apereo.cas.ticket.TicketDefinition;
@@ -39,26 +41,21 @@ import java.util.stream.Collectors;
  * @since 4.1.0
  */
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class HazelcastTicketRegistry extends AbstractTicketRegistry implements Closeable {
     private final HazelcastInstance hazelcastInstance;
     private final TicketCatalog ticketCatalog;
     private final long pageSize;
+
     private IMap<String, Ticket> tgts;
     private IMap<String, Set<String>> users;
 
     /**
-     * Instantiates a new Hazelcast ticket ticketGrantingTicketsRegistry.
-     *
-     * @param hz       An instance of {@code HazelcastInstance}
-     * @param plan     the plan
-     * @param pageSize the page size
+     * Init.
      */
-    public HazelcastTicketRegistry(final HazelcastInstance hz, final TicketCatalog plan, final long pageSize) {
-        this.hazelcastInstance = hz;
-        this.pageSize = pageSize;
-        this.ticketCatalog = plan;
-
+    @PostConstruct
+    public void init() {
+        //LOGGER.info("Setting up Hazelcast Ticket Registry instance [{}] with name [{}]", this.hazelcastInstance.getName(), tgts.getName());
         this.tgts = getTicketMapInstance("ticketGrantingTicketsCache");
         this.users = hazelcastInstance.getMap("users");
 
@@ -86,16 +83,6 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements C
                 addTGTtoUser(user,entryEvent.getKey());
             }
         });
-
-    }
-
-    /**
-     * Init.
-     */
-    @PostConstruct
-    public void init() {
-        LOGGER.info("Setting up Hazelcast Ticket Registry instance [{}] with name [{}]", this.hazelcastInstance.getName(), tgts.getName());
-
     }
 
     @Override
@@ -268,5 +255,10 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements C
                 .flatMap(h -> h.stream())
                 .map(s -> getTicket(s))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void setCipherExecutor(CipherExecutor cipherExecutor) {
+        super.setCipherExecutor(null);
     }
 }
