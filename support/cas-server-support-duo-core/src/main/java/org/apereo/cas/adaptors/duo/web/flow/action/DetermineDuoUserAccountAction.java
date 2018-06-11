@@ -48,8 +48,10 @@ public class DetermineDuoUserAccountAction extends AbstractAction {
             final DuoMultifactorAuthenticationProvider duoProvider = this.provider.findProvider(pr.getId(), DuoMultifactorAuthenticationProvider.class);
             final DuoSecurityAuthenticationService duoAuthenticationService = duoProvider.getDuoAuthenticationService();
             final DuoUserAccount account = duoAuthenticationService.getDuoUserAccount(p.getId());
-            if (account.getStatus() == DuoUserAccountAuthStatus.ENROLL && StringUtils.isNotBlank(duoProvider.getRegistrationUrl())) {
-                requestContext.getFlowScope().put("duoRegistrationUrl", duoProvider.getRegistrationUrl());
+            //if (account.getStatus() == DuoUserAccountAuthStatus.ENROLL) {
+            //}
+            if (account.getStatus() == DuoUserAccountAuthStatus.ENROLL) {
+                //requestContext.getFlowScope().put("duoRegistrationUrl", duoProvider.getRegistrationUrl());
                 return enrollEvent;
             }
         }

@@ -109,18 +109,24 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
         createDuoInitializeLoginAction(states);
         createDuoDetermineUserAccountAction(states);
         createDuoDetermineRequestAction(states);
+
         createDuoDoNonWebAuthenticationAction(states);
         createDuoFinalizeAuthenticationAction(states);
         createDuoLoginViewState(states);
         createDuoAuthenticationWebflowAction(states);
         createDuoRedirectToRegistrationAction(states);
         createDuoSuccessEndState(states);
-        
+
         modelBuilder.setStates(states);
     }
 
     private void createDuoSuccessEndState(final List<AbstractStateModel> states) {
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_SUCCESS));
+
+        states.add(new EndStateModel("duoUnavailable"));
+        states.add(new EndStateModel("duoEnrollUser"));
+        states.add(new EndStateModel("deniedByDuo"));
+
     }
 
     private void createDuoRedirectToRegistrationAction(final List<AbstractStateModel> states) {
@@ -130,12 +136,12 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
     }
 
     private void createDuoAuthenticationWebflowAction(final List<AbstractStateModel> states) {
-        ActionStateModel actModel = new ActionStateModel(CasWebflowConstants.STATE_ID_REAL_SUBMIT);
-        LinkedList<AbstractActionModel> actions = new LinkedList<>();
+        final ActionStateModel actModel = new ActionStateModel(CasWebflowConstants.STATE_ID_REAL_SUBMIT);
+        final LinkedList<AbstractActionModel> actions = new LinkedList<>();
         actions.add(new EvaluateModel("duoAuthenticationWebflowAction"));
         actModel.setActions(actions);
 
-        LinkedList<TransitionModel> trans = new LinkedList<>();
+        final LinkedList<TransitionModel> trans = new LinkedList<>();
 
         TransitionModel transModel = new TransitionModel();
         transModel.setOn(CasWebflowConstants.TRANSITION_ID_SUCCESS);
@@ -143,100 +149,8 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
         trans.add(transModel);
 
         transModel = new TransitionModel();
-        transModel.setOn(CasWebflowConstants.TRANSITION_ID_ENROLL);
-        transModel.setTo("redirectToDuoRegistration");
-        trans.add(transModel);
-        
-        actModel.setTransitions(trans);
-        states.add(actModel);
-        
-        ////////////
-        
-        actModel = new ActionStateModel("determineDuoRequest");
-        actions = new LinkedList<>();
-        actions.add(new EvaluateModel("checkWebAuthenticationRequestAction"));
-        actModel.setActions(actions);
-
-        trans = new LinkedList<>();
-
-        transModel = new TransitionModel();
-        transModel.setOn(CasWebflowConstants.TRANSITION_ID_YES);
-        transModel.setTo("duoPreauthCheck");
-        trans.add(transModel);
-
-        transModel = new TransitionModel();
-        transModel.setOn(CasWebflowConstants.TRANSITION_ID_NO);
-        transModel.setTo("doNonWebAuthentication");
-        trans.add(transModel);
-
-        actModel.setTransitions(trans);
-        states.add(actModel);
-
-        ///////////////
-
-        actModel = new ActionStateModel("doNonWebAuthentication");
-        actions = new LinkedList<>();
-        actions.add(new EvaluateModel("duoNonWebAuthenticationAction"));
-        actModel.setActions(actions);
-
-        trans = new LinkedList<>();
-
-        transModel = new TransitionModel();
-        transModel.setOn(CasWebflowConstants.TRANSITION_ID_SUCCESS);
-        transModel.setTo("finalizeAuthentication");
-        trans.add(transModel);
-
-        actModel.setTransitions(trans);
-        states.add(actModel);
-        ///////////////
-
-        actModel = new ActionStateModel("duoPreauthCheck");
-        actions = new LinkedList<>();
-        actions.add(new EvaluateModel("duoMultifactorAuthenticationProvider.findProvider('mfa-duo').performPreauth(conversationScope.authentication.principal.id)"));
-        actModel.setActions(actions);
-
-        trans = new LinkedList<>();
-
-        transModel = new TransitionModel();
-        transModel.setOn("ALLOW");
-        transModel.setTo("success");
-        trans.add(transModel);
-
-        transModel = new TransitionModel();
-        transModel.setOn("DENY");
-        transModel.setTo("deniedByDuo");
-        trans.add(transModel);
-
-        transModel = new TransitionModel();
-        transModel.setOn("AUTH");
-        transModel.setTo(STATE_ID_VIEW_LOGIN_FORM_DUO);
-        trans.add(transModel);
-
-        transModel = new TransitionModel();
-        transModel.setOn("ENROLL");
-        transModel.setTo("duoEnrollUser");
-        trans.add(transModel);
-
-        transModel = new TransitionModel();
-        transModel.setOn("UNAVAILABLE");
-        transModel.setTo("duoUnavailable");
-        trans.add(transModel);
-
-        actModel.setTransitions(trans);
-        states.add(actModel);
-
-        ///////////////
-
-        actModel = new ActionStateModel("finalizeAuthentication");
-        actions = new LinkedList<>();
-        actions.add(new EvaluateModel("duoAuthenticationWebflowAction"));
-        actModel.setActions(actions);
-
-        trans = new LinkedList<>();
-
-        transModel = new TransitionModel();
-        transModel.setOn(CasWebflowConstants.TRANSITION_ID_SUCCESS);
-        transModel.setTo(CasWebflowConstants.TRANSITION_ID_SUCCESS);
+        transModel.setOn(CasWebflowConstants.TRANSITION_ID_ERROR);
+        transModel.setTo(CasWebflowConstants.STATE_ID_INIT_LOGIN_FORM);
         trans.add(transModel);
 
         actModel.setTransitions(trans);
@@ -340,7 +254,47 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
 
         transModel = new TransitionModel();
         transModel.setOn(CasWebflowConstants.TRANSITION_ID_ENROLL);
-        transModel.setTo("redirectToDuoRegistration");
+        transModel.setTo("duoEnrollUser");
+        trans.add(transModel);
+
+        transModel = new TransitionModel();
+        transModel.setOn("DENY");
+        transModel.setTo("deniedByDuo");
+        trans.add(transModel);
+
+        actModel.setTransitions(trans);
+        states.add(actModel);
+    }
+
+    private void createDuoPreAuthCheck(final List<AbstractStateModel> states) {
+        final ActionStateModel actModel = new ActionStateModel("duoPreAuthCheck");
+        final LinkedList<AbstractActionModel> actions = new LinkedList<>();
+        actions.add(new EvaluateModel("duoMultifactorAuthenticationProvider.findProvider('mfa-duo').performPreauth(conversationScope.authentication.principal.id)"));
+        actModel.setActions(actions);
+
+        final LinkedList<TransitionModel> trans = new LinkedList<>();
+        TransitionModel transModel = new TransitionModel();
+        transModel.setOn("ALLOW");
+        transModel.setTo("success");
+        trans.add(transModel);
+        transModel = new TransitionModel();
+        transModel.setOn("DENY");
+        transModel.setTo("deniedByDuo");
+        trans.add(transModel);
+
+        transModel = new TransitionModel();
+        transModel.setOn("AUTH");
+        transModel.setTo(STATE_ID_VIEW_LOGIN_FORM_DUO);
+        trans.add(transModel);
+
+        transModel = new TransitionModel();
+        transModel.setOn("ENROLL");
+        transModel.setTo("duoEnrollUser");
+        trans.add(transModel);
+
+        transModel = new TransitionModel();
+        transModel.setOn("UNAVAILABLE");
+        transModel.setTo("duoUnavailable");
         trans.add(transModel);
 
         actModel.setTransitions(trans);
@@ -361,21 +315,6 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
 
         actModel.setTransitions(trans);
         states.add(actModel);
-
-        ////////////////////
-
-        final ViewStateModel endModel = new ViewStateModel("redirectToDuoRegistration");
-        endModel.setView("externalRedirect:#{flowScope.duoRegistrationUrl}");
-        states.add(endModel);
-        
-        ////////////////////
-        states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_SUCCESS));
-
-        states.add(new EndStateModel("duoEnrollUser"));
-        states.add(new EndStateModel("deniedByDuo"));
-        states.add(new EndStateModel("duoUnavailable"));
-
-        ////////////////////
         return actions;
     }
 
