@@ -3,6 +3,7 @@ package org.apereo.cas.monitor.config;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.monitor.HazelcastMonitor;
 import org.apereo.cas.monitor.Monitor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -19,10 +20,16 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 public class HazelcastMonitorConfiguration {
 
+    /**
+     * CAS properties.
+     */
+    @Autowired
+    protected CasConfigurationProperties casProperties;
+
     @ConditionalOnMissingBean(name = "hazelcastMonitor")
     @Bean
     @RefreshScope
     public Monitor hazelcastMonitor() {
-        return new HazelcastMonitor();
+        return new HazelcastMonitor(casProperties.getTicket().getRegistry().getHazelcast().getCluster().getInstanceName());
     }
 }

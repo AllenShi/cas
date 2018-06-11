@@ -27,8 +27,12 @@ import java.util.concurrent.TimeoutException;
 public class HazelcastMonitor extends AbstractCacheMonitor {
     private static final Logger LOGGER = LoggerFactory.getLogger(HazelcastMonitor.class);
 
-    public HazelcastMonitor() {
+    private static int clusterSize;
+
+    public HazelcastMonitor(final String clusterName) {
         super(HazelcastMonitor.class.getSimpleName());
+        final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(clusterName);
+        getClusterSize(instance);
     }
 
     @Override
@@ -37,7 +41,7 @@ public class HazelcastMonitor extends AbstractCacheMonitor {
         final HazelcastTicketRegistryProperties hz = casProperties.getTicket().getRegistry().getHazelcast();
         LOGGER.debug("Locating hazelcast instance [{}]...", hz.getCluster().getInstanceName());
         final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
-        final int clusterSize = getClusterSize(instance);
+        getClusterSize(instance);
         final boolean isMaster = instance.getOriginal().node.isMaster();
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
             final IMap map = instance.getMap(key);
@@ -48,25 +52,15 @@ public class HazelcastMonitor extends AbstractCacheMonitor {
         return statsList.toArray(new CacheStatistics[statsList.size()]);
     }
 
-    private int getClusterSize(HazelcastInstanceProxy instance) {
-        Callable<Integer> callForSize = new Callable<Integer>() {
+    private void getClusterSize(HazelcastInstanceProxy instance) {
+        Runnable callForSize = new Runnable() {
             @Override
-            public Integer call() {
-                return instance.getOriginal().node.getClusterService().getSize();
+            public void run() {
+                HazelcastMonitor.clusterSize = instance.getOriginal().node.getClusterService().getSize();
             }
         };
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        Future<Integer> future =  executorService.submit(callForSize);
-        int val = -1;
-        try {
-           val = future.get(1, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-           future.cancel(true);
-        } catch (Exception e) {
-           LOGGER.error(e.getMessage(), e);
-        }
-        executorService.shutdownNow();
-        return val;
+        executorService.submit(callForSize);
     }
 
     /**

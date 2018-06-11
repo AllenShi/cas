@@ -23,9 +23,9 @@ public class TlsCheck extends AbstractAction {
             return no();
         }
         final String service = requestContext.getRequestParameters().get("service");
-        if (service.startsWith("https")) {
-            return no();
+        if (service != null && !service.startsWith("https")) {
+            return yes();
         }
-        return yes();
+        return no();
     }
 }
