@@ -57,6 +57,8 @@ public class StatusController extends BaseCasMvcEndpoint {
         }
 
         sb.append("Health: ").append(status.getCode());
+
+        sb.append(health.getDetails());
         sb.append("\n\nHost:\t\t").append(
             StringUtils.isBlank(casProperties.getHost().getName())
                 ? InetAddressUtils.getCasServerHostName()

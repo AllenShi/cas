@@ -13,6 +13,8 @@ import org.apereo.cas.configuration.model.support.hazelcast.HazelcastTicketRegis
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * This is {@link HazelcastHealthIndicator}.
@@ -24,8 +26,14 @@ import java.util.List;
 @ToString
 public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
 
+    private static int clusterSize;
+
     public HazelcastHealthIndicator(final CasConfigurationProperties casProperties) {
         super(casProperties);
+        final HazelcastTicketRegistryProperties hz = casProperties.getTicket().getRegistry().getHazelcast();
+        @NonNull
+        final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
+        getClusterSize(instance);
     }
 
     @Override
@@ -35,15 +43,26 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         LOGGER.debug("Locating hazelcast instance [{}]...", hz.getCluster().getInstanceName());
         @NonNull
         final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
+        getClusterSize(instance);
+        final boolean isMaster = instance.getOriginal().node.isMaster();
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
             final IMap map = instance.getMap(key);
             LOGGER.debug("Starting to collect hazelcast statistics for map [{}] identified by key [{}]...", map, key);
-            statsList.add(new HazelcastStatistics(map,
-                    instance.getOriginal().node.clusterService.getSize(),
-                    instance.getOriginal().node.isMaster()));
+            statsList.add(new HazelcastStatistics(map, clusterSize, isMaster));
 
         });
         return statsList.toArray(new CacheStatistics[0]);
+    }
+
+    private void getClusterSize(final HazelcastInstanceProxy instance) {
+        Runnable callForSize = new Runnable() {
+            @Override
+            public void run() {
+                HazelcastHealthIndicator.clusterSize = instance.getOriginal().node.getClusterService().getSize();
+            }
+        };
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(callForSize);
     }
 
     /**
