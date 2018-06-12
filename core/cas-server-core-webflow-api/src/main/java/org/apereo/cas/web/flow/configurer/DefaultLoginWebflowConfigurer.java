@@ -149,7 +149,6 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
         createCreateTicketGrantingTicketAction(flow);
         createSendTicketGrantingTicketAction(flow);
         createGenerateServiceTicketAction(flow);
-        createTerminateSessionAction(flow);
         createGatewayServicesMgmtAction(flow);
         createServiceAuthorizationCheckAction(flow);
         createRedirectToServiceActionState(flow);
@@ -219,7 +218,7 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
             createEvaluateAction(CasWebflowConstants.ACTION_ID_REDIRECT_TO_SERVICE));
         createTransitionForState(redirectToView, Response.ResponseType.POST.name().toLowerCase(), CasWebflowConstants.STATE_ID_POST_VIEW);
         createTransitionForState(redirectToView, Response.ResponseType.HEADER.name().toLowerCase(), CasWebflowConstants.STATE_ID_HEADER_VIEW);
-        createTransitionForState(redirectToView, Response.ResponseType.REDIRECT.name().toLowerCase(), CasWebflowConstants.STATE_ID_REDIR_VIEW);
+        createTransitionForState(redirectToView, Response.ResponseType.REDIRECT.name().toLowerCase(), CasWebflowConstants.STATE_ID_REDIRECT_VIEW);
     }
 
     /**
@@ -240,19 +239,8 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
      */
     protected void createGatewayServicesMgmtAction(final Flow flow) {
         final ActionState gatewayServicesManagementCheck = createActionState(flow,
-            CasWebflowConstants.STATE_ID_GATEWAY_SERVICES_MGMT_CHECK, createEvaluateAction("gatewayServicesManagementCheck"));
+            CasWebflowConstants.STATE_ID_GATEWAY_SERVICES_MGMT_CHECK, "gatewayServicesManagementCheck");
         createTransitionForState(gatewayServicesManagementCheck, CasWebflowConstants.STATE_ID_SUCCESS, CasWebflowConstants.STATE_ID_REDIRECT);
-    }
-
-    /**
-     * Create terminate session action.
-     *
-     * @param flow the flow
-     */
-    protected void createTerminateSessionAction(final Flow flow) {
-        final ActionState terminateSession = createActionState(flow,
-            CasWebflowConstants.STATE_ID_TERMINATE_SESSION, createEvaluateAction(CasWebflowConstants.ACTION_ID_TERMINATE_SESSION));
-        createStateDefaultTransition(terminateSession, CasWebflowConstants.STATE_ID_GATEWAY_REQUEST_CHECK);
     }
 
     /**
@@ -290,7 +278,7 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
      * @param flow the flow
      */
     protected void createRedirectEndState(final Flow flow) {
-        createEndState(flow, CasWebflowConstants.STATE_ID_REDIR_VIEW, "requestScope.url", true);
+        createEndState(flow, CasWebflowConstants.STATE_ID_REDIRECT_VIEW, "requestScope.url", true);
     }
 
     /**
@@ -310,7 +298,7 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
     protected void createInjectHeadersActionState(final Flow flow) {
         final ActionState headerState = createActionState(flow, CasWebflowConstants.STATE_ID_HEADER_VIEW, "injectResponseHeadersAction");
         createTransitionForState(headerState, CasWebflowConstants.TRANSITION_ID_SUCCESS, CasWebflowConstants.STATE_ID_END_WEBFLOW);
-        createTransitionForState(headerState, CasWebflowConstants.TRANSITION_ID_REDIRECT, CasWebflowConstants.STATE_ID_REDIR_VIEW);
+        createTransitionForState(headerState, CasWebflowConstants.TRANSITION_ID_REDIRECT, CasWebflowConstants.STATE_ID_REDIRECT_VIEW);
     }
 
     /**
