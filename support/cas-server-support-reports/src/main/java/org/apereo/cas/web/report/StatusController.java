@@ -1,5 +1,6 @@
 package org.apereo.cas.web.report;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 
 /**
@@ -31,6 +33,10 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class StatusController extends BaseCasMvcEndpoint {
     private final HealthEndpoint healthEndpoint;
+
+    private static final int PERCENTAGE_VALUE = 100;
+    private static final double BYTES_PER_MB = 1048510.0;
+    private static final double BYTEST_PER_KB = 1024.0;
 
     public StatusController(final CasConfigurationProperties casProperties, final HealthEndpoint healthEndpoint) {
         super("status", StringUtils.EMPTY, casProperties.getMonitor().getEndpoints().getStatus(), casProperties);
@@ -58,7 +64,36 @@ public class StatusController extends BaseCasMvcEndpoint {
 
         sb.append("Health: ").append(status.getCode());
 
-        sb.append(health.getDetails());
+        ObjectMapper mapper = new ObjectMapper();
+        HzStats stats = mapper.convertValue(health.getDetails().get("hazelcast"), HzStats.class);
+
+        sb.append("\n\n\tHazelcast: " + stats.getStatus());
+        sb.append("\n\t  Members: " + stats.clusterSize);
+        sb.append("\n\t  Is Master: " +  stats.isMaster());
+        for(String key : stats.maps.keySet()) {
+            sb.append("\n\t  Map: " + key + " - Size: " + formatMemory(stats.maps.get(key).memory));
+            sb.append("\n\t\tLocal Count: " + stats.maps.get(key).localCount);
+            sb.append("\n\t\tBackup Count: " + stats.maps.get(key).backupCount);
+            sb.append("\n\t\tGet Latency: " + stats.maps.get(key).getLatency);
+            sb.append("\n\t\tPut Latency: " + stats.maps.get(key).putLatency);
+        }
+
+        SessionStats sess = mapper.convertValue(health.getDetails().get("session"), SessionStats.class);
+        sb.append("\n\n\tSessions: " + sess.message);
+        sb.append(" - " + sess.sessionCount + " sessions. ");
+        sb.append(sess.ticketCount + " service tickets. ");
+        sb.append(sess.userCount + " unique users.");
+
+        MemoryStats memStats = mapper.convertValue(health.getDetails().get("memory"), MemoryStats.class);
+        sb.append("\n\n\tMemory: " + memStats.status);
+        sb.append(" - " + formatMemory(memStats.freeMemory) + " free, ");
+        sb.append(formatMemory(memStats.totalMemory) + " total.");
+
+        LdapStats ldapStats = mapper.convertValue(health.getDetails().get("pooledLdapConnectionFactory"), LdapStats.class);
+        sb.append("\n\n\tLDAP Pool: " + ldapStats.message);
+        sb.append(" - " + ldapStats.activeCount + " active, ");
+        sb.append(ldapStats.idleCount + " idle.");
+
         sb.append("\n\nHost:\t\t").append(
             StringUtils.isBlank(casProperties.getHost().getName())
                 ? InetAddressUtils.getCasServerHostName()
@@ -73,5 +108,263 @@ public class StatusController extends BaseCasMvcEndpoint {
                 StandardCharsets.UTF_8);
             writer.flush();
         }
+    }
+
+    private static class HzStats {
+        private String status;
+        private boolean master;
+        private int clusterSize;
+        private Map<String, HzMap> maps;
+
+        public HzStats() {
+
+        }
+
+        public boolean isMaster() {
+            return master;
+        }
+
+        public void setMaster(boolean master) {
+            this.master = master;
+        }
+
+        public int getClusterSize() {
+            return clusterSize;
+        }
+
+        public void setClusterSize(int clusterSize) {
+            this.clusterSize = clusterSize;
+        }
+
+        public Map<String, HzMap> getMaps() {
+            return maps;
+        }
+
+        public void setMaps(Map<String, HzMap> maps) {
+            this.maps = maps;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
+    private static class HzMap {
+        private int size;
+        private int percentFree;
+        private int evictions;
+        private int capacity;
+        private long localCount;
+        private long backupCount;
+        private long getLatency;
+        private long putLatency;
+        private long memory;
+
+        public HzMap() {
+
+        }
+
+        public int getSize() {
+            return size;
+        }
+
+        public void setSize(int size) {
+            this.size = size;
+        }
+
+        public int getPercentFree() {
+            return percentFree;
+        }
+
+        public void setPercentFree(int percentFree) {
+            this.percentFree = percentFree;
+        }
+
+        public int getEvictions() {
+            return evictions;
+        }
+
+        public void setEvictions(int evictions) {
+            this.evictions = evictions;
+        }
+
+        public int getCapacity() {
+            return capacity;
+        }
+
+        public void setCapacity(int capacity) {
+            this.capacity = capacity;
+        }
+
+        public long getLocalCount() {
+            return localCount;
+        }
+
+        public void setLocalCount(long localCount) {
+            this.localCount = localCount;
+        }
+
+        public long getBackupCount() {
+            return backupCount;
+        }
+
+        public void setBackupCount(long backupCount) {
+            this.backupCount = backupCount;
+        }
+
+        public long getGetLatency() {
+            return getLatency;
+        }
+
+        public void setGetLatency(long getLatency) {
+            this.getLatency = getLatency;
+        }
+
+        public long getPutLatency() {
+            return putLatency;
+        }
+
+        public void setPutLatency(long putLatency) {
+            this.putLatency = putLatency;
+        }
+
+        public long getMemory() {
+            return memory;
+        }
+
+        public void setMemory(long memory) {
+            this.memory = memory;
+        }
+    }
+
+    private static class SessionStats {
+        private String status;
+        private int sessionCount;
+        private int userCount;
+        private int ticketCount;
+        private String message;
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public int getSessionCount() {
+            return sessionCount;
+        }
+
+        public void setSessionCount(int sessionCount) {
+            this.sessionCount = sessionCount;
+        }
+
+        public int getUserCount() {
+            return userCount;
+        }
+
+        public void setUserCount(int userCount) {
+            this.userCount = userCount;
+        }
+
+        public int getTicketCount() {
+            return ticketCount;
+        }
+
+        public void setTicketCount(int ticketCount) {
+            this.ticketCount = ticketCount;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
+
+    private static class MemoryStats {
+        private String status;
+        private long freeMemory;
+        private long totalMemory;
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public long getFreeMemory() {
+            return freeMemory;
+        }
+
+        public void setFreeMemory(long freeMemory) {
+            this.freeMemory = freeMemory;
+        }
+
+        public long getTotalMemory() {
+            return totalMemory;
+        }
+
+        public void setTotalMemory(long totalMemory) {
+            this.totalMemory = totalMemory;
+        }
+    }
+
+    private static class LdapStats {
+        private String status;
+        private String message;
+        private int activeCount;
+        private int idleCount;
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public int getActiveCount() {
+            return activeCount;
+        }
+
+        public void setActiveCount(int activeCount) {
+            this.activeCount = activeCount;
+        }
+
+        public int getIdleCount() {
+            return idleCount;
+        }
+
+        public void setIdleCount(int idleCount) {
+            this.idleCount = idleCount;
+        }
+    }
+
+    public String formatMemory(long mem) {
+        if (mem < BYTEST_PER_KB) {
+            return String.format(mem+"B");
+        }
+        if (mem < BYTES_PER_MB) {
+            return String.format("%.2fKB", mem / BYTEST_PER_KB);
+        }
+        return String.format("%.2fMB", mem / BYTES_PER_MB);
     }
 }

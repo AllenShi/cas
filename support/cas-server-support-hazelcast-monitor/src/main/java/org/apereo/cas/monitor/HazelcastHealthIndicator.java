@@ -136,6 +136,16 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         }
 
         @Override
+        public long getLocalEntryCount() {
+            return map.getLocalMapStats().getOwnedEntryCount();
+        }
+
+        @Override
+        public long getBackupEntryCount() {
+            return map.getLocalMapStats().getBackupEntryCount();
+        }
+
+        @Override
         public String toString(final StringBuilder builder) {
             final LocalMapStats localMapStats = map.getLocalMapStats();
              builder.append("\n\t  ")

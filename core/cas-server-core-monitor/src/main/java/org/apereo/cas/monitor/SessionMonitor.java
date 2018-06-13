@@ -42,30 +42,32 @@ public class SessionMonitor extends AbstractHealthIndicator {
 
         if (sessionCount == Integer.MIN_VALUE || ticketCount == Integer.MIN_VALUE) {
             final String msg = String.format("Ticket registry %s reports unknown session and/or ticket counts.", this.registryState.getClass().getName());
-            buildHealthCheckStatus(builder.unknown(), sessionCount, ticketCount, msg);
+            buildHealthCheckStatus(builder.unknown(), sessionCount, userCount, ticketCount, msg);
             return;
         }
 
         if (this.sessionCountWarnThreshold > -1 && sessionCount > this.sessionCountWarnThreshold) {
             final String msg = String.format("Session count (%s) is above threshold %s. ", sessionCount, this.sessionCountWarnThreshold);
-            buildHealthCheckStatus(builder.status("WARN"), sessionCount, ticketCount, msg);
+            buildHealthCheckStatus(builder.status("WARN"), sessionCount, userCount, ticketCount, msg);
             return;
         }
 
         if (this.serviceTicketCountWarnThreshold > -1 && ticketCount > this.serviceTicketCountWarnThreshold) {
             final String msg = String.format("Service ticket count (%s) is above threshold %s.", ticketCount, this.serviceTicketCountWarnThreshold);
-            buildHealthCheckStatus(builder.status("WARN"), sessionCount, ticketCount, msg);
+            buildHealthCheckStatus(builder.status("WARN"), sessionCount, userCount, ticketCount, msg);
             return;
         }
 
-        buildHealthCheckStatus(builder.up(), sessionCount, ticketCount, "OK");
+        buildHealthCheckStatus(builder.up(), sessionCount, ticketCount, userCount, "OK");
     }
 
     private void buildHealthCheckStatus(final Health.Builder builder,
-                                        final long sessionCount, final long ticketCount, final String msg) {
+                                        final long sessionCount, final long ticketCount,
+                                        final long userCount, final String msg) {
         builder
             .withDetail("sessionCount", sessionCount)
             .withDetail("ticketCount", ticketCount)
-            .withDetail("message", msg);
+            .withDetail("message", msg)
+            .withDetail("userCount", userCount);
     }
 }
