@@ -256,6 +256,7 @@ public class PolicyBasedAuthenticationManager implements AuthenticationManager {
             .filter(r -> r.supports(handlers, transaction))
             .map(r -> r.resolve(handlers, transaction))
             .flatMap(Set::stream)
+            .sorted()
             .collect(Collectors.toSet());
 
         if (resolvedHandlers.isEmpty()) {
