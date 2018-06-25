@@ -2,6 +2,7 @@ package org.apereo.cas.authentication;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apereo.cas.util.RegexUtils;
 
 import java.io.File;
 import java.nio.file.FileSystems;
@@ -51,7 +52,7 @@ public class Impersonators {
          return allowed &&
                 !map.isEmpty() &&
                 map.containsKey(user) &&
-                map.get(user).contains(service);
+                map.get(user).stream().anyMatch(s -> RegexUtils.matches(RegexUtils.createPattern(s), service));
     }
 
     private void readFile() {
