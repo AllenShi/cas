@@ -52,7 +52,7 @@ public class Impersonators {
          return allowed &&
                 !map.isEmpty() &&
                 map.containsKey(user) &&
-                map.get(user).stream().anyMatch(s -> RegexUtils.matches(RegexUtils.createPattern(s), service));
+                map.get(user).stream().anyMatch(s -> RegexUtils.createPattern(s).matcher(service).matches());
     }
 
     private void readFile() {
