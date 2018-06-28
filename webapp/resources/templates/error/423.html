@@ -1,15 +1,13 @@
 <!DOCTYPE html>
-<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="layout">
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout}">
 
 <head>
-    <title>WAH WAH WAH</title>
-    <style>
-        @import 'https://fonts.googleapis.com/css?family=Gloria+Hallelujah';
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
 
-        .prompt {
-            font-family: 'Gloria Hallelujah', cursive;
-        }
-    </style>
+    <title th:text="#{screen.error.page.title.blocked}">Error - Permission Denied</title>
+    <link href="../../static/css/cas.css" rel="stylesheet" th:href="@{${#themes.code('cas.standard.css.file')}}"/>
 </head>
 
 <body id="cas">
