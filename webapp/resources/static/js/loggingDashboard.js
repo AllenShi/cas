@@ -17,11 +17,11 @@ function setConnected(connected) {
 
 function connect() {
     $('#logoutputarea').empty();
-    var socket = new SockJS(urls.logOutput);
+    var socket = new SockJS(urls.reportsWebsocket);
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function () {
         setConnected(true);
-        stompClient.subscribe('/logs/logoutput', function (msg) {
+        stompClient.subscribe('/topic/logs', function (msg) {
             if (msg != null && msg.body != '') {
                 showLogs(msg.body);
             }
@@ -37,10 +37,6 @@ function disconnect() {
         stompClient.disconnect();
     }
     setConnected(false);
-}
-
-function getLogs() {
-    stompClient.send(urls.logOutput, {}, {});
 }
 
 function showLogs(message) {
@@ -101,16 +97,21 @@ var loggingDashboard = (function () {
 
     var getAuditData = function () {
         $.getJSON(urls.getAuditLog, function (data) {
-            loggerTableAudit(data);
+            if ($(data).length > 0) {
+                loggerTableAudit(data);
+            } else {
+                $('#auditLogTable').DataTable();
+            }
         });
     };
 
     var loggerTableAudit = function (jsonData) {
         var t = $('#auditLogTable').DataTable({
+            'autoWidth': false,
             'order': [[3, 'desc']],
             retrieve: true,
             columnDefs: [
-        
+
                 {'width': '5%', 'targets': 0},
                 {'width': '100%', 'targets': 1},
                 {
@@ -133,7 +134,7 @@ var loggingDashboard = (function () {
                         if (dd.indexOf('failed') != -1) {
                             return '<span class="glyphicon glyphicon-thumbs-down" aria-hidden="true">&nbsp;</span>' + data;
                         }
-                        
+
                         return data;
                     }
                 }
@@ -154,6 +155,7 @@ var loggingDashboard = (function () {
 
     var loggerTable = function () {
         $('#loggersTable').DataTable({
+            'autoWidth': false,
             'order': [[1, 'desc']],
             data: json.loggers,
             'drawCallback': function () {
@@ -167,12 +169,12 @@ var loggingDashboard = (function () {
             },
             'initComplete': function (settings) {
                 if (!settings.aoData || settings.aoData.length == 0) {
-                    $('#loadingMessage').addClass('hidden');
-                    $('#errorLoadingData').removeClass('hidden');
+                    $('#loadingMessage').addClass('d-none');
+                    $('#errorLoadingData').removeClass('d-none');
                 } else {
-                    $('#loadingMessage').addClass('hidden');
-                    $('#errorLoadingData').addClass('hidden');
-                    $('#loggingDashboard .tabsContainer').removeClass('hidden');
+                    $('#loadingMessage').addClass('d-none');
+                    $('#errorLoadingData').addClass('d-none');
+                    $('#loggingDashboard .tabsContainer').removeClass('d-none');
                 }
             },
             'processing': true,
@@ -248,12 +250,12 @@ var loggingDashboard = (function () {
         default:
             btnColor = 'default';
         }
-        var btnGroup = '<div class="btn-group btn-block" data-logger="' + full + '"><button class="btn btn-sm btn-block bg-' + btnColor + ' dropdown-toggle" name="recordinput" data-toggle="dropdown">' + data + ' <span class="caret"></span></button>' +
-            '<ul class="dropdown-menu">';
+        var btnGroup = '<div class="dropdown" data-logger="' + full + '"><button class="btn btn-sm btn-block bg-' + btnColor + ' dropdown-toggle" name="recordinput" data-toggle="dropdown">' + data + ' <span class="caret"></span></button>' +
+            '<div class="dropdown-menu">';
         for (var i = 0; i < logLevels.length; i++) {
-            btnGroup += '<li><a href="#">' + logLevels[i].toUpperCase() + '</a></li>';
+            btnGroup += '<a class="dropdown-item" href="#">' + logLevels[i].toUpperCase() + '</a>';
         }
-        btnGroup += '</ul></div>';
+        btnGroup += '</div>';
 
         return btnGroup;
     };
@@ -270,7 +272,7 @@ var loggingDashboard = (function () {
     var addEventHandlers = function () {
         //console.log('addEventHAndlers()');
 
-        $(document).on('click', '#loggersTable .dropdown-menu li a', function (e) {
+        $(document).on('click', '#loggersTable .dropdown-menu a', function (e) {
             //console.log('status change', this);
             e.preventDefault();
             var selText = $(this).text();
@@ -303,8 +305,8 @@ var loggingDashboard = (function () {
          */
         var table = $('#loggersTable').DataTable();
         var data = table.row($(el).closest('tr')[0]).data();
-        
-        if ( newLevel != data.level) {
+
+        if (newLevel != data.level) {
             var cell = table.cell($(el).closest('td')[0]);
 
             $.post(urls.updateLevel, {
@@ -321,10 +323,11 @@ var loggingDashboard = (function () {
     };
 
     // initialization *******
-    (function init() {})();
+    (function init() {
+    })();
 
     return {
-        init: function() {
+        init: function () {
             getData();
             addEventHandlers();
             getAuditData();

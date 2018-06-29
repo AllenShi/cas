@@ -1,5 +1,6 @@
 package org.apereo.cas.adaptors.gauth;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.config.CasCoreAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationHandlersConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationMetadataConfiguration;
@@ -21,10 +22,14 @@ import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguratio
 import org.apereo.cas.config.support.EnvironmentConversionServiceInitializer;
 import org.apereo.cas.config.support.authentication.GoogleAuthenticatorAuthenticationEventExecutionPlanConfiguration;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
-import org.apereo.cas.otp.repository.credentials.OneTimeTokenAccount;
+import org.apereo.cas.authentication.OneTimeTokenAccount;
 import org.apereo.cas.otp.repository.credentials.OneTimeTokenCredentialRepository;
+import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.SchedulingUtils;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -40,7 +45,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.annotation.PostConstruct;
-import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -52,34 +56,38 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
-        JpaGoogleAuthenticatorTokenCredentialRepositoryTests.JpaTestConfiguration.class,
-        GoogleAuthenticatorJpaConfiguration.class,
-        CasCoreTicketsConfiguration.class,
-        CasCoreTicketCatalogConfiguration.class,
-        CasCoreLogoutConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        CasCoreAuthenticationConfiguration.class,
-        CasCoreServicesAuthenticationConfiguration.class,
-        CasCoreAuthenticationMetadataConfiguration.class,
-        CasCoreAuthenticationPolicyConfiguration.class,
-        CasCoreAuthenticationPrincipalConfiguration.class,
-        CasCoreAuthenticationHandlersConfiguration.class,
-        CasCoreAuthenticationSupportConfiguration.class,
-        CasPersonDirectoryConfiguration.class,
-        CasCoreServicesConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class,
-        GoogleAuthenticatorAuthenticationEventExecutionPlanConfiguration.class,
-        CasCoreUtilConfiguration.class,
-        CasCoreConfiguration.class,
-        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-        AopAutoConfiguration.class,
-        RefreshAutoConfiguration.class,
-        CasCoreWebConfiguration.class})
+    JpaGoogleAuthenticatorTokenCredentialRepositoryTests.JpaTestConfiguration.class,
+    GoogleAuthenticatorJpaConfiguration.class,
+    CasCoreTicketsConfiguration.class,
+    CasCoreTicketCatalogConfiguration.class,
+    CasCoreLogoutConfiguration.class,
+    CasCoreHttpConfiguration.class,
+    CasCoreAuthenticationConfiguration.class,
+    CasCoreServicesAuthenticationConfiguration.class,
+    CasCoreAuthenticationMetadataConfiguration.class,
+    CasCoreAuthenticationPolicyConfiguration.class,
+    CasCoreAuthenticationPrincipalConfiguration.class,
+    CasCoreAuthenticationHandlersConfiguration.class,
+    CasCoreAuthenticationSupportConfiguration.class,
+    CasPersonDirectoryConfiguration.class,
+    CasCoreServicesConfiguration.class,
+    CasWebApplicationServiceFactoryConfiguration.class,
+    GoogleAuthenticatorAuthenticationEventExecutionPlanConfiguration.class,
+    CasCoreUtilConfiguration.class,
+    CasCoreConfiguration.class,
+    CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+    AopAutoConfiguration.class,
+    RefreshAutoConfiguration.class,
+    CasCoreWebConfiguration.class},
+    properties = "cas.authn.mfa.gauth.crypto.enabled=false")
 @EnableTransactionManagement(proxyTargetClass = true)
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableScheduling
 @ContextConfiguration(initializers = EnvironmentConversionServiceInitializer.class)
+@Slf4j
 public class JpaGoogleAuthenticatorTokenCredentialRepositoryTests {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Autowired
     @Qualifier("googleAuthenticatorAccountRegistry")
@@ -96,10 +104,30 @@ public class JpaGoogleAuthenticatorTokenCredentialRepositoryTests {
         }
     }
 
+    @Before
+    public void cleanUp() {
+        registry.deleteAll();
+    }
+    
     @Test
     public void verifySave() {
-        registry.save("uid", "secret", 143211, Arrays.asList(1, 2, 3, 4, 5, 6));
+        registry.save("uid", "secret", 143211, CollectionUtils.wrapList(1, 2, 3, 4, 5, 6));
         final OneTimeTokenAccount s = registry.get("uid");
-        assertEquals(s.getSecretKey(), "secret");
+        assertEquals("secret", s.getSecretKey());
+    }
+
+    @Test
+    public void verifySaveAndUpdate() {
+        registry.save("casuser", "secret", 111222, CollectionUtils.wrapList(1, 2, 3, 4, 5, 6));
+        OneTimeTokenAccount s = registry.get("casuser");
+        assertNotNull(s.getRegistrationDate());
+        assertEquals(111222, s.getValidationCode());
+        assertEquals("secret", s.getSecretKey());
+        s.setSecretKey("newSecret");
+        s.setValidationCode(999666);
+        registry.update(s);
+        s = registry.get("casuser");
+        assertEquals(999666, s.getValidationCode());
+        assertEquals("newSecret", s.getSecretKey());
     }
 }

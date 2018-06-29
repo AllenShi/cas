@@ -1,16 +1,15 @@
 package org.apereo.cas.adaptors.fortress.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.directory.fortress.core.AccessMgr;
 import org.apache.directory.fortress.core.rest.AccessMgrRestImpl;
 import org.apereo.cas.adaptors.fortress.FortressAuthenticationHandler;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationHandler;
-import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
+import org.apereo.cas.authentication.principal.PrincipalFactoryUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.ServicesManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,10 +26,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration("fortressAuthenticationConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class FortressAuthenticationConfiguration {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(FortressAuthenticationConfiguration.class);
-
     @Autowired
     private CasConfigurationProperties casProperties;
 
@@ -42,7 +40,7 @@ public class FortressAuthenticationConfiguration {
     @Bean
     @RefreshScope
     public PrincipalFactory fortressPrincipalFactory() {
-        return new DefaultPrincipalFactory();
+        return PrincipalFactoryUtils.newPrincipalFactory();
     }
 
     @Bean

@@ -1,9 +1,11 @@
 package org.apereo.cas.pm.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.pm.PasswordManagementService;
 import org.apereo.cas.pm.PasswordValidationService;
 import org.apereo.cas.pm.web.flow.PasswordManagementWebflowConfigurer;
+import org.apereo.cas.pm.web.flow.actions.HandlePasswordExpirationWarningMessagesAction;
 import org.apereo.cas.pm.web.flow.actions.InitPasswordChangeAction;
 import org.apereo.cas.pm.web.flow.actions.InitPasswordResetAction;
 import org.apereo.cas.pm.web.flow.actions.PasswordChangeAction;
@@ -12,8 +14,9 @@ import org.apereo.cas.pm.web.flow.actions.VerifyPasswordResetRequestAction;
 import org.apereo.cas.pm.web.flow.actions.VerifySecurityQuestionsAction;
 import org.apereo.cas.util.io.CommunicationsManager;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlan;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlanConfigurer;
+import org.apereo.cas.web.flow.actions.StaticEventExecutionAction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -39,16 +42,14 @@ import org.springframework.webflow.mvc.servlet.FlowHandlerAdapter;
  */
 @Configuration("passwordManagementWebflowConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-public class PasswordManagementWebflowConfiguration {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PasswordManagementConfiguration.class);
-
+@Slf4j
+public class PasswordManagementWebflowConfiguration implements CasWebflowExecutionPlanConfigurer {
     @Autowired
     private ApplicationContext applicationContext;
 
     @Autowired
     private CasConfigurationProperties casProperties;
-    
+
     @Autowired
     @Qualifier("communicationsManager")
     private CommunicationsManager communicationsManager;
@@ -69,9 +70,9 @@ public class PasswordManagementWebflowConfiguration {
     private PasswordValidationService passwordValidationService;
 
     @Autowired
-    @Qualifier("passwordChangeService") 
+    @Qualifier("passwordChangeService")
     private PasswordManagementService passwordManagementService;
-    
+
     @RefreshScope
     @Bean
     public HandlerAdapter passwordResetHandlerAdapter() {
@@ -79,7 +80,7 @@ public class PasswordManagementWebflowConfiguration {
             @Override
             public boolean supports(final Object handler) {
                 return super.supports(handler) && ((FlowHandler) handler)
-                        .getFlowId().equals(PasswordManagementWebflowConfigurer.FLOW_ID_PASSWORD_RESET);
+                    .getFlowId().equals(PasswordManagementWebflowConfigurer.FLOW_ID_PASSWORD_RESET);
             }
         };
         handler.setFlowExecutor(loginFlowExecutor);
@@ -90,7 +91,7 @@ public class PasswordManagementWebflowConfiguration {
     @RefreshScope
     @Bean
     public Action initPasswordChangeAction() {
-        return new InitPasswordChangeAction();
+        return new InitPasswordChangeAction(casProperties);
     }
 
     @ConditionalOnMissingBean(name = "initPasswordResetAction")
@@ -111,20 +112,31 @@ public class PasswordManagementWebflowConfiguration {
     @Bean
     @RefreshScope
     public Action sendPasswordResetInstructionsAction() {
-        return new SendPasswordResetInstructionsAction(communicationsManager, passwordManagementService);
+        return new SendPasswordResetInstructionsAction(casProperties, communicationsManager, passwordManagementService);
     }
 
     @ConditionalOnMissingBean(name = "verifyPasswordResetRequestAction")
     @Bean
     @RefreshScope
     public Action verifyPasswordResetRequestAction() {
-        return new VerifyPasswordResetRequestAction(passwordManagementService);
+        return new VerifyPasswordResetRequestAction(casProperties, passwordManagementService);
+    }
+
+    @ConditionalOnMissingBean(name = "handlePasswordExpirationWarningMessagesAction")
+    @Bean
+    @RefreshScope
+    public Action handlePasswordExpirationWarningMessagesAction() {
+        return new HandlePasswordExpirationWarningMessagesAction();
     }
 
     @ConditionalOnMissingBean(name = "verifySecurityQuestionsAction")
     @Bean
     @RefreshScope
     public Action verifySecurityQuestionsAction() {
+        if (!casProperties.getAuthn().getPm().getReset().isSecurityQuestionsEnabled()) {
+            LOGGER.debug("Functionality to handle security questions for password management is not enabled");
+            return new StaticEventExecutionAction("success");
+        }
         return new VerifySecurityQuestionsAction(passwordManagementService);
     }
 
@@ -133,10 +145,13 @@ public class PasswordManagementWebflowConfiguration {
     @Bean
     @DependsOn("defaultWebflowConfigurer")
     public CasWebflowConfigurer passwordManagementWebflowConfigurer() {
-        final CasWebflowConfigurer w = new PasswordManagementWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry,
-                applicationContext, casProperties, initPasswordChangeAction());
-        w.initialize();
-        return w;
+        return new PasswordManagementWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry,
+            applicationContext, casProperties, initPasswordChangeAction());
+    }
+
+    @Override
+    public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
+        plan.registerWebflowConfigurer(passwordManagementWebflowConfigurer());
     }
 }
 

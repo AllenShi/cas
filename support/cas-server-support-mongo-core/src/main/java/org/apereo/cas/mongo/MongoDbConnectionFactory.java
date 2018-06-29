@@ -7,11 +7,12 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.model.support.mongo.BaseMongoDbProperties;
+import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.util.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -44,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This is {@link MongoDbConnectionFactory}.
@@ -51,15 +53,23 @@ import java.util.stream.Collectors;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class MongoDbConnectionFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbConnectionFactory.class);
+
     private static final int TIMEOUT = 5000;
     private static final int DEFAULT_PORT = 27017;
 
     private final CustomConversions customConversions;
 
     public MongoDbConnectionFactory() {
-        final List<Converter> converters = new ArrayList();
+        this(new ArrayList<>());
+    }
+
+    public MongoDbConnectionFactory(final Converter... converters) {
+        this(Stream.of(converters).collect(Collectors.toList()));
+    }
+
+    public MongoDbConnectionFactory(final List<Converter> converters) {
         converters.add(new BaseConverters.LoggerConverter());
         converters.add(new BaseConverters.ClassConverter());
         converters.add(new BaseConverters.CommonsLogConverter());
@@ -72,10 +82,14 @@ public class MongoDbConnectionFactory {
         converters.add(new BaseConverters.CaffeinCacheConverter());
         converters.add(new BaseConverters.CaffeinCacheLoaderConverter());
         converters.add(new BaseConverters.CacheConverter());
+        converters.add(new BaseConverters.ZonedDateTimeToDateConverter());
+        converters.add(new BaseConverters.ZonedDateTimeToStringConverter());
+        converters.add(new BaseConverters.StringToZonedDateTimeConverter());
+        converters.add(new BaseConverters.DateToZonedDateTimeConverter());
 
         converters.addAll(JodaTimeConverters.getConvertersToRegister());
         converters.addAll(Jsr310Converters.getConvertersToRegister());
-
+        
         this.customConversions = new CustomConversions(converters);
     }
 
@@ -118,7 +132,7 @@ public class MongoDbConnectionFactory {
             mongoTemplate.createCollection(collectionName);
         }
     }
-    
+
     private MongoMappingContext mongoMappingContext() {
         final MongoMappingContext mappingContext = new MongoMappingContext();
         mappingContext.setInitialEntitySet(getInitialEntitySet());
@@ -136,7 +150,8 @@ public class MongoDbConnectionFactory {
     }
 
     private MongoDbFactory mongoDbFactory(final Mongo mongo, final BaseMongoDbProperties props) {
-        final String dbName, authDbName;
+        final String dbName;
+        final String authDbName;
 
         if (StringUtils.isNotBlank(props.getClientUri())) {
             final MongoClientURI uri = buildMongoClientURI(props.getClientUri(), buildMongoDbClientOptions(props));
@@ -178,7 +193,7 @@ public class MongoDbConnectionFactory {
 
         if (StringUtils.isNotBlank(basePackage)) {
             final ClassPathScanningCandidateComponentProvider componentProvider = new ClassPathScanningCandidateComponentProvider(
-                    false);
+                false);
             componentProvider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
             componentProvider.addIncludeFilter(new AnnotationTypeFilter(Persistent.class));
 
@@ -200,7 +215,7 @@ public class MongoDbConnectionFactory {
 
     private FieldNamingStrategy fieldNamingStrategy() {
         return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy()
-                : PropertyNameFieldNamingStrategy.INSTANCE;
+            : PropertyNameFieldNamingStrategy.INSTANCE;
     }
 
     /**
@@ -231,82 +246,64 @@ public class MongoDbConnectionFactory {
      * @param mongo the property setttings (including, perhaps, a client uri)
      * @return a bean containing the MongoClientOptions object
      */
+    @SneakyThrows
     private MongoClientOptionsFactoryBean buildMongoDbClientOptionsFactoryBean(final BaseMongoDbProperties mongo) {
-        try {
-            final MongoClientOptionsFactoryBean bean1 = new MongoClientOptionsFactoryBean();
 
-            bean1.setWriteConcern(WriteConcern.valueOf(mongo.getWriteConcern()));
-            bean1.setHeartbeatConnectTimeout((int) mongo.getTimeout());
-            bean1.setHeartbeatSocketTimeout((int) mongo.getTimeout());
-            bean1.setMaxConnectionLifeTime(mongo.getConns().getLifetime());
-            bean1.setSocketKeepAlive(mongo.isSocketKeepAlive());
-            bean1.setMaxConnectionIdleTime((int) mongo.getIdleTimeout());
-            bean1.setConnectionsPerHost(mongo.getConns().getPerHost());
-            bean1.setSocketTimeout((int) mongo.getTimeout());
-            bean1.setConnectTimeout((int) mongo.getTimeout());
-            if (StringUtils.isNotBlank(mongo.getReplicaSet())) {
-                bean1.setRequiredReplicaSetName(mongo.getReplicaSet());
-            }
-            bean1.setSsl(mongo.isSslEnabled());
-            if (mongo.isSslEnabled()) {
-                bean1.setSslSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
-            }
+        final MongoClientOptionsFactoryBean bean1 = new MongoClientOptionsFactoryBean();
 
-            bean1.afterPropertiesSet();
-
-            if (StringUtils.isNotBlank(mongo.getClientUri())) {
-                final MongoClientOptionsFactoryBean bean2 = new MongoClientOptionsFactoryBean();
-
-                final MongoClientURI uri = buildMongoClientURI(mongo.getClientUri(), bean1.getObject());
-                final MongoClientOptions opts = uri.getOptions();
-
-                bean2.setWriteConcern(opts.getWriteConcern());
-                bean2.setHeartbeatConnectTimeout(opts.getHeartbeatConnectTimeout());
-                bean2.setHeartbeatSocketTimeout(opts.getHeartbeatSocketTimeout());
-                bean2.setMaxConnectionLifeTime(opts.getMaxConnectionLifeTime());
-                bean2.setSocketKeepAlive(opts.isSocketKeepAlive());
-                bean2.setMaxConnectionIdleTime(opts.getMaxConnectionIdleTime());
-                bean2.setConnectionsPerHost(opts.getConnectionsPerHost());
-                bean2.setSocketTimeout(opts.getSocketTimeout());
-                bean2.setConnectTimeout(opts.getConnectTimeout());
-                bean2.setRequiredReplicaSetName(opts.getRequiredReplicaSetName());
-                bean2.setSsl(opts.isSslEnabled());
-
-                if (opts.isSslEnabled()) {
-                    bean2.setSslSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
-                }
-
-                bean2.afterPropertiesSet();
-                bean1.destroy();
-
-                return bean2;
-            }
-
-            return bean1;
-        } catch (final Exception e) {
-            throw new BeanCreationException(e.getMessage(), e);
+        bean1.setWriteConcern(WriteConcern.valueOf(mongo.getWriteConcern()));
+        bean1.setHeartbeatConnectTimeout((int) Beans.newDuration(mongo.getTimeout()).toMillis());
+        bean1.setHeartbeatSocketTimeout((int) Beans.newDuration(mongo.getTimeout()).toMillis());
+        bean1.setMaxConnectionLifeTime(mongo.getConns().getLifetime());
+        bean1.setSocketKeepAlive(mongo.isSocketKeepAlive());
+        bean1.setMaxConnectionIdleTime((int) Beans.newDuration(mongo.getIdleTimeout()).toMillis());
+        bean1.setConnectionsPerHost(mongo.getConns().getPerHost());
+        bean1.setSocketTimeout((int) Beans.newDuration(mongo.getTimeout()).toMillis());
+        bean1.setConnectTimeout((int) Beans.newDuration(mongo.getTimeout()).toMillis());
+        if (StringUtils.isNotBlank(mongo.getReplicaSet())) {
+            bean1.setRequiredReplicaSetName(mongo.getReplicaSet());
         }
+        bean1.setSsl(mongo.isSslEnabled());
+        if (mongo.isSslEnabled()) {
+            bean1.setSslSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
+        }
+
+        bean1.afterPropertiesSet();
+
+        if (StringUtils.isNotBlank(mongo.getClientUri())) {
+            final MongoClientOptionsFactoryBean bean2 = new MongoClientOptionsFactoryBean();
+
+            final MongoClientURI uri = buildMongoClientURI(mongo.getClientUri(), bean1.getObject());
+            final MongoClientOptions opts = uri.getOptions();
+
+            bean2.setWriteConcern(opts.getWriteConcern());
+            bean2.setHeartbeatConnectTimeout(opts.getHeartbeatConnectTimeout());
+            bean2.setHeartbeatSocketTimeout(opts.getHeartbeatSocketTimeout());
+            bean2.setMaxConnectionLifeTime(opts.getMaxConnectionLifeTime());
+            bean2.setSocketKeepAlive(opts.isSocketKeepAlive());
+            bean2.setMaxConnectionIdleTime(opts.getMaxConnectionIdleTime());
+            bean2.setConnectionsPerHost(opts.getConnectionsPerHost());
+            bean2.setSocketTimeout(opts.getSocketTimeout());
+            bean2.setConnectTimeout(opts.getConnectTimeout());
+            bean2.setRequiredReplicaSetName(opts.getRequiredReplicaSetName());
+            bean2.setSsl(opts.isSslEnabled());
+
+            if (opts.isSslEnabled()) {
+                bean2.setSslSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
+            }
+
+            bean2.afterPropertiesSet();
+            bean1.destroy();
+
+            return bean2;
+        }
+
+        return bean1;
     }
 
+    @SneakyThrows
     private MongoClientOptions buildMongoDbClientOptions(final BaseMongoDbProperties mongo) {
-        try {
-            return buildMongoDbClientOptionsFactoryBean(mongo).getObject();
-        } catch (final Exception e) {
-            throw new BeanCreationException(e.getMessage(), e);
-        }
-    }
-
-    private MongoClientOptions buildMongoDbClientOptions() {
-        try {
-            final MongoClientOptionsFactoryBean bean = new MongoClientOptionsFactoryBean();
-            bean.setSocketTimeout(TIMEOUT);
-            bean.setConnectTimeout(TIMEOUT);
-            bean.setMaxWaitTime(TIMEOUT);
-            bean.afterPropertiesSet();
-            return bean.getObject();
-        } catch (final Exception e) {
-            throw new BeanCreationException(e.getMessage(), e);
-        }
+        return buildMongoDbClientOptionsFactoryBean(mongo).getObject();
     }
 
     private Mongo buildMongoDbClient(final BaseMongoDbProperties mongo) {
@@ -324,14 +321,14 @@ public class MongoDbConnectionFactory {
         List<ServerAddress> servers = new ArrayList<>();
         if (serverAddresses.length > 1) {
             LOGGER.debug("Multiple MongoDb server addresses are defined. Ignoring port [{}], "
-                    + "assuming ports are defined as part of the address", mongo.getPort());
+                + "assuming ports are defined as part of the address", mongo.getPort());
             servers = Arrays.stream(serverAddresses)
-                    .filter(StringUtils::isNotBlank)
-                    .map(ServerAddress::new)
-                    .collect(Collectors.toList());
+                .filter(StringUtils::isNotBlank)
+                .map(ServerAddress::new)
+                .collect(Collectors.toList());
         } else {
             final int port = mongo.getPort() > 0 ? mongo.getPort() : DEFAULT_PORT;
-            LOGGER.debug("Found single MongoDb server address [{}] using port [{}]" + mongo.getHost(), port);
+            LOGGER.debug("Found single MongoDb server address [{}] using port [{}]", mongo.getHost(), port);
             final ServerAddress addr = new ServerAddress(mongo.getHost(), port);
             servers.add(addr);
         }
@@ -343,10 +340,6 @@ public class MongoDbConnectionFactory {
     private Mongo buildMongoDbClient(final String clientUri, final MongoClientOptions clientOptions) {
         final MongoClientURI uri = buildMongoClientURI(clientUri, clientOptions);
         return new MongoClient(uri);
-    }
-
-    private MongoCredential buildMongoCredential(final MongoClientURI uri) {
-        return MongoCredential.createCredential(uri.getUsername(), uri.getDatabase(), uri.getPassword());
     }
 
     private MongoCredential buildMongoCredential(final BaseMongoDbProperties mongo) {
@@ -362,7 +355,7 @@ public class MongoDbConnectionFactory {
     private static class ClientUriMongoDbProperties extends BaseMongoDbProperties {
         private static final long serialVersionUID = -9182480568666563805L;
 
-        public ClientUriMongoDbProperties(final String clientUri) {
+        ClientUriMongoDbProperties(final String clientUri) {
             setClientUri(clientUri);
         }
     }

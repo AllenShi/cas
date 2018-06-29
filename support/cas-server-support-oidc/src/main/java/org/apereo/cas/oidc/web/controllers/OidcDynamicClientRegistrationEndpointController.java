@@ -1,5 +1,6 @@
 package org.apereo.cas.oidc.web.controllers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.ServiceFactory;
@@ -15,7 +16,6 @@ import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.oauth.OAuth20GrantTypes;
 import org.apereo.cas.support.oauth.OAuth20ResponseTypes;
 import org.apereo.cas.support.oauth.profile.OAuth20ProfileScopeToAttributesFilter;
-import org.apereo.cas.support.oauth.validator.OAuth20Validator;
 import org.apereo.cas.support.oauth.web.endpoints.BaseOAuth20Controller;
 import org.apereo.cas.ticket.accesstoken.AccessTokenFactory;
 import org.apereo.cas.ticket.registry.TicketRegistry;
@@ -23,8 +23,6 @@ import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.gen.RandomStringGenerator;
 import org.apereo.cas.util.serialization.StringSerializer;
 import org.apereo.cas.web.support.CookieRetrievingCookieGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,8 +44,9 @@ import java.util.stream.Collectors;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
 public class OidcDynamicClientRegistrationEndpointController extends BaseOAuth20Controller {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OidcDynamicClientRegistrationEndpointController.class);
+
 
     private final StringSerializer<OidcClientRegistrationRequest> clientRegistrationRequestSerializer;
     private final RandomStringGenerator clientIdGenerator;
@@ -55,7 +54,6 @@ public class OidcDynamicClientRegistrationEndpointController extends BaseOAuth20
 
     public OidcDynamicClientRegistrationEndpointController(final ServicesManager servicesManager,
                                                            final TicketRegistry ticketRegistry,
-                                                           final OAuth20Validator validator,
                                                            final AccessTokenFactory accessTokenFactory,
                                                            final PrincipalFactory principalFactory,
                                                            final ServiceFactory<WebApplicationService> webApplicationServiceServiceFactory,
@@ -65,7 +63,7 @@ public class OidcDynamicClientRegistrationEndpointController extends BaseOAuth20
                                                            final OAuth20ProfileScopeToAttributesFilter scopeToAttributesFilter,
                                                            final CasConfigurationProperties casProperties,
                                                            final CookieRetrievingCookieGenerator ticketGrantingTicketCookieGenerator) {
-        super(servicesManager, ticketRegistry, validator, accessTokenFactory,
+        super(servicesManager, ticketRegistry, accessTokenFactory,
                 principalFactory, webApplicationServiceServiceFactory,
                 scopeToAttributesFilter, casProperties, ticketGrantingTicketCookieGenerator);
         this.clientRegistrationRequestSerializer = clientRegistrationRequestSerializer;

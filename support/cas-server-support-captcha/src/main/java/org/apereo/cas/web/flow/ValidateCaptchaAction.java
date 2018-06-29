@@ -3,11 +3,11 @@ package org.apereo.cas.web.flow;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.model.support.captcha.GoogleRecaptchaProperties;
 import org.apereo.cas.web.support.WebUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.binding.message.MessageBuilder;
 import org.springframework.binding.message.MessageContext;
 import org.springframework.http.HttpStatus;
@@ -15,11 +15,11 @@ import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
@@ -30,22 +30,26 @@ import java.util.stream.Collectors;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
+@AllArgsConstructor
 public class ValidateCaptchaAction extends AbstractAction {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ValidateCaptchaAction.class);
+    /**
+     * Recaptcha response as a request parameter.
+     */
+    public static final String REQUEST_PARAM_RECAPTCHA_RESPONSE = "g-recaptcha-response";
+    /**
+     * Captcha error event.
+     */
+    public static final String EVENT_ID_ERROR = "captchaError";
+    
     private static final ObjectReader READER = new ObjectMapper().findAndRegisterModules().reader();
-    private static final String CODE = "captchaError";
 
     private final GoogleRecaptchaProperties recaptchaProperties;
-
-    public ValidateCaptchaAction(final GoogleRecaptchaProperties recaptchaProperties) {
-        this.recaptchaProperties = recaptchaProperties;
-    }
 
     @Override
     protected Event doExecute(final RequestContext requestContext) {
         final HttpServletRequest request = WebUtils.getHttpServletRequestFromExternalWebflowContext(requestContext);
-        final String gRecaptchaResponse = request.getParameter("g-recaptcha-response");
+        final String gRecaptchaResponse = request.getParameter(REQUEST_PARAM_RECAPTCHA_RESPONSE);
 
         if (StringUtils.isBlank(gRecaptchaResponse)) {
             LOGGER.warn("Recaptcha response is missing from the request");
@@ -53,7 +57,7 @@ public class ValidateCaptchaAction extends AbstractAction {
         }
         try {
             final URL obj = new URL(recaptchaProperties.getVerifyUrl());
-            final HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
+            final HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
             con.setRequestMethod("POST");
             con.setRequestProperty("User-Agent", WebUtils.getHttpServletRequestUserAgentFromRequestContext());
@@ -88,7 +92,7 @@ public class ValidateCaptchaAction extends AbstractAction {
 
     private Event getError(final RequestContext requestContext) {
         final MessageContext messageContext = requestContext.getMessageContext();
-        messageContext.addMessage(new MessageBuilder().error().code(CODE).build());
-        return getEventFactorySupport().event(this, CODE);
+        messageContext.addMessage(new MessageBuilder().error().code(EVENT_ID_ERROR).defaultText(EVENT_ID_ERROR).build());
+        return getEventFactorySupport().event(this, EVENT_ID_ERROR);
     }
 }

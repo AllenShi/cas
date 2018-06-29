@@ -1,7 +1,10 @@
 package org.apereo.cas.authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apereo.cas.services.AbstractRegisteredService;
+import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.RegisteredServiceTestUtils;
 import org.junit.Test;
 
@@ -15,6 +18,7 @@ import static org.junit.Assert.*;
  * @author Scott Battaglia
  * @since 3.0.0
  */
+@Slf4j
 public class HttpBasedServiceCredentialTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "httpBasedServiceCredential.json");
@@ -30,25 +34,26 @@ public class HttpBasedServiceCredentialTests {
 
     @Test
     public void verifyEqualsWithNull() throws Exception {
-        final HttpBasedServiceCredential c = new HttpBasedServiceCredential(new URL(CNN_URL), CoreAuthenticationTestUtils.getRegisteredService(SOME_APP_URL));
+        final RegisteredService registeredService = CoreAuthenticationTestUtils.getRegisteredService(SOME_APP_URL);
+        final HttpBasedServiceCredential c = new HttpBasedServiceCredential(new URL(CNN_URL), registeredService);
         assertNotEquals(c, null);
     }
 
     @Test
     public void verifyEqualsWithFalse() throws Exception {
-        final HttpBasedServiceCredential c = new HttpBasedServiceCredential(new URL(CNN_URL),
-                CoreAuthenticationTestUtils.getRegisteredService(SOME_APP_URL));
-        final HttpBasedServiceCredential c2 = new HttpBasedServiceCredential(new URL("http://www.msn.com"),
-                CoreAuthenticationTestUtils.getRegisteredService(SOME_APP_URL));
-
+        final RegisteredService registeredService = CoreAuthenticationTestUtils.getRegisteredService(SOME_APP_URL);
+        final HttpBasedServiceCredential c = new HttpBasedServiceCredential(new URL(CNN_URL), registeredService);
+        final HttpBasedServiceCredential c2 = new HttpBasedServiceCredential(new URL("http://www.msn.com"), registeredService);
         assertFalse(c.equals(c2));
         assertFalse(c.equals(new Object()));
     }
 
     @Test
     public void verifyEqualsWithTrue() throws Exception {
-        final HttpBasedServiceCredential c = new HttpBasedServiceCredential(new URL(CNN_URL), RegisteredServiceTestUtils.getRegisteredService(SOME_APP_URL));
-        final HttpBasedServiceCredential c2 = new HttpBasedServiceCredential(new URL(CNN_URL), RegisteredServiceTestUtils.getRegisteredService(SOME_APP_URL));
+        final AbstractRegisteredService registeredService = RegisteredServiceTestUtils.getRegisteredService(SOME_APP_URL);
+        final URL callbackUrl = new URL(CNN_URL);
+        final HttpBasedServiceCredential c = new HttpBasedServiceCredential(callbackUrl, registeredService);
+        final HttpBasedServiceCredential c2 = new HttpBasedServiceCredential(callbackUrl, registeredService);
 
         assertTrue(c.equals(c2));
         assertTrue(c2.equals(c));

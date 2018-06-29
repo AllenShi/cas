@@ -1,8 +1,7 @@
 package org.apereo.cas.ticket.registry;
 
-import net.sf.ehcache.CacheException;
-import net.sf.ehcache.Ehcache;
-import net.sf.ehcache.Element;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.distribution.CacheReplicator;
 import org.apereo.cas.config.CasCoreAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationHandlersConfiguration;
@@ -36,6 +35,8 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.mockito.Mockito.*;
+
 /**
  * Unit test for {@link EhCacheTicketRegistry}.
  *
@@ -43,30 +44,32 @@ import java.util.Collection;
  * @since 3.0.0
  */
 @RunWith(Parameterized.class)
-@SpringBootTest(classes = {EhCacheTicketRegistryTests.EhcacheTicketRegistryTestConfiguration.class,
-        EhcacheTicketRegistryConfiguration.class,
-        RefreshAutoConfiguration.class,
-        EhcacheTicketRegistryTicketCatalogConfiguration.class,
-        CasCoreTicketsConfiguration.class,
-        CasCoreTicketCatalogConfiguration.class,
-        CasCoreUtilConfiguration.class,
-        CasPersonDirectoryConfiguration.class,
-        CasCoreLogoutConfiguration.class,
-        CasCoreAuthenticationConfiguration.class, 
-        CasCoreServicesAuthenticationConfiguration.class,
-        CasCoreAuthenticationPrincipalConfiguration.class,
-        CasCoreAuthenticationPolicyConfiguration.class,
-        CasCoreAuthenticationMetadataConfiguration.class,
-        CasCoreAuthenticationSupportConfiguration.class,
-        CasCoreAuthenticationHandlersConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        RefreshAutoConfiguration.class,
-        CasCoreConfiguration.class,
-        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-        CasCoreServicesConfiguration.class,
-        CasCoreWebConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class})
-public class EhCacheTicketRegistryTests extends AbstractTicketRegistryTests {
+@SpringBootTest(classes = {
+    EhCacheTicketRegistryTests.EhcacheTicketRegistryTestConfiguration.class,
+    EhcacheTicketRegistryConfiguration.class,
+    RefreshAutoConfiguration.class,
+    EhcacheTicketRegistryTicketCatalogConfiguration.class,
+    CasCoreTicketsConfiguration.class,
+    CasCoreTicketCatalogConfiguration.class,
+    CasCoreUtilConfiguration.class,
+    CasPersonDirectoryConfiguration.class,
+    CasCoreLogoutConfiguration.class,
+    CasCoreAuthenticationConfiguration.class,
+    CasCoreServicesAuthenticationConfiguration.class,
+    CasCoreAuthenticationPrincipalConfiguration.class,
+    CasCoreAuthenticationPolicyConfiguration.class,
+    CasCoreAuthenticationMetadataConfiguration.class,
+    CasCoreAuthenticationSupportConfiguration.class,
+    CasCoreAuthenticationHandlersConfiguration.class,
+    CasCoreHttpConfiguration.class,
+    RefreshAutoConfiguration.class,
+    CasCoreConfiguration.class,
+    CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+    CasCoreServicesConfiguration.class,
+    CasCoreWebConfiguration.class,
+    CasWebApplicationServiceFactoryConfiguration.class})
+@Slf4j
+public class EhCacheTicketRegistryTests extends BaseSpringRunnableTicketRegistryTests {
 
     @Autowired
     @Qualifier("ticketRegistry")
@@ -90,58 +93,14 @@ public class EhCacheTicketRegistryTests extends AbstractTicketRegistryTests {
     @Configuration("EhcacheTicketRegistryTestConfiguration")
     public static class EhcacheTicketRegistryTestConfiguration {
         @Bean
+        @SneakyThrows
         public CacheReplicator ticketRMISynchronousCacheReplicator() {
-            return new NOPCacheReplicator();
-        }
-
-        private static class NOPCacheReplicator implements CacheReplicator {
-            @Override
-            public boolean isReplicateUpdatesViaCopy() {
-                return false;
-            }
-
-            @Override
-            public boolean notAlive() {
-                return false;
-            }
-
-            @Override
-            public boolean alive() {
-                return false;
-            }
-
-            @Override
-            public void notifyElementRemoved(final Ehcache ehcache, final Element element) throws CacheException {
-            }
-
-            @Override
-            public void notifyElementPut(final Ehcache ehcache, final Element element) throws CacheException {
-            }
-
-            @Override
-            public void notifyElementUpdated(final Ehcache ehcache, final Element element) throws CacheException {
-            }
-
-            @Override
-            public void notifyElementExpired(final Ehcache ehcache, final Element element) {
-            }
-
-            @Override
-            public void notifyElementEvicted(final Ehcache ehcache, final Element element) {
-            }
-
-            @Override
-            public void notifyRemoveAll(final Ehcache ehcache) {
-            }
-
-            @Override
-            public void dispose() {
-            }
-
-            @Override
-            public Object clone() {
-                return null;
-            }
+            final CacheReplicator replicator = mock(CacheReplicator.class);
+            when(replicator.isReplicateUpdatesViaCopy()).thenReturn(false);
+            when(replicator.notAlive()).thenReturn(false);
+            when(replicator.alive()).thenReturn(false);
+            when(replicator.clone()).thenReturn(null);
+            return replicator;
         }
     }
 }

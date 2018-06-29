@@ -3,9 +3,11 @@ package org.apereo.cas.adaptors.gauth.repository.credentials;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorConfig;
 import com.warrenstrange.googleauth.IGoogleAuthenticator;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.config.CasCoreUtilConfiguration;
-import org.apereo.cas.otp.repository.credentials.OneTimeTokenAccount;
+import org.apereo.cas.authentication.OneTimeTokenAccount;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,8 +29,10 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
-        AopAutoConfiguration.class,
-        CasCoreUtilConfiguration.class})
+    AopAutoConfiguration.class,
+    CasCoreUtilConfiguration.class
+})
+@Slf4j
 public class JsonGoogleAuthenticatorTokenCredentialRepositoryTests {
     private static final Resource JSON_FILE = new FileSystemResource(new File(FileUtils.getTempDirectoryPath(), "repository.json"));
 
@@ -45,7 +49,8 @@ public class JsonGoogleAuthenticatorTokenCredentialRepositoryTests {
         if (JSON_FILE.exists()) {
             FileUtils.forceDelete(JSON_FILE.getFile());
         }
-        final JsonGoogleAuthenticatorTokenCredentialRepository repo = new JsonGoogleAuthenticatorTokenCredentialRepository(JSON_FILE, google);
+        final JsonGoogleAuthenticatorTokenCredentialRepository repo =
+            new JsonGoogleAuthenticatorTokenCredentialRepository(JSON_FILE, google, CipherExecutor.noOpOfStringToString());
         final OneTimeTokenAccount acct = repo.create("casuser");
         assertNotNull(acct);
     }
@@ -55,7 +60,8 @@ public class JsonGoogleAuthenticatorTokenCredentialRepositoryTests {
         if (JSON_FILE.exists()) {
             FileUtils.forceDelete(JSON_FILE.getFile());
         }
-        final JsonGoogleAuthenticatorTokenCredentialRepository repo = new JsonGoogleAuthenticatorTokenCredentialRepository(JSON_FILE, google);
+        final JsonGoogleAuthenticatorTokenCredentialRepository repo =
+            new JsonGoogleAuthenticatorTokenCredentialRepository(JSON_FILE, google, CipherExecutor.noOpOfStringToString());
         OneTimeTokenAccount acct = repo.get("casuser");
         assertNull(acct);
         acct = repo.create("casuser");

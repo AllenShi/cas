@@ -105,6 +105,7 @@ The behavior is only activated when an endpoint url is provided.
 | Method    | Headers             | Expected Response
 |-----------|--------------------------------------------------
 | `GET`     | `username`          | `200`. Secret key of the account in the body.
+| `DELETE`  | N/A          | `200`.
 | `POST`    | `username`, `validationCode`, `secretKey`, `scratchCodes` | `200`. `true/false` in the body.
 
 To see the relevant list of CAS properties, please [review this guide](Configuration-Properties.html#google-authenticator-rest).
@@ -117,3 +118,7 @@ and otherwise CAS may fallback to keeping records in memory. This feature is mos
 useful during development and for demo purposes.
 
 To see the relevant list of CAS properties, please [review this guide](Configuration-Properties.html#google-authenticator-json).
+
+## REST Protocol Credential Extraction 
+
+In the event that the [CAS REST Protocol](../protocol/REST-Protocol.html) is turned on, a special credential extractor is injected into the REST authentication engine in order to recognize YubiKey credentials and authenticate them as part of the REST request. The expected parameter name in the request body is `gauthotp`.

@@ -1,5 +1,6 @@
 package org.apereo.cas.token.cipher;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.util.cipher.BaseStringCipherExecutor;
 
 /**
@@ -8,18 +9,39 @@ import org.apereo.cas.util.cipher.BaseStringCipherExecutor;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
 public class TokenTicketCipherExecutor extends BaseStringCipherExecutor {
+    public TokenTicketCipherExecutor() {
+        this(null, null, null, false, false);
+    }
+
     public TokenTicketCipherExecutor(final String secretKeyEncryption,
                                      final String secretKeySigning,
-                                     final String alg, 
+                                     final String alg,
+                                     final boolean encryptionEnabled,
+                                     final boolean signingEnabled) {
+        super(secretKeyEncryption, secretKeySigning, alg, encryptionEnabled, signingEnabled);
+    }
+
+
+    public TokenTicketCipherExecutor(final String secretKeyEncryption,
+                                     final String secretKeySigning,
+                                     final String alg,
                                      final boolean encryptionEnabled) {
-        super(secretKeyEncryption, secretKeySigning, alg, encryptionEnabled);
+        this(secretKeyEncryption, secretKeySigning, alg, encryptionEnabled, true);
     }
 
     public TokenTicketCipherExecutor(final String secretKeyEncryption,
                                      final String secretKeySigning,
                                      final boolean encryptionEnabled) {
         super(secretKeyEncryption, secretKeySigning, encryptionEnabled);
+    }
+
+    public TokenTicketCipherExecutor(final String secretKeyEncryption,
+                                     final String secretKeySigning,
+                                     final boolean encryptionEnabled,
+                                     final boolean signingEnabled) {
+        super(secretKeyEncryption, secretKeySigning, encryptionEnabled, signingEnabled);
     }
 
     @Override

@@ -13,7 +13,7 @@ bootRun {
 }
 
 war {
-    enabled = !rootProject.publishingRelease && !rootProject.publishSnapshots
+    enabled = !rootProject.publishingRelease
 }
 
 springBoot  {
@@ -31,5 +31,5 @@ dependencies {
     runtimeOnly libraries.springsecurityweb
     runtimeOnly libraries.springsecurityconfig
     implementation libraries.springcloudconfigserver
-    implementation project(":core:cas-server-core-util")
+    implementation project(":core:cas-server-core-util-api")
 }

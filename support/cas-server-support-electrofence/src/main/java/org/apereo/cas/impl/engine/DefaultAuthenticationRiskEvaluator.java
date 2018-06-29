@@ -1,5 +1,7 @@
 package org.apereo.cas.impl.engine;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.api.AuthenticationRequestRiskCalculator;
 import org.apereo.cas.api.AuthenticationRiskEvaluator;
 import org.apereo.cas.api.AuthenticationRiskScore;
@@ -19,20 +21,19 @@ import java.util.Set;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
+@AllArgsConstructor
 public class DefaultAuthenticationRiskEvaluator implements AuthenticationRiskEvaluator {
     private final Set<AuthenticationRequestRiskCalculator> calculators;
-
-    public DefaultAuthenticationRiskEvaluator(final Set<AuthenticationRequestRiskCalculator> calculators) {
-        this.calculators = calculators;
-    }
 
     @Override
     public Set<AuthenticationRequestRiskCalculator> getCalculators() {
         return calculators;
     }
 
-    @Audit(action = "EVALUATE_RISKY_AUTHENTICATION", actionResolverName = "ADAPTIVE_RISKY_AUTHENTICATION_ACTION_RESOLVER",
-            resourceResolverName = "ADAPTIVE_RISKY_AUTHENTICATION_RESOURCE_RESOLVER")
+    @Audit(action = "EVALUATE_RISKY_AUTHENTICATION",
+        actionResolverName = "ADAPTIVE_RISKY_AUTHENTICATION_ACTION_RESOLVER",
+        resourceResolverName = "ADAPTIVE_RISKY_AUTHENTICATION_RESOURCE_RESOLVER")
     @Override
     public AuthenticationRiskScore eval(final Authentication authentication,
                                         final RegisteredService service,
@@ -42,7 +43,7 @@ public class DefaultAuthenticationRiskEvaluator implements AuthenticationRiskEva
         }
 
         final List<AuthenticationRiskScore> scores = new ArrayList<>();
-        this.calculators.stream().forEach(r -> scores.add(r.calculate(authentication, service, request)));
+        this.calculators.forEach(r -> scores.add(r.calculate(authentication, service, request)));
         final BigDecimal sum = scores.stream().map(AuthenticationRiskScore::getScore).reduce(BigDecimal.ZERO, BigDecimal::add);
         final BigDecimal score = sum.divide(BigDecimal.valueOf(this.calculators.size()), 2, BigDecimal.ROUND_UP);
         return new AuthenticationRiskScore(score);

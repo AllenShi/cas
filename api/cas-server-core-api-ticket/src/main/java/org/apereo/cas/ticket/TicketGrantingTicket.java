@@ -17,7 +17,7 @@ import java.util.Map;
  * @author Scott Battaglia
  * @since 3.0.0
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public interface TicketGrantingTicket extends Ticket {
 
     /**
@@ -80,11 +80,6 @@ public interface TicketGrantingTicket extends Ticket {
      * Remove all services of the TGT (at logout).
      */
     void removeAllServices();
-
-    /**
-     * Mark a ticket as expired.
-     */
-    void markTicketExpired();
 
     /**
      * Convenience method to determine if the TicketGrantingTicket is the root

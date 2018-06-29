@@ -1,7 +1,10 @@
 package org.apereo.cas.authentication;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * This is {@link SurrogateUsernamePasswordCredential},
@@ -11,25 +14,13 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
+@ToString(callSuper = true)
+@Setter
+@Getter
+@EqualsAndHashCode(callSuper = true)
 public class SurrogateUsernamePasswordCredential extends RememberMeUsernamePasswordCredential {
-
     private static final long serialVersionUID = 8760695298971444249L;
 
     private String surrogateUsername;
-
-    public String getSurrogateUsername() {
-        return surrogateUsername;
-    }
-
-    public void setSurrogateUsername(final String surrogateUsername) {
-        this.surrogateUsername = surrogateUsername;
-    }
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                .appendSuper(super.toString())
-                .append("surrogateUsername", surrogateUsername)
-                .toString();
-    }
 }

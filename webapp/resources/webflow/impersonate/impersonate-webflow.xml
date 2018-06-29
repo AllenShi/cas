@@ -7,23 +7,8 @@
     <var name="credential" class="org.apereo.cas.authentication.ImpUsernamePasswordCredential"/>
 
     <on-start>
-        <evaluate expression="initialFlowSetupAction"/>
         <evaluate expression="true" result="conversationScope.impersonation"/>
     </on-start>
-
-    <action-state id="initialAuthenticationRequestValidationCheck">
-        <evaluate expression="initialAuthenticationRequestValidationAction"/>
-        <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
-        <transition on="error" to="initializeLoginForm"/>
-        <transition on="success" to="ticketGrantingTicketCheck"/>
-    </action-state>
-
-    <action-state id="ticketGrantingTicketCheck">
-        <evaluate expression="ticketGrantingTicketCheckAction"/>
-        <transition on="notExists" to="gatewayRequestCheck"/>
-        <transition on="invalid" to="terminateSession"/>
-        <transition on="valid" to="hasServiceCheck"/>
-    </action-state>
 
     <action-state id="initializeLoginForm">
         <evaluate expression="initializeLoginAction" />
@@ -57,7 +42,7 @@
     </decision-state>
 
     <decision-state id="checkByURL">
-        <if test="impersonators.canImpersonate(credential.username,flowScope.service.getOriginalUrl())"
+        <if test="impersonators.canImpersonate(credential.username,requestParameters.service)"
             then="realSubmit"
             else="notAllowedImpersonation"/>
     </decision-state>
@@ -65,7 +50,7 @@
     <action-state id="realSubmit">
         <evaluate expression="authenticationViaFormAction"/>
         <transition on="warn" to="warn"/>
-        <transition on="success" to="sendTicketGrantingTicket"/>
+        <transition on="success" to="createTicketGrantingTicket"/>
         <!--<transition on="success" to="jaasView"/>-->
         <transition on="successWithWarnings" to="showMessages"/>
         <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
@@ -76,31 +61,7 @@
         <transition on="duoUnavailable" to="duoUnavailable"/>
     </action-state>
 
-    <view-state id="jaasView" view="jaasView">
-        <transition on="success" to="sendTicketGrantingTicket"/>
-    </view-state>
 
-    <view-state id="showAuthenticationWarningMessages" view="casLoginMessageView">
-        <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
-            <set name="requestScope.messages" value="messageContext.allMessages"/>
-        </on-entry>
-        <transition on="proceed" to="serviceCheck"/>
-    </view-state>
-
-    <action-state id="sendTicketGrantingTicket">
-        <evaluate expression="sendTicketGrantingTicketAction"/>
-        <transition on="success" to="serviceCheck"/>
-    </action-state>
-
-    <action-state id="generateServiceTicket">
-        <evaluate expression="generateServiceTicketAction"/>
-        <transition on="success" to="redirect"/>
-        <transition on="warn" to="warn"/>
-        <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
-        <transition on="error" to="initializeLoginForm"/>
-        <transition on="gateway" to="gatewayServicesManagementCheck"/>
-    </action-state>
     <!--
         <action-state id="redirect">
             <evaluate expression="flowScope.service.getResponse(requestScope.serviceTicketId)"
@@ -117,7 +78,7 @@
      -->
     <end-state id="duoEnrollUser" view="enrollmentView">
         <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
+            <evaluate expression="TicketGrantingTicketAction"/>
         </on-entry>
     </end-state>
 
@@ -133,12 +94,4 @@
 
     <end-state id="notAllowedImpersonation" view="notAllowedImpersonationView"/>
 
-    <!--
-        <end-state id="postView" view="protocol/casPostResponseView">
-            <on-entry>
-                <set name="requestScope.parameters" value="requestScope.response.attributes"/>
-                <set name="requestScope.originalUrl" value="flowScope.service.id"/>
-       q     </on-entry>
-        </end-state>
-    -->
 </flow>

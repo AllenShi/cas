@@ -1,12 +1,15 @@
 package org.apereo.cas.token.authentication.principal;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CasProtocolConstants;
+import org.apereo.cas.authentication.principal.Response;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.WebApplicationService;
 import org.apereo.cas.authentication.principal.WebApplicationServiceResponseBuilder;
 import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.RegisteredServiceAccessStrategyUtils;
-import org.apereo.cas.services.RegisteredServiceProperty;
+import org.apereo.cas.services.RegisteredServiceProperty.RegisteredServiceProperties;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.token.TokenTicketBuilder;
 
@@ -18,26 +21,28 @@ import java.util.Map;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
 public class TokenWebApplicationServiceResponseBuilder extends WebApplicationServiceResponseBuilder {
     private static final long serialVersionUID = -2863268279032438778L;
 
-    private final ServicesManager servicesManager;
-    private final TokenTicketBuilder tokenTicketBuilder;
+    private final transient TokenTicketBuilder tokenTicketBuilder;
 
     public TokenWebApplicationServiceResponseBuilder(final ServicesManager servicesManager,
                                                      final TokenTicketBuilder tokenTicketBuilder) {
-        this.servicesManager = servicesManager;
+        super(servicesManager);
         this.tokenTicketBuilder = tokenTicketBuilder;
     }
 
     @Override
-    protected WebApplicationService buildInternal(final WebApplicationService service,
-                                                  final Map<String, String> parameters) {
+    protected WebApplicationService buildInternal(final WebApplicationService service, final Map<String, String> parameters) {
         final RegisteredService registeredService = this.servicesManager.findServiceBy(service);
         RegisteredServiceAccessStrategyUtils.ensureServiceAccessIsAllowed(service, registeredService);
-        final boolean tokenAsResponse = RegisteredServiceProperty.RegisteredServiceProperties.TOKEN_AS_RESPONSE.isAssignedTo(registeredService);
+        final boolean tokenAsResponse = RegisteredServiceProperties.TOKEN_AS_SERVICE_TICKET.isAssignedTo(registeredService);
 
         if (!tokenAsResponse) {
+            LOGGER.debug("Registered service [{}] is not configured to issue JWTs for service tickets. "
+                    + "Make sure the service property [{}] is defined and set to true", registeredService,
+                RegisteredServiceProperties.TOKEN_AS_SERVICE_TICKET.getPropertyName());
             return super.buildInternal(service, parameters);
         }
 
@@ -45,7 +50,10 @@ public class TokenWebApplicationServiceResponseBuilder extends WebApplicationSer
         final TokenWebApplicationService jwtService = new TokenWebApplicationService(service.getId(), service.getOriginalUrl(), service.getArtifactId());
         jwtService.setFormat(service.getFormat());
         jwtService.setLoggedOutAlready(service.isLoggedOutAlready());
+
         parameters.put(CasProtocolConstants.PARAMETER_TICKET, jwt);
+        parameters.put(Response.ResponseType.REDIRECT.name().toLowerCase(), Boolean.TRUE.toString());
+
         return jwtService;
     }
 
@@ -56,12 +64,9 @@ public class TokenWebApplicationServiceResponseBuilder extends WebApplicationSer
      * @param parameters the parameters
      * @return the jwt
      */
+    @SneakyThrows
     protected String generateToken(final Service service, final Map<String, String> parameters) {
-        try {
-            final String ticketId = parameters.get(CasProtocolConstants.PARAMETER_TICKET);
-            return this.tokenTicketBuilder.build(ticketId, service);
-        } catch (final Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        final String ticketId = parameters.get(CasProtocolConstants.PARAMETER_TICKET);
+        return this.tokenTicketBuilder.build(ticketId, service);
     }
 }

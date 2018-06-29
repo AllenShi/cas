@@ -1,5 +1,6 @@
 package org.apereo.cas.monitor;
 
+import lombok.extern.slf4j.Slf4j;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.statistics.StatisticsGateway;
@@ -13,6 +14,7 @@ import java.util.Formatter;
  * @author Marvin S. Addison
  * @since 3.5.1
  */
+@Slf4j
 public class EhCacheStatistics implements CacheStatistics {
 
     private static final double TOTAL_NUMBER_BYTES_IN_ONE_MEGABYTE = 1048510.0;
@@ -78,7 +80,7 @@ public class EhCacheStatistics implements CacheStatistics {
     }
 
     @Override
-    public int getPercentFree() {
+    public long getPercentFree() {
         final long capacity = getCapacity();
         if (capacity == 0) {
             return 0;
@@ -92,26 +94,23 @@ public class EhCacheStatistics implements CacheStatistics {
     }
 
     @Override
-    public void toString(final StringBuilder builder) {
+    public String toString(final StringBuilder builder) {
         final String name = this.getName();
         if (StringUtils.isNotBlank(name)) {
             builder.append(name).append(':');
         }
-        final int free = getPercentFree();
         try (Formatter formatter = new Formatter(builder)) {
             if (this.useBytes) {
-                formatter.format("%.2f", this.heapSize / TOTAL_NUMBER_BYTES_IN_ONE_MEGABYTE);
-                builder.append("MB heap, ");
-                formatter.format("%.2f", this.diskSize / TOTAL_NUMBER_BYTES_IN_ONE_MEGABYTE);
-                builder.append("MB disk, ");
+                formatter.format("%.2f MB heap, ", this.heapSize / TOTAL_NUMBER_BYTES_IN_ONE_MEGABYTE);
+                formatter.format("%.2f MB disk, ", this.diskSize / TOTAL_NUMBER_BYTES_IN_ONE_MEGABYTE);
             } else {
                 builder.append(this.heapSize).append(" items in heap, ");
                 builder.append(this.diskSize).append(" items on disk, ");
             }
-            formatter.format("%.2f", this.offHeapSize / TOTAL_NUMBER_BYTES_IN_ONE_MEGABYTE);
-            builder.append("MB off-heap, ");
-            builder.append(free).append("% free, ");
+            formatter.format("%.2f MB off-heap, ", this.offHeapSize / TOTAL_NUMBER_BYTES_IN_ONE_MEGABYTE);
+            builder.append(getPercentFree()).append(" perfect free, ");
             builder.append(getEvictions()).append(" evictions");
         }
+        return builder.toString();
     }
 }

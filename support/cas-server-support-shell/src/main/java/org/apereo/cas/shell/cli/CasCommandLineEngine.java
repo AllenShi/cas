@@ -1,11 +1,11 @@
 package org.apereo.cas.shell.cli;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apereo.cas.shell.commands.FindPropertiesCommand;
 import org.apereo.cas.shell.commands.GenerateCryptoKeysCommand;
 import org.apereo.cas.shell.commands.GenerateJwtCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apereo.cas.shell.commands.ListUndocumentedPropertiesCommand;
 
 import java.util.regex.Pattern;
 
@@ -15,8 +15,9 @@ import java.util.regex.Pattern;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class CasCommandLineEngine {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CasCommandLineEngine.class);
+
 
     /**
      * Execute.
@@ -40,6 +41,9 @@ public class CasCommandLineEngine {
         } else if (parser.isGeneratingJwt(line)) {
             final GenerateJwtCommand cmd = new GenerateJwtCommand();
             cmd.generate(parser.getSubject(line));
+        } else if (parser.isScanningUndocumentedProperties(line)) {
+            final ListUndocumentedPropertiesCommand cmd = new ListUndocumentedPropertiesCommand();
+            cmd.listUndocumented();
         } else {
             final FindPropertiesCommand cmd = new FindPropertiesCommand();
             cmd.find(propertyPattern.pattern(), strict, parser.isSummary(line));

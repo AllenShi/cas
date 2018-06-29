@@ -1,9 +1,8 @@
 package org.apereo.cas.aup;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.webflow.execution.RequestContext;
 
@@ -19,12 +18,11 @@ import javax.sql.DataSource;
  * @author Misagh Moayyed
  * @since 5.2
  */
+@Slf4j
 public class JdbcAcceptableUsagePolicyRepository extends AbstractPrincipalAttributeAcceptableUsagePolicyRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JdbcAcceptableUsagePolicyRepository.class);
-
     private static final long serialVersionUID = 1600024683199961892L;
-
-    private final JdbcTemplate jdbcTemplate;
+    
+    private final transient JdbcTemplate jdbcTemplate;
     private final String tableName;
 
     public JdbcAcceptableUsagePolicyRepository(final TicketRegistrySupport ticketRegistrySupport,
@@ -40,6 +38,7 @@ public class JdbcAcceptableUsagePolicyRepository extends AbstractPrincipalAttrib
     public boolean submit(final RequestContext requestContext, final Credential credential) {
         try {
             final String sql = String.format("UPDATE %s SET %s=true WHERE username=?", this.tableName, this.aupAttributeName);
+            LOGGER.debug("Executing update query [{}]", sql);
             return this.jdbcTemplate.update(sql, credential.getId()) > 0;
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);

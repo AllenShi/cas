@@ -1,5 +1,6 @@
 package org.apereo.cas.adaptors.jdbc;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.authentication.UsernamePasswordCredential;
 import org.junit.After;
@@ -12,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.persistence.Entity;
@@ -29,12 +30,16 @@ import static org.junit.Assert.*;
 /**
  * Tests for {@link SearchModeSearchDatabaseAuthenticationHandler}.
  *
- * @author Misagh Moayyed mmoayyed@unicon.net
+ * @author Misagh Moayyed
  * @since 4.0.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {RefreshAutoConfiguration.class})
-@ContextConfiguration(locations = {"classpath:/jpaTestApplicationContext.xml"})
+@SpringBootTest(classes = {
+    RefreshAutoConfiguration.class,
+    DatabaseAuthenticationTestConfiguration.class
+})
+@Slf4j
+@DirtiesContext
 public class SearchModeSearchDatabaseAuthenticationHandlerTests {
 
     @Rule
@@ -93,7 +98,7 @@ public class SearchModeSearchDatabaseAuthenticationHandlerTests {
         final UsernamePasswordCredential c = CoreAuthenticationTestUtils.getCredentialsWithDifferentUsernameAndPassword("hello", "world");
 
         this.thrown.expect(FailedLoginException.class);
-        this.thrown.expectMessage("hello not found with SQL query.");
+
 
         this.handler.authenticate(c);
     }

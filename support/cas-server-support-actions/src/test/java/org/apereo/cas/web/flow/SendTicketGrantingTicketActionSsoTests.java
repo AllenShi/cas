@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.AbstractCentralAuthenticationServiceTests;
 import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.authentication.principal.WebApplicationService;
@@ -34,7 +35,8 @@ import static org.mockito.Mockito.*;
  */
 @DirtiesContext
 @Import(CasSupportActionsConfiguration.class)
-@TestPropertySource(properties = "cas.sso.renewedAuthn=false")
+@TestPropertySource(properties = "cas.sso.createSsoCookieOnRenewAuthn=false")
+@Slf4j
 public class SendTicketGrantingTicketActionSsoTests extends AbstractCentralAuthenticationServiceTests {
 
     private static final String LOCALHOST_IP = "127.0.0.1";

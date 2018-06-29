@@ -1,5 +1,6 @@
 package org.apereo.cas;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.ProtocolAttributeEncoder;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.support.DefaultCasProtocolAttributeEncoder;
@@ -24,7 +25,6 @@ import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguratio
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.services.RegisteredServiceTestUtils;
 import org.apereo.cas.services.ServicesManager;
-import org.apereo.cas.util.cipher.NoOpCipherExecutor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,28 +50,29 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
-        CasCoreServicesConfiguration.class,
-        CasCoreAuthenticationConfiguration.class, 
-        CasCoreServicesAuthenticationConfiguration.class,
-        CasRegisteredServicesTestConfiguration.class,
-        CasCoreAuthenticationPrincipalConfiguration.class,
-        CasCoreAuthenticationPolicyConfiguration.class,
-        CasCoreAuthenticationMetadataConfiguration.class,
-        CasCoreAuthenticationSupportConfiguration.class,
-        CasCoreAuthenticationHandlersConfiguration.class,
-        CasPersonDirectoryTestConfiguration.class,
-        CasRegisteredServicesTestConfiguration.class,
-        CasCoreTicketsConfiguration.class,
-        CasCoreLogoutConfiguration.class,
-        CasCoreWebConfiguration.class,
-        CasCoreConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class,
-        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-        CasCoreTicketCatalogConfiguration.class,
-        RefreshAutoConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        CasCoreUtilConfiguration.class})
+    CasCoreServicesConfiguration.class,
+    CasCoreAuthenticationConfiguration.class,
+    CasCoreServicesAuthenticationConfiguration.class,
+    CasRegisteredServicesTestConfiguration.class,
+    CasCoreAuthenticationPrincipalConfiguration.class,
+    CasCoreAuthenticationPolicyConfiguration.class,
+    CasCoreAuthenticationMetadataConfiguration.class,
+    CasCoreAuthenticationSupportConfiguration.class,
+    CasCoreAuthenticationHandlersConfiguration.class,
+    CasPersonDirectoryTestConfiguration.class,
+    CasRegisteredServicesTestConfiguration.class,
+    CasCoreTicketsConfiguration.class,
+    CasCoreLogoutConfiguration.class,
+    CasCoreWebConfiguration.class,
+    CasCoreConfiguration.class,
+    CasWebApplicationServiceFactoryConfiguration.class,
+    CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+    CasCoreTicketCatalogConfiguration.class,
+    RefreshAutoConfiguration.class,
+    CasCoreHttpConfiguration.class,
+    CasCoreUtilConfiguration.class})
 @EnableScheduling
+@Slf4j
 public class DefaultCasAttributeEncoderTests {
 
     private Map<String, Object> attributes;
@@ -94,7 +95,7 @@ public class DefaultCasAttributeEncoderTests {
     @Test
     public void checkNoPublicKeyDefined() {
         final Service service = RegisteredServiceTestUtils.getService("testDefault");
-        final ProtocolAttributeEncoder encoder = new DefaultCasProtocolAttributeEncoder(this.servicesManager, NoOpCipherExecutor.getInstance());
+        final ProtocolAttributeEncoder encoder = new DefaultCasProtocolAttributeEncoder(this.servicesManager, CipherExecutor.noOpOfStringToString());
         final Map<String, Object> encoded = encoder.encodeAttributes(this.attributes, this.servicesManager.findServiceBy(service));
         assertEquals(this.attributes.size() - 2, encoded.size());
     }
@@ -102,7 +103,7 @@ public class DefaultCasAttributeEncoderTests {
     @Test
     public void checkAttributesEncodedCorrectly() {
         final Service service = RegisteredServiceTestUtils.getService("testencryption");
-        final ProtocolAttributeEncoder encoder = new DefaultCasProtocolAttributeEncoder(this.servicesManager, NoOpCipherExecutor.getInstance());
+        final ProtocolAttributeEncoder encoder = new DefaultCasProtocolAttributeEncoder(this.servicesManager, CipherExecutor.noOpOfStringToString());
         final Map<String, Object> encoded = encoder.encodeAttributes(this.attributes, this.servicesManager.findServiceBy(service));
         assertEquals(encoded.size(), this.attributes.size());
         checkEncryptedValues(CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL, encoded);
@@ -111,7 +112,7 @@ public class DefaultCasAttributeEncoderTests {
 
     private void checkEncryptedValues(final String name, final Map<String, Object> encoded) {
         final String v1 = ((Collection<?>) this.attributes.get(
-                name)).iterator().next().toString();
+            name)).iterator().next().toString();
         final String v2 = (String) encoded.get(name);
         assertNotEquals(v1, v2);
     }

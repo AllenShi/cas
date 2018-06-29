@@ -1,9 +1,9 @@
 package org.apereo.cas.web;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The FlowExecutionExceptionResolver catches the FlowExecutionRepositoryException
+ * The {@link FlowExecutionExceptionResolver} catches the {@link FlowExecutionRepositoryException}
  * thrown by Spring Webflow when the given flow id no longer exists. This can
  * occur if a particular flow has reached an end state (the id is no longer valid)
  * <p>
@@ -27,27 +27,27 @@ import java.util.Map;
  * @author Misagh Moayyed
  * @since 3.0.0
  */
+@Slf4j
+@Getter
 public class FlowExecutionExceptionResolver implements HandlerExceptionResolver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FlowExecutionExceptionResolver.class);
-        
-    private final String modelKey = "exception.message";
+    private String modelKey = "exception.message";
 
+    /**
+     * Since FlowExecutionRepositoryException is a common ancestor to these exceptions and other
+     * error cases we would likely want to hide from the user, it seems reasonable to check for
+     * FlowExecutionRepositoryException.
+     *
+     * BadlyFormattedFlowExecutionKeyException is specifically ignored by this handler
+     * because redirecting to the requested URI with this exception may cause an infinite
+     * redirect loop (i.e. when invalid "execution" parameter exists as part of the query string
+     */
     @Override
     public ModelAndView resolveException(final HttpServletRequest request,
         final HttpServletResponse response, final Object handler,
         final Exception exception) {
 
-        /*
-         * Since FlowExecutionRepositoryException is a common ancestor to these exceptions and other
-         * error cases we would likely want to hide from the user, it seems reasonable to check for
-         * FlowExecutionRepositoryException.
-         *
-         * BadlyFormattedFlowExecutionKeyException is specifically ignored by this handler
-         * because redirecting to the requested URI with this exception may cause an infinite
-         * redirect loop (i.e. when invalid "execution" parameter exists as part of the query string
-         */
-        if (!(exception instanceof FlowExecutionRepositoryException)
-              || exception instanceof BadlyFormattedFlowExecutionKeyException) {
+
+        if (!(exception instanceof FlowExecutionRepositoryException) || exception instanceof BadlyFormattedFlowExecutionKeyException) {
             LOGGER.debug("Ignoring the received exception due to a type mismatch", exception);
             return null;
         }

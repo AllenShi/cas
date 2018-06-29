@@ -3,12 +3,8 @@ package org.apereo.cas.authentication;
 import org.apereo.cas.authentication.principal.Service;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 /**
  * This is {@link AuthenticationTransaction}.
@@ -16,89 +12,39 @@ import java.util.stream.Collectors;
  * @author Misagh Moayyed
  * @since 4.2.0
  */
-public class AuthenticationTransaction implements Serializable {
-
-    private static final long serialVersionUID = 6213904009424725484L;
-
-    private final Collection<Credential> credentials;
-    private final Service service;
+public interface AuthenticationTransaction extends Serializable {
 
     /**
-     * Instantiates a new Default authentication transaction.
+     * Gets service.
      *
-     * @param service     the service
-     * @param credentials the credentials
+     * @return the service
      */
-    protected AuthenticationTransaction(final Service service, final Collection<Credential> credentials) {
-        this.credentials = credentials;
-        this.service = service;
-    }
-
-    public Collection<Credential> getCredentials() {
-        return this.credentials;
-    }
+    Service getService();
 
     /**
-     * Wrap credentials into an authentication transaction, as a factory method,
-     * and return the final result.
+     * Gets credentials.
      *
-     * @param service     the service
-     * @param credentials the credentials
-     * @return the authentication transaction
+     * @return the credentials
      */
-    public static AuthenticationTransaction wrap(final Service service, final Credential... credentials) {
-        return new AuthenticationTransaction(service, sanitizeCredentials(credentials));
-    }
-
-    /**
-     * Wrap credentials into an authentication transaction, as a factory method,
-     * and return the final result.
-     *
-     * @param credentials the credentials
-     * @return the authentication transaction
-     */
-    public static AuthenticationTransaction wrap(final Credential... credentials) {
-        return wrap(null, credentials);
-    }
-
-    public Service getService() {
-        return this.service;
-    }
+    Collection<Credential> getCredentials();
 
     /**
      * Gets the first (primary) credential in the chain.
      *
      * @return the credential
      */
-    public Credential getCredential() {
-        if (!credentials.isEmpty()) {
-            return credentials.iterator().next();
-        }
-        return null;
+    default Optional<Credential> getPrimaryCredential() {
+        return getCredentials().stream().findFirst();
     }
 
     /**
-     * Is credential of given type?
+     * Does this AuthenticationTransaction contain a credential of the given type?
      *
-     * @param clazz the clazz
-     * @return true/false
+     * @param type the credential type to check for
+     * @return true if this AuthenticationTransaction contains a credential of the specified type
      */
-    public boolean isCredentialOfType(final Class clazz) {
-        try {
-            final Object object = clazz.cast(getCredential());
-            return object != null;
-        } catch (final Exception e) {
-            return false;
-        }
-    }
-
-    private static Set<Credential> sanitizeCredentials(final Credential[] credentials) {
-        if (credentials != null && credentials.length > 0) {
-            return Arrays.stream(credentials)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-        }
-        return new HashSet<>(0);
+    default boolean hasCredentialOfType(final Class<? extends Credential> type) {
+        return getCredentials().stream().anyMatch(type::isInstance);
     }
 }
 

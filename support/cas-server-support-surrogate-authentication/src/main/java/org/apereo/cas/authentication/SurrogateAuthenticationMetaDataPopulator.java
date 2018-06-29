@@ -1,9 +1,10 @@
 package org.apereo.cas.authentication;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.metadata.BaseAuthenticationMetaDataPopulator;
 import org.apereo.cas.authentication.surrogate.SurrogateAuthenticationService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 /**
  * This is {@link SurrogateAuthenticationMetaDataPopulator}.
@@ -11,13 +12,16 @@ import org.slf4j.LoggerFactory;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
 public class SurrogateAuthenticationMetaDataPopulator extends BaseAuthenticationMetaDataPopulator {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(SurrogateAuthenticationMetaDataPopulator.class);
-    
     @Override
     public void populateAttributes(final AuthenticationBuilder builder, final AuthenticationTransaction transaction) {
-        final SurrogateUsernamePasswordCredential current = SurrogateUsernamePasswordCredential.class.cast(transaction.getCredential());
+        final Optional<Credential> credential = transaction.getPrimaryCredential();
+        if (!credential.isPresent()) {
+            throw new SurrogateAuthenticationException("The authentication transaction does not have a primary principal associated with it");
+        }
+
+        final SurrogateUsernamePasswordCredential current = SurrogateUsernamePasswordCredential.class.cast(credential.get());
         LOGGER.debug("Recording surrogate username [{}] as an authentication attribute", current.getSurrogateUsername());
         builder.addAttribute(SurrogateAuthenticationService.AUTHENTICATION_ATTR_SURROGATE_USER, current.getSurrogateUsername());
         builder.addAttribute(SurrogateAuthenticationService.AUTHENTICATION_ATTR_SURROGATE_PRINCIPAL, current.getId());

@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.AbstractCentralAuthenticationServiceTests;
 import org.apereo.cas.web.config.CasSupportActionsConfiguration;
 import org.apereo.cas.web.support.WebUtils;
@@ -24,16 +25,16 @@ import static org.junit.Assert.*;
  */
 @TestPropertySource(locations = {"classpath:/core.properties"})
 @Import(CasSupportActionsConfiguration.class)
+@Slf4j
 public class InitialFlowSetupActionTests extends AbstractCentralAuthenticationServiceTests {
     @Autowired
     @Qualifier("initialFlowSetupAction")
     private Action action;
-        
+
     @Test
     public void verifyNoServiceFound() throws Exception {
         final MockRequestContext context = new MockRequestContext();
-        context.setExternalContext(new ServletExternalContext(new MockServletContext(), new MockHttpServletRequest(),
-                new MockHttpServletResponse()));
+        context.setExternalContext(new ServletExternalContext(new MockServletContext(), new MockHttpServletRequest(), new MockHttpServletResponse()));
         final Event event = this.action.execute(context);
         assertNull(WebUtils.getService(context));
         assertEquals("success", event.getId());

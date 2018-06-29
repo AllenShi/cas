@@ -1,9 +1,10 @@
 package org.apereo.cas.config.support.authentication;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationHandler;
-import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
+import org.apereo.cas.authentication.principal.PrincipalFactoryUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.support.openid.OpenIdProperties;
 import org.apereo.cas.services.ServicesManager;
@@ -27,6 +28,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration("openIdAuthenticationEventExecutionPlanConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class OpenIdAuthenticationEventExecutionPlanConfiguration {
     @Autowired
     @Qualifier("servicesManager")
@@ -60,7 +62,7 @@ public class OpenIdAuthenticationEventExecutionPlanConfiguration {
     @ConditionalOnMissingBean(name = "openidPrincipalFactory")
     @Bean
     public PrincipalFactory openidPrincipalFactory() {
-        return new DefaultPrincipalFactory();
+        return PrincipalFactoryUtils.newPrincipalFactory();
     }
 
     @ConditionalOnMissingBean(name = "openIdAuthenticationEventExecutionPlanConfigurer")

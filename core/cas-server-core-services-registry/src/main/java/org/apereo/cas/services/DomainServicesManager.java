@@ -1,9 +1,8 @@
 package org.apereo.cas.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.util.RegexUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
@@ -23,8 +22,9 @@ import java.util.stream.Collectors;
  * @author Travis Schmidt
  * @since 5.2.0
  */
+@Slf4j
 public class DomainServicesManager extends AbstractServicesManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DomainServicesManager.class);
+
 
     private static final long serialVersionUID = -8581398063126547772L;
 
@@ -39,8 +39,8 @@ public class DomainServicesManager extends AbstractServicesManager {
     private final Pattern domainExtractor = RegexUtils.createPattern("^\\^?https?\\??://(.*?)(?:[(]?[:/]|$)");
     private final Pattern domainPattern = RegexUtils.createPattern("^[a-z0-9-.]*$");
 
-    public DomainServicesManager(final ServiceRegistryDao serviceRegistryDao, final ApplicationEventPublisher eventPublisher) {
-        super(serviceRegistryDao, eventPublisher);
+    public DomainServicesManager(final ServiceRegistry serviceRegistry, final ApplicationEventPublisher eventPublisher) {
+        super(serviceRegistry, eventPublisher);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class DomainServicesManager extends AbstractServicesManager {
     @Override
     protected void loadInternal() {
         final Map<String, TreeSet<RegisteredService>> localDomains = new ConcurrentHashMap<>();
-        getAllServices().stream().forEach(r -> addToDomain(r, localDomains));
+        getAllServices().forEach(r -> addToDomain(r, localDomains));
         this.domains.clear();
         this.domains.putAll(localDomains);
     }

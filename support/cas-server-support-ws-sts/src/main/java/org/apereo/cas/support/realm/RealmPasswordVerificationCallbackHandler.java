@@ -1,8 +1,9 @@
 package org.apereo.cas.support.realm;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.wss4j.common.ext.WSPasswordCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -14,23 +15,23 @@ import java.util.Arrays;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
+@AllArgsConstructor
 public class RealmPasswordVerificationCallbackHandler implements CallbackHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RealmPasswordVerificationCallbackHandler.class);
+
     private final String psw;
 
-    public RealmPasswordVerificationCallbackHandler(final String psw) {
-        this.psw = psw;
-    }
-
+    @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
     @Override
     public void handle(final Callback[] callbacks) {
         Arrays.stream(callbacks)
-                .filter(WSPasswordCallback.class::isInstance)
-                .map(WSPasswordCallback.class::cast)
-                .forEach(c -> {
-                    LOGGER.debug("Evaluating [{}]", c.getIdentifier());
-                    c.setPassword(this.psw);
-                    LOGGER.debug("Authenticated [{}] successfully.", c.getIdentifier());
-                });
+            .filter(WSPasswordCallback.class::isInstance)
+            .map(WSPasswordCallback.class::cast)
+            .forEach(c -> {
+                final String identifier = c.getIdentifier();
+                LOGGER.debug("Evaluating [{}]", identifier);
+                c.setPassword(this.psw);
+                LOGGER.debug("Authenticated [{}] successfully.", identifier);
+            });
     }
 }

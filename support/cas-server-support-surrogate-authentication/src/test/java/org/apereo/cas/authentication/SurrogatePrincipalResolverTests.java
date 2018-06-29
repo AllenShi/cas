@@ -1,5 +1,6 @@
 package org.apereo.cas.authentication;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.handler.support.SimpleTestUsernamePasswordAuthenticationHandler;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.PrincipalResolver;
@@ -8,6 +9,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -18,6 +21,7 @@ import static org.junit.Assert.*;
  * @since 5.2.0
  */
 @RunWith(SpringRunner.class)
+@Slf4j
 public class SurrogatePrincipalResolverTests {
 
     @Rule
@@ -55,8 +59,8 @@ public class SurrogatePrincipalResolverTests {
         final SurrogateUsernamePasswordCredential credential = new SurrogateUsernamePasswordCredential();
         credential.setSurrogateUsername("surrogate");
         credential.setUsername("username");
-        final Principal p = resolver.resolve(credential, CoreAuthenticationTestUtils.getPrincipal("casuser"), 
-                new SimpleTestUsernamePasswordAuthenticationHandler());
+        final Principal p = resolver.resolve(credential, Optional.of(CoreAuthenticationTestUtils.getPrincipal("casuser")),
+            Optional.of(new SimpleTestUsernamePasswordAuthenticationHandler()));
         assertNotNull(p);
         assertTrue(p.getId().equals("casuser"));
     }

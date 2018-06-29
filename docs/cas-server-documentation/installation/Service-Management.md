@@ -20,7 +20,9 @@ To see the relevant list of CAS properties, please [review this guide](Configura
 ## Service Management Web Application
 
 The service management webapp is a standalone web application that may be deployed along side CAS that provides a GUI
-to manage service registry data. The management web application *MUST* share the same registry configuration as the CAS server itself so the entire system can load the same services data. To learn more about the management webapp, [please see this guide](Installing-ServicesMgmt-Webapp.html).
+to manage service registry data. The management web application *MUST* share the same registry configuration as the 
+CAS server itself so the entire system can load the same services data. To learn more about 
+the management webapp, [please see this guide](Installing-ServicesMgmt-Webapp.html).
 
 ## Registered Services
 
@@ -36,11 +38,12 @@ Registered services present the following metadata:
 | `logo`                            | Optional path to an image file that is the logo for this service. The image will be displayed on the login page along with the service description and name. The value may be a relative path to the `images` directory of the CAS web application or it may be a full URL.
 | `serviceId`                       | Required [regular expression](http://docs.oracle.com/javase/tutorial/essential/regex/) describing a logical service. A logical service defines one or more URLs where a service or services are located. The definition of the url pattern must be **done carefully** because it can open security breaches.
 | `theme`                           | Optional theme name that may be used to customize the CAS UI when the service requests a ticket. See [this guide](User-Interface-Customization.html) for more details.
-| `proxyPolicy`                     | Determines whether the service is able to proxy authentication.
+| `proxyPolicy`                     | Determines whether the service is able to proxy authentication. See [this guide](Configuring-Service-Proxy-Policy.html) for more info.
 | `evaluationOrder`                 | Determines relative order of evaluation of registered services. This flag is particularly important in cases where two service URL expressions cover the same services; evaluation order determines which registration is evaluated first and acts as an internal sorting factor.
-| `requiredHandlers`                | Set of authentication handler names that must successfully authenticate credentials in order to access the service. If defined, only the selected required handlers are chosen to respond to authentication requests from this registered service.
+| `requiredHandlers`                | Set of authentication handler names that must successfully authenticate credentials in order to access the service. If defined, only the selected required handlers are chosen to respond to authentication requests from this registered service.  See [this guide](Configuring-Service-Required-AuthN.html) for more details.
 | `attributeReleasePolicy`          | The policy that describes the set of attributes allows to be released to the application, as well as any other filtering logic needed to weed some out. See [this guide](../integration/Attribute-Release.html) for more details on attribute release and filters.
 | `logoutType`                      | Defines how this service should be treated once the logout protocol is initiated. Acceptable values are `LogoutType.BACK_CHANNEL`, `LogoutType.FRONT_CHANNEL` or `LogoutType.NONE`. See [this guide](Logout-Single-Signout.html) for more details on logout.
+| `responseType`                      | Defines how CAS should respond to requests for this service. See [this guide](Configuring-Service-Response-Type.html) for more details.
 | `usernameAttributeProvider`       | The provider configuration which dictates what value as the "username" should be sent back to the application. See [this guide](../integration/Attribute-Release.html) for more details on attribute release and filters.
 | `accessStrategy`                  | The strategy configuration that outlines and access rules for this service. It describes whether the service is allowed, authorized to participate in SSO, or can be granted access from the CAS perspective based on a particular attribute-defined role, aka RBAC. See [this guide](../integration/Attribute-Release.html) for more details on attribute release and filters.
 | `publicKey`                          | The public key associated with this service that is used to authorize the request by encrypting certain elements and attributes in the CAS validation protocol response, such as [the PGT](Configuring-Proxy-Authentication.html) or [the credential](../integration/ClearPass.html). See [this guide](../integration/Attribute-Release.html) for more details on attribute release and filters.
@@ -58,6 +61,10 @@ Registered services present the following metadata:
 ### Proxy Authentication Policy
 
 [See this guide](Configuring-Service-Proxy-Policy.html) for more info please.
+
+### Required Authentication
+
+[See this guide](Configuring-Service-Required-AuthN.html) for more details.
 
 ### Tags & Properties
 
@@ -86,6 +93,7 @@ The following options may be used to store services in CAS.
 | JPA              | [See this guide](JPA-Service-Management.html).        | Store service definitions in a relational database (Oracle, MySQL, etc). Candidate for HA deployments.
 | Couchbase        | [See this guide](Couchbase-Service-Management.html).  | Store service definitions in Couchbase. Candidate for HA deployments.
 | DynamoDb         | [See this guide](DynamoDb-Service-Management.html).   | Store service definitions in DynamoDb. Candidate for HA deployments.
+| CosmosDb         | [See this guide](CosmosDb-Service-Management.html).   | Store service definitions in an Azure CosmosDb. Candidate for HA deployments.
 | REST             | [See this guide](REST-Service-Management.html).       | Design your own service registry implementation as a REST API. Candidate for HA deployments.
 | Custom           | [See this guide](Custom-Service-Management.html).     | Design your own service registry using CAS APIs as an extension. Candidate for HA deployments.
 

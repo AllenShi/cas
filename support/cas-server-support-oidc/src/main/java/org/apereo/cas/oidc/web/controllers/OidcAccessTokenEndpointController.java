@@ -1,5 +1,6 @@
 package org.apereo.cas.oidc.web.controllers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.ServiceFactory;
 import org.apereo.cas.authentication.principal.WebApplicationService;
@@ -8,7 +9,7 @@ import org.apereo.cas.oidc.OidcConstants;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.oauth.OAuth20Constants;
 import org.apereo.cas.support.oauth.profile.OAuth20ProfileScopeToAttributesFilter;
-import org.apereo.cas.support.oauth.validator.OAuth20Validator;
+import org.apereo.cas.support.oauth.validator.token.OAuth20TokenRequestValidator;
 import org.apereo.cas.support.oauth.web.endpoints.OAuth20AccessTokenEndpointController;
 import org.apereo.cas.support.oauth.web.response.accesstoken.AccessTokenResponseGenerator;
 import org.apereo.cas.support.oauth.web.response.accesstoken.OAuth20TokenGenerator;
@@ -30,11 +31,11 @@ import java.util.Collection;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class OidcAccessTokenEndpointController extends OAuth20AccessTokenEndpointController {
 
     public OidcAccessTokenEndpointController(final ServicesManager servicesManager,
                                              final TicketRegistry ticketRegistry,
-                                             final OAuth20Validator validator,
                                              final AccessTokenFactory accessTokenFactory,
                                              final PrincipalFactory principalFactory,
                                              final ServiceFactory<WebApplicationService> webApplicationServiceServiceFactory,
@@ -44,22 +45,32 @@ public class OidcAccessTokenEndpointController extends OAuth20AccessTokenEndpoin
                                              final CasConfigurationProperties casProperties,
                                              final CookieRetrievingCookieGenerator cookieGenerator,
                                              final ExpirationPolicy accessTokenExpirationPolicy,
-                                             final Collection<BaseAccessTokenGrantRequestExtractor> accessTokenGrantRequestExtractors) {
-        super(servicesManager, ticketRegistry, validator, accessTokenFactory, principalFactory,
-                webApplicationServiceServiceFactory, accessTokenGenerator, accessTokenResponseGenerator,
-                scopeToAttributesFilter, casProperties, cookieGenerator, 
-                accessTokenExpirationPolicy, accessTokenGrantRequestExtractors);
+                                             final Collection<BaseAccessTokenGrantRequestExtractor> accessTokenGrantRequestExtractors,
+                                             final Collection<OAuth20TokenRequestValidator> accessTokenGrantRequestValidators) {
+        super(servicesManager,
+            ticketRegistry,
+            accessTokenFactory,
+            principalFactory,
+            webApplicationServiceServiceFactory,
+            accessTokenGenerator,
+            accessTokenResponseGenerator,
+            scopeToAttributesFilter,
+            casProperties,
+            cookieGenerator,
+            accessTokenExpirationPolicy,
+            accessTokenGrantRequestExtractors,
+            accessTokenGrantRequestValidators);
     }
 
     @PostMapping(value = {'/' + OidcConstants.BASE_OIDC_URL + '/' + OAuth20Constants.ACCESS_TOKEN_URL,
-            '/' + OidcConstants.BASE_OIDC_URL + '/' + OAuth20Constants.TOKEN_URL})
+        '/' + OidcConstants.BASE_OIDC_URL + '/' + OAuth20Constants.TOKEN_URL})
     @Override
     public void handleRequest(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
         super.handleRequest(request, response);
     }
 
     @GetMapping(value = {'/' + OidcConstants.BASE_OIDC_URL + '/' + OAuth20Constants.ACCESS_TOKEN_URL,
-            '/' + OidcConstants.BASE_OIDC_URL + '/' + OAuth20Constants.TOKEN_URL})
+        '/' + OidcConstants.BASE_OIDC_URL + '/' + OAuth20Constants.TOKEN_URL})
     @Override
     public void handleGetRequest(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
         super.handleRequest(request, response);

@@ -1,5 +1,7 @@
 package org.apereo.cas.ws.idp.web.flow;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionStrategy;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.services.RegisteredService;
@@ -12,26 +14,17 @@ import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
 
-import java.io.Serializable;
-
 /**
  * This is {@link WSFederationMetadataUIAction}.
  *
  * @author Misagh Moayyed
  * @since 5.1.0
  */
-public class WSFederationMetadataUIAction extends AbstractAction implements Serializable {
-
-    private static final long serialVersionUID = -8016284160122109307L;
+@Slf4j
+@AllArgsConstructor
+public class WSFederationMetadataUIAction extends AbstractAction {
     private final transient ServicesManager servicesManager;
-
     private final transient AuthenticationServiceSelectionStrategy serviceSelectionStrategy;
-
-    public WSFederationMetadataUIAction(final ServicesManager servicesManager,
-                                               final AuthenticationServiceSelectionStrategy serviceSelectionStrategy) {
-        this.servicesManager = servicesManager;
-        this.serviceSelectionStrategy = serviceSelectionStrategy;
-    }
 
     @Override
     protected Event doExecute(final RequestContext requestContext) {

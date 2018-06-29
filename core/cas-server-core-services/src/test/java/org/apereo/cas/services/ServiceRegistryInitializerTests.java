@@ -16,10 +16,10 @@ public class ServiceRegistryInitializerTests {
         RegexRegisteredService initialService = newService();
 
         final ServicesManager servicesManager = mock(ServicesManager.class);
-        final ServiceRegistryDao jsonServiceRegistryDao = mock(ServiceRegistryDao.class);
+        final ServiceRegistry jsonServiceRegistryDao = mock(ServiceRegistry.class);
         when(jsonServiceRegistryDao.load()).thenReturn(Arrays.asList(initialService));
 
-        final ServiceRegistryDao serviceRegistryDao = new InMemoryServiceRegistry();
+        final ServiceRegistry serviceRegistryDao = new InMemoryServiceRegistry();
         final ServiceRegistryInitializer serviceRegistryInitializer = new ServiceRegistryInitializer(jsonServiceRegistryDao, serviceRegistryDao, 
                                                                                                      servicesManager, true);
 

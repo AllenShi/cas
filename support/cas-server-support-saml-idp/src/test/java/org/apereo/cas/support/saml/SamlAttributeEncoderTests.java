@@ -1,5 +1,6 @@
 package org.apereo.cas.support.saml;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlAttributeEncoder;
 import org.apereo.cas.util.EncodingUtils;
@@ -19,7 +20,18 @@ import static org.junit.Assert.*;
  * @since 5.1.0
  */
 @RunWith(SpringRunner.class)
+@Slf4j
 public class SamlAttributeEncoderTests {
+
+    @Test
+    public void verifyAction() {
+        final SamlAttributeEncoder encoder = new SamlAttributeEncoder();
+        final Map original = CoreAuthenticationTestUtils.getAttributes();
+        original.put("address", EncodingUtils.hexEncode("123 Main Street"));
+        final Map attributes = encoder.encodeAttributes(original, CoreAuthenticationTestUtils.getRegisteredService());
+        assertEquals(original.size(), attributes.size());
+        assertTrue(attributes.containsKey("address"));
+    }
 
     @Test
     public void ensureSamlUrnAttributesEncoded() {
@@ -27,7 +39,7 @@ public class SamlAttributeEncoderTests {
         final Map<String, Object> attributes = new HashMap<>();
         attributes.put(EncodingUtils.hexEncode("urn:oid:2.5.4.3"), "testValue");
         final Map<String, Object> result =
-                encoder.encodeAttributes(attributes, CoreAuthenticationTestUtils.getRegisteredService("test"));
+            encoder.encodeAttributes(attributes, CoreAuthenticationTestUtils.getRegisteredService("test"));
         assertTrue(result.containsKey("urn:oid:2.5.4.3"));
     }
 

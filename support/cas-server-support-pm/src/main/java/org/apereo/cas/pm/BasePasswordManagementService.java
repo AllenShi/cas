@@ -1,5 +1,7 @@
 package org.apereo.cas.pm;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.authentication.Credential;
@@ -9,8 +11,6 @@ import org.apereo.inspektr.common.web.ClientInfo;
 import org.apereo.inspektr.common.web.ClientInfoHolder;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.NumericDate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -24,8 +24,9 @@ import java.util.UUID;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
+@RequiredArgsConstructor
 public class BasePasswordManagementService implements PasswordManagementService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BasePasswordManagementService.class);
 
     /**
      * Password management settings.
@@ -33,15 +34,8 @@ public class BasePasswordManagementService implements PasswordManagementService 
     protected final PasswordManagementProperties properties;
 
     private final CipherExecutor<Serializable, String> cipherExecutor;
+
     private final String issuer;
-    
-    public BasePasswordManagementService(final CipherExecutor<Serializable, String> cipherExecutor,
-                                         final String issuer,
-                                         final PasswordManagementProperties properties) {
-        this.cipherExecutor = cipherExecutor;
-        this.issuer = issuer;
-        this.properties = properties;
-    }
 
     @Override
     public String parseToken(final String token) {
@@ -64,11 +58,11 @@ public class BasePasswordManagementService implements PasswordManagementService 
 
             final ClientInfo holder = ClientInfoHolder.getClientInfo();
             if (!claims.getStringClaimValue("origin").equals(holder.getServerIpAddress())) {
-                LOGGER.error("Token origin does not match CAS");
+                LOGGER.error("Token origin server IP address does not match CAS");
                 return null;
             }
             if (!claims.getStringClaimValue("client").equals(holder.getClientIpAddress())) {
-                LOGGER.error("Token client does not match CAS");
+                LOGGER.error("Token client IP address does not match CAS");
                 return null;
             }
 
@@ -96,9 +90,10 @@ public class BasePasswordManagementService implements PasswordManagementService 
             claims.setIssuedAtToNow();
 
             final ClientInfo holder = ClientInfoHolder.getClientInfo();
-            claims.setStringClaim("origin", holder.getServerIpAddress());
-            claims.setStringClaim("client", holder.getClientIpAddress());
-
+            if (holder != null) {
+                claims.setStringClaim("origin", holder.getServerIpAddress());
+                claims.setStringClaim("client", holder.getClientIpAddress());
+            }
             claims.setSubject(to);
             final String json = claims.toJson();
             return this.cipherExecutor.encode(json);
@@ -109,8 +104,8 @@ public class BasePasswordManagementService implements PasswordManagementService 
     }
 
     @Audit(action = "CHANGE_PASSWORD",
-            actionResolverName = "CHANGE_PASSWORD_ACTION_RESOLVER",
-            resourceResolverName = "CHANGE_PASSWORD_RESOURCE_RESOLVER")
+        actionResolverName = "CHANGE_PASSWORD_ACTION_RESOLVER",
+        resourceResolverName = "CHANGE_PASSWORD_RESOURCE_RESOLVER")
     @Override
     public boolean change(final Credential c, final PasswordChangeBean bean) throws InvalidPasswordException {
         return changeInternal(c, bean);

@@ -4,9 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.principal.Principal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Transient;
 
 import java.util.HashMap;
@@ -21,16 +20,15 @@ import java.util.concurrent.TimeUnit;
  * @author Misagh Moayyed
  * @since 4.2
  */
+@Slf4j
 public class CachingPrincipalAttributesRepository extends AbstractPrincipalAttributesRepository {
     private static final long serialVersionUID = 6350244643948535906L;
     private static final long DEFAULT_MAXIMUM_CACHE_SIZE = 1000;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CachingPrincipalAttributesRepository.class);
-    
     @JsonIgnore
     @Transient
     private final transient Cache<String, Map<String, Object>> cache;
-    
+
     @JsonIgnore
     @Transient
     private final transient PrincipalAttributesCacheLoader cacheLoader = new PrincipalAttributesCacheLoader();
@@ -41,9 +39,10 @@ public class CachingPrincipalAttributesRepository extends AbstractPrincipalAttri
      * Used for serialization only.
      */
     private CachingPrincipalAttributesRepository() {
-        super();
-        this.cache = Caffeine.newBuilder().maximumSize(this.maxCacheSize)
-                .expireAfterWrite(getExpiration(), TimeUnit.valueOf(getTimeUnit())).build(this.cacheLoader);
+        this.cache = Caffeine.newBuilder()
+            .maximumSize(this.maxCacheSize)
+            .expireAfterWrite(getExpiration(), TimeUnit.valueOf(getTimeUnit()))
+            .build(this.cacheLoader);
     }
 
     /**
@@ -69,8 +68,10 @@ public class CachingPrincipalAttributesRepository extends AbstractPrincipalAttri
                                                 final long expiryDuration) {
         super(expiryDuration, timeUnit);
         this.maxCacheSize = maxCacheSize;
-        this.cache = Caffeine.newBuilder().maximumSize(maxCacheSize)
-                .expireAfterWrite(getExpiration(), TimeUnit.valueOf(getTimeUnit())).build(this.cacheLoader);
+        this.cache = Caffeine.newBuilder()
+            .maximumSize(maxCacheSize)
+            .expireAfterWrite(getExpiration(), TimeUnit.valueOf(getTimeUnit()))
+            .build(this.cacheLoader);
     }
 
     @Override

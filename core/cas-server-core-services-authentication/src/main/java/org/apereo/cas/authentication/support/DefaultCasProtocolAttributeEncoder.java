@@ -1,5 +1,6 @@
 package org.apereo.cas.authentication.support;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apereo.cas.CasViewConstants;
@@ -7,13 +8,12 @@ import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.RegisteredServiceCipherExecutor;
 import org.apereo.cas.services.ServicesManager;
-import org.apereo.cas.services.util.DefaultRegisteredServiceCipherExecutor;
+import org.apereo.cas.services.util.RegisteredServicePublicKeyCipherExecutor;
 import org.apereo.cas.util.EncodingUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -28,8 +28,9 @@ import java.util.stream.Collectors;
  * @author Misagh Moayyed
  * @since 4.1
  */
+@Slf4j
 public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttributeEncoder {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCasProtocolAttributeEncoder.class);
+
 
     private final CipherExecutor<String, String> cacheCredentialCipherExecutor;
 
@@ -40,8 +41,8 @@ public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttribut
      * @param cacheCredentialCipherExecutor the cache credential cipher executor
      */
     public DefaultCasProtocolAttributeEncoder(final ServicesManager servicesManager,
-                                              final CipherExecutor cacheCredentialCipherExecutor) {
-        this(servicesManager, new DefaultRegisteredServiceCipherExecutor(), cacheCredentialCipherExecutor);
+                                              final CipherExecutor<String, String> cacheCredentialCipherExecutor) {
+        this(servicesManager, new RegisteredServicePublicKeyCipherExecutor(), cacheCredentialCipherExecutor);
     }
 
     /**
@@ -53,7 +54,7 @@ public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttribut
      */
     public DefaultCasProtocolAttributeEncoder(final ServicesManager servicesManager,
                                               final RegisteredServiceCipherExecutor cipherExecutor,
-                                              final CipherExecutor cacheCredentialCipherExecutor) {
+                                              final CipherExecutor<String, String> cacheCredentialCipherExecutor) {
         super(servicesManager, cipherExecutor);
         this.cacheCredentialCipherExecutor = cacheCredentialCipherExecutor;
     }
@@ -76,7 +77,7 @@ public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttribut
 
         if (cachedAttributesToEncode.containsKey(CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL)) {
             final String value = cachedAttributesToEncode.get(CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL);
-            final String decodedValue = this.cacheCredentialCipherExecutor.decode(value);
+            final String decodedValue = this.cacheCredentialCipherExecutor.decode(value, new Object[] {});
             cachedAttributesToEncode.remove(CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL);
             if (StringUtils.isNotBlank(decodedValue)) {
                 cachedAttributesToEncode.put(CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL, decodedValue);
@@ -84,8 +85,8 @@ public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttribut
         }
 
         encryptAndEncodeAndPutIntoAttributesMap(attributes, cachedAttributesToEncode,
-                CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL,
-                cipher, registeredService);
+            CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL,
+            cipher, registeredService);
     }
 
     /**
@@ -101,7 +102,7 @@ public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttribut
                                                        final RegisteredServiceCipherExecutor cipher,
                                                        final RegisteredService registeredService) {
         encryptAndEncodeAndPutIntoAttributesMap(attributes, cachedAttributesToEncode,
-                CasViewConstants.MODEL_ATTRIBUTE_NAME_PROXY_GRANTING_TICKET, cipher, registeredService);
+            CasViewConstants.MODEL_ATTRIBUTE_NAME_PROXY_GRANTING_TICKET, cipher, registeredService);
     }
 
     /**
@@ -121,7 +122,7 @@ public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttribut
         final String cachedAttribute = cachedAttributesToEncode.remove(cachedAttributeName);
         if (StringUtils.isNotBlank(cachedAttribute)) {
             LOGGER.debug("Retrieved [{}] as a cached model attribute...", cachedAttributeName);
-            final String encodedValue = cipher.encode(cachedAttribute, registeredService);
+            final String encodedValue = cipher.encode(cachedAttribute, Optional.of(registeredService));
             if (StringUtils.isNotBlank(encodedValue)) {
                 attributes.put(cachedAttributeName, encodedValue);
                 LOGGER.debug("Encrypted and encoded [{}] as an attribute to [{}].", cachedAttributeName, encodedValue);
@@ -148,15 +149,16 @@ public class DefaultCasProtocolAttributeEncoder extends AbstractProtocolAttribut
         LOGGER.debug("Sanitizing attribute names in preparation of the final validation response");
 
         final Set<Pair<String, Object>> attrs = attributes.keySet().stream()
-                .filter(getSanitizingAttributeNamePredicate())
-                .map(s -> Pair.of(EncodingUtils.hexEncode(s.getBytes(StandardCharsets.UTF_8)), attributes.get(s)))
-                .collect(Collectors.toSet());
+            .filter(getSanitizingAttributeNamePredicate())
+            .map(s -> Pair.of(EncodingUtils.hexEncode(s.getBytes(StandardCharsets.UTF_8)), attributes.get(s)))
+            .collect(Collectors.toSet());
         if (!attrs.isEmpty()) {
             LOGGER.warn("Found [{}] attribute(s) that need to be sanitized/encoded.", attrs);
             attributes.keySet().removeIf(getSanitizingAttributeNamePredicate());
             attrs.forEach(p -> {
-                LOGGER.debug("Sanitized attribute name to be [{}]", p.getKey());
-                attributes.put(p.getKey(), p.getValue());
+                final String key = p.getKey();
+                LOGGER.debug("Sanitized attribute name to be [{}]", key);
+                attributes.put(key, p.getValue());
             });
         }
     }

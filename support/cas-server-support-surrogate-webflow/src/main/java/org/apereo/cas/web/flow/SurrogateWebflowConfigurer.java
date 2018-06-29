@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.web.flow.configurer.AbstractCasWebflowConfigurer;
 import org.springframework.context.ApplicationContext;
@@ -8,7 +9,6 @@ import org.springframework.webflow.engine.ActionState;
 import org.springframework.webflow.engine.Flow;
 import org.springframework.webflow.engine.ViewState;
 import org.springframework.webflow.engine.builder.support.FlowBuilderServices;
-import org.springframework.webflow.execution.Action;
 
 /**
  * This is {@link SurrogateWebflowConfigurer}.
@@ -16,20 +16,18 @@ import org.springframework.webflow.execution.Action;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
 public class SurrogateWebflowConfigurer extends AbstractCasWebflowConfigurer {
     /**
      * The view id 'surrogateListView'.
      */
     public static final String VIEW_ID_SURROGATE_VIEW = "surrogateListView";
 
-    private final Action selectSurrogateAction;
-
     public SurrogateWebflowConfigurer(final FlowBuilderServices flowBuilderServices,
                                       final FlowDefinitionRegistry loginFlowDefinitionRegistry,
-                                      final Action selectSurrogateAction, final ApplicationContext applicationContext,
+                                      final ApplicationContext applicationContext,
                                       final CasConfigurationProperties casProperties) {
         super(flowBuilderServices, loginFlowDefinitionRegistry, applicationContext, casProperties);
-        this.selectSurrogateAction = selectSurrogateAction;
     }
 
     @Override
@@ -38,8 +36,9 @@ public class SurrogateWebflowConfigurer extends AbstractCasWebflowConfigurer {
         if (flow != null) {
             createSurrogateListViewState(flow);
             createSurrogateSelectionActionState(flow);
-            createTransitionToInjectSurrogateIntoFlow(flow);
             createSurrogateAuthorizationActionState(flow);
+            
+            createTransitionToInjectSurrogateIntoFlow(flow);
         }
     }
 
@@ -50,13 +49,22 @@ public class SurrogateWebflowConfigurer extends AbstractCasWebflowConfigurer {
 
     private void createTransitionToInjectSurrogateIntoFlow(final Flow flow) {
         final ActionState actionState = getState(flow, CasWebflowConstants.STATE_ID_REAL_SUBMIT, ActionState.class);
-        createTransitionForState(actionState, VIEW_ID_SURROGATE_VIEW, VIEW_ID_SURROGATE_VIEW, true);
+
+        LOGGER.debug("Locating transition id [{}] to for state [{}", CasWebflowConstants.TRANSITION_ID_SUCCESS, actionState.getId());
+        final String targetSuccessId = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS).getTargetStateId();
+
+        final ActionState loadSurrogatesAction = createActionState(flow, "loadSurrogatesAction", "loadSurrogatesListAction");
+        createTransitionForState(loadSurrogatesAction, CasWebflowConstants.TRANSITION_ID_SUCCESS, targetSuccessId);
+        createTransitionForState(loadSurrogatesAction, VIEW_ID_SURROGATE_VIEW, VIEW_ID_SURROGATE_VIEW);
+        createTransitionForState(actionState, CasWebflowConstants.TRANSITION_ID_SUCCESS, loadSurrogatesAction.getId(), true);
+
     }
 
     private void createSurrogateSelectionActionState(final Flow flow) {
-        final ActionState selectSurrogate = createActionState(flow, "selectSurrogate", selectSurrogateAction);
-        createTransitionForState(selectSurrogate, CasWebflowConstants.TRANSITION_ID_SUCCESS,
-                CasWebflowConstants.STATE_ID_REAL_SUBMIT);
+        final ActionState selectSurrogate = createActionState(flow, "selectSurrogate", "selectSurrogateAction");
+        final ActionState actionState = getState(flow, CasWebflowConstants.STATE_ID_REAL_SUBMIT, ActionState.class);
+        final String targetSuccessId = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS).getTargetStateId();
+        createTransitionForState(selectSurrogate, CasWebflowConstants.TRANSITION_ID_SUCCESS, targetSuccessId);
     }
 
     private void createSurrogateListViewState(final Flow flow) {

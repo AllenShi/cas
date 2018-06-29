@@ -88,7 +88,7 @@ Once vault is accessible and configured inside CAS, support is provided via the 
 ```xml
 <dependency>
      <groupId>org.apereo.cas</groupId>
-     <artifactId>cas-server-core-configuration-cloud-vault</artifactId>
+     <artifactId>cas-server-support-configuration-cloud-vault</artifactId>
      <version>${cas.version}</version>
 </dependency>
 ```
@@ -119,7 +119,7 @@ vault read secret/cas/native
 ```
 
 All settings and secrets that are stored inside Vault may be reloaded at any given time.
-To lean more about CAS allows you to reload configuration changes, please [review this guide](Configuration-Management-Reload.html).
+To lean more about how CAS allows you to reload configuration changes, please [review this guide](Configuration-Management-Reload.html).
 To lean more about how configuration is managed and profiled by CAS, please [review this guide](Configuration-Management.html).
 
 ### Troubleshooting

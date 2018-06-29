@@ -1,5 +1,7 @@
 package org.apereo.cas.oidc.web.flow;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionStrategy;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.services.OidcRegisteredService;
@@ -12,26 +14,18 @@ import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
 
-import java.io.Serializable;
-
 /**
  * This is {@link OidcRegisteredServiceUIAction}.
  *
  * @author Misagh Moayyed
  * @since 5.1.0
  */
-public class OidcRegisteredServiceUIAction extends AbstractAction implements Serializable {
+@Slf4j
+@RequiredArgsConstructor
+public class OidcRegisteredServiceUIAction extends AbstractAction {
 
-    private static final long serialVersionUID = -8016284160122109307L;
     private final transient ServicesManager servicesManager;
-
     private final transient AuthenticationServiceSelectionStrategy serviceSelectionStrategy;
-
-    public OidcRegisteredServiceUIAction(final ServicesManager servicesManager,
-                                         final AuthenticationServiceSelectionStrategy serviceSelectionStrategy) {
-        this.servicesManager = servicesManager;
-        this.serviceSelectionStrategy = serviceSelectionStrategy;
-    }
 
     @Override
     protected Event doExecute(final RequestContext requestContext) {

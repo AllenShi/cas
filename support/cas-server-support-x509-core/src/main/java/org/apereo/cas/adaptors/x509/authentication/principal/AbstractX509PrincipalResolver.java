@@ -1,13 +1,15 @@
 package org.apereo.cas.adaptors.x509.authentication.principal;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.resolvers.PersonDirectoryPrincipalResolver;
 import org.apereo.services.persondir.IPersonAttributeDao;
-
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 /**
  * Abstract class in support of multiple resolvers for X509 Certificates.
@@ -15,20 +17,19 @@ import java.security.cert.X509Certificate;
  * @author Scott Battaglia
  * @since 3.0.0
  */
+@Slf4j
+@ToString(callSuper = true)
+@NoArgsConstructor
 public abstract class AbstractX509PrincipalResolver extends PersonDirectoryPrincipalResolver {
 
-    public AbstractX509PrincipalResolver() {
-        super();
-    }
-
-    public AbstractX509PrincipalResolver(final IPersonAttributeDao attributeRepository, final PrincipalFactory principalFactory,
-                                         final boolean returnNullIfNoAttributes,
+    public AbstractX509PrincipalResolver(final IPersonAttributeDao attributeRepository,
+                                         final PrincipalFactory principalFactory, final boolean returnNullIfNoAttributes,
                                          final String principalAttributeName) {
         super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName);
     }
 
     @Override
-    protected String extractPrincipalId(final Credential credential, final Principal currentPrincipal) {
+    protected String extractPrincipalId(final Credential credential, final Optional<Principal> currentPrincipal) {
         return resolvePrincipalInternal(((X509CertificateCredential) credential).getCertificate());
     }
 
@@ -44,12 +45,4 @@ public abstract class AbstractX509PrincipalResolver extends PersonDirectoryPrinc
      * @return the string
      */
     protected abstract String resolvePrincipalInternal(X509Certificate certificate);
-
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .appendSuper(super.toString())
-                .toString();
-    }
 }

@@ -6,8 +6,9 @@ title: CAS - ADFS Integration
 # Overview
 
 The integration between the CAS Server and ADFS delegates user authentication from CAS Server
-to ADFS, making CAS Server a WS-Federation client.
-Claims released from ADFS are made available as attributes to CAS Server, and by extension CAS Clients.
+to ADFS, making CAS Server a WS-Federation client. Claims released from ADFS are made available as attributes to CAS Server, and by extension CAS Clients.
+
+<div class="alert alert-info"><strong>Remember</strong><p>The functionality described here allows CAS to use ADFS as an external identity provider. If you wish to do the opposite, allowing ADFS to become a CAS client and using CAS as an identity provider, you may take advantage of <a href="../installation/Configuring-SAML2-Authentication.html">SAML2 support in CAS</a> as one integration option.</p></div>
 
 Support is enabled by including the following dependency in the WAR overlay:
 
@@ -33,7 +34,9 @@ CAS Overlay to be able to resolve dependencies:
 </repositories>
 ```
 
-<div class="alert alert-info"><strong>JCE Requirement</strong><p>It's safe to make sure you have the proper JCE bundle installed in your Java environment that is used by CAS, specially if you need to consume encrypted payloads issued by ADFS. Be sure to pick the right version of the JCE for your Java version. Java versions can be detected via the <code>java -version</code> command.</p></div>
+<div class="alert alert-info"><strong>JCE Requirement</strong><p>It's safe to make sure you have the proper JCE bundle 
+installed in your Java environment that is used by CAS, specially if you need to consume encrypted payloads issued by ADFS. 
+Be sure to pick the right version of the JCE for your Java version. Java versions can be detected via the <code>java -version</code> command.</p></div>
 
 ## WsFed Configuration
 
@@ -96,6 +99,9 @@ An optional step, the `casLogoutView.html` can be modified to place a link to AD
 ```html
 <a href="https://adfs.example.org/adfs/ls/?wa=wsignout1.0">Logout</a>
 ```
+
+Alternatively, you may simply instruct CAS to redirect to the above endpoint after logout operations have executed.
+To see the relevant list of CAS properties, please [review this guide](../installation/Configuration-Properties.html#logout).
 
 ## Per-Service Relying Party Id
 

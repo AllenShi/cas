@@ -18,11 +18,12 @@ public interface ServiceTicketFactory extends TicketFactory {
      * @param ticketGrantingTicket the ticket granting ticket
      * @param service              the service
      * @param credentialProvided   current credential if provided as part of primary authn, may be false.
+     * @param clazz                the clazz
      * @return the t
      */
     <T extends Ticket> T create(TicketGrantingTicket ticketGrantingTicket,
                                 Service service,
-                                boolean credentialProvided);
+                                boolean credentialProvided, Class<T> clazz);
 
     /**
      * Create the ticket object.
@@ -30,12 +31,13 @@ public interface ServiceTicketFactory extends TicketFactory {
      * @param <T>                  the type parameter
      * @param ticketGrantingTicket the ticket granting ticket
      * @param service              the service
-     * @param currentAuthentication currentAuthentication may be null.
-     * @param fromImpersonation    the request is part of an impersonation
+     * @param credentialProvided   current credential if provided as part of primary authn, may be false.
+     * @param clazz                the clazz
+     * @param fromImpersonation    from impersonation
      * @return the t
      */
     <T extends Ticket> T create(TicketGrantingTicket ticketGrantingTicket,
                                 Service service,
-                                boolean credentialProvided, boolean fromImpersonation);
-
+                                boolean credentialProvided, Class<T> clazz,
+                                boolean fromImpersonation);
 }

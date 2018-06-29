@@ -1,11 +1,15 @@
 package org.apereo.cas.adaptors.trusted.authentication.principal;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.resolvers.PersonDirectoryPrincipalResolver;
 import org.apereo.services.persondir.IPersonAttributeDao;
+import lombok.NoArgsConstructor;
+
+import java.util.Optional;
 
 /**
  * Extracts the Principal out of PrincipalBearingCredential. It is very simple
@@ -15,33 +19,23 @@ import org.apereo.services.persondir.IPersonAttributeDao;
  * @author Andrew Petro
  * @since 3.0.0
  */
+@Slf4j
+@ToString(callSuper = true)
+@NoArgsConstructor
 public class PrincipalBearingPrincipalResolver extends PersonDirectoryPrincipalResolver {
 
-    public PrincipalBearingPrincipalResolver() {
-    }
-
-    public PrincipalBearingPrincipalResolver(final IPersonAttributeDao attributeRepository,
-                                             final PrincipalFactory principalFactory,
-                                             final boolean returnNullIfNoAttributes,
-                                             final String principalAttributeName) {
+    public PrincipalBearingPrincipalResolver(final IPersonAttributeDao attributeRepository, final PrincipalFactory principalFactory,
+                                             final boolean returnNullIfNoAttributes, final String principalAttributeName) {
         super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName);
     }
 
     @Override
-    protected String extractPrincipalId(final Credential credential, final Principal currentPrincipal) {
+    protected String extractPrincipalId(final Credential credential, final Optional<Principal> currentPrincipal) {
         return ((PrincipalBearingCredential) credential).getPrincipal().getId();
     }
 
     @Override
     public boolean supports(final Credential credential) {
         return credential instanceof PrincipalBearingCredential;
-    }
-
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .appendSuper(super.toString())
-                .toString();
     }
 }

@@ -1,5 +1,6 @@
 package org.apereo.cas.oidc;
 
+import lombok.Getter;
 import org.apache.commons.text.WordUtils;
 
 /**
@@ -14,12 +15,11 @@ public interface OidcConstants {
      * Dynamic client registration mode.
      */
     enum DynamicClientRegistrationMode {
+
         /**
          * Registration is open to all.
          */
-        OPEN,
-
-        /**
+        OPEN, /**
          * registration is protected for all.
          */
         PROTECTED
@@ -43,37 +43,33 @@ public interface OidcConstants {
     /**
      * Standard openid connect scopes.
      */
+    @Getter
     enum StandardScopes {
+
         /**
          * OpenId scope.
          */
         OPENID("openid"),
-
         /**
          * Custom scope.
          */
         CUSTOM("custom"),
-
         /**
          * address scope.
          */
         ADDRESS("address"),
-
         /**
          * email scope.
          */
         EMAIL("email"),
-
         /**
          * profile scope.
          */
         PROFILE("profile"),
-
         /**
          * phone scope.
          */
         PHONE("phone"),
-
         /**
          * offline_access scope.
          */
@@ -83,10 +79,6 @@ public interface OidcConstants {
 
         StandardScopes(final String scope) {
             this.scope = scope;
-        }
-
-        public String getScope() {
-            return scope;
         }
 
         public String getFriendlyName() {

@@ -1,5 +1,7 @@
 package org.apereo.cas.adaptors.yubikey.web.flow;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.adaptors.yubikey.YubiKeyAccountRegistry;
 import org.apereo.cas.web.support.WebUtils;
@@ -15,12 +17,10 @@ import javax.servlet.http.HttpServletRequest;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
+@RequiredArgsConstructor
 public class YubiKeyAccountSaveRegistrationAction extends AbstractAction {
     private final YubiKeyAccountRegistry registry;
-
-    public YubiKeyAccountSaveRegistrationAction(final YubiKeyAccountRegistry registry) {
-        this.registry = registry;
-    }
 
     @Override
     protected Event doExecute(final RequestContext requestContext) {
@@ -28,7 +28,7 @@ public class YubiKeyAccountSaveRegistrationAction extends AbstractAction {
         final HttpServletRequest request = WebUtils.getHttpServletRequestFromExternalWebflowContext(requestContext);
         final String token = request.getParameter("token");
         if (StringUtils.isNotBlank(token) && registry.registerAccountFor(uid, token)) {
-            success();
+            return success();
         }
         return error();
     }

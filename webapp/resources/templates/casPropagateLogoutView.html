@@ -2,19 +2,26 @@
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout}">
 
 <head>
-    <title th:text="#{screen.logout.header}"></title>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.3.0/zxcvbn.js"></script>
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
 
+    <title th:text="#{screen.logout.header}">Propagate Logout View</title>
+    <link href="../../static/css/cas.css" rel="stylesheet" th:remove="tag" />
+    <link href="https://use.fontawesome.com/releases/v5.0.6/css/all.css" rel="stylesheet">
+
+    <script th:src="@{#{webjars.poppermin.js}}"></script>
+
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
     <script th:inline="javascript">
         /*<![CDATA[*/
         function redirectToApp() {
             window.location = [[${logoutRedirectUrl}]] ;
         }
-        
+
         function handleCallback(index, status) {
             if (status == 200) {
                 $("#service" + index).addClass("fa-check").removeClass("fa-question");
@@ -24,6 +31,7 @@
                 $("#service" + index).prop('title', 'Logout notification could not be sent.');
             }
         }
+
         /*]]>*/
     </script>
 </head>
@@ -72,7 +80,7 @@
                 </li>
             </ol>
 
-            
+
         </div>
         <p th:utext="#{screen.logout.security}"/>
         <br/>

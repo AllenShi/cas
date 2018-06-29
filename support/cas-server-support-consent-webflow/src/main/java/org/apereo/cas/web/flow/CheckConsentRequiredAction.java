@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
@@ -19,6 +20,7 @@ import org.springframework.webflow.execution.RequestContext;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
 public class CheckConsentRequiredAction extends AbstractConsentAction {
     /**
      * Indicates that webflow should proceed with consent.
@@ -33,7 +35,7 @@ public class CheckConsentRequiredAction extends AbstractConsentAction {
     }
 
     @Override
-    protected Event doExecute(final RequestContext requestContext) {
+    public Event doExecute(final RequestContext requestContext) {
         final String consentEvent = determineConsentEvent(requestContext);
         if (StringUtils.isBlank(consentEvent)) {
             return null;
@@ -49,7 +51,8 @@ public class CheckConsentRequiredAction extends AbstractConsentAction {
      * @return the string
      */
     protected String determineConsentEvent(final RequestContext requestContext) {
-        final Service service = this.authenticationRequestServiceSelectionStrategies.resolveService(WebUtils.getService(requestContext));
+        final Service webService = WebUtils.getService(requestContext);
+        final Service service = this.authenticationRequestServiceSelectionStrategies.resolveService(webService);
         if (service == null) {
             return null;
         }

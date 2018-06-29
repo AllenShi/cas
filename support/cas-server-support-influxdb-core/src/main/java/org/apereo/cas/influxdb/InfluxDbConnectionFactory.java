@@ -1,17 +1,18 @@
 package org.apereo.cas.influxdb;
 
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.model.support.influxdb.InfluxDbProperties;
+import org.apereo.cas.configuration.support.Beans;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,8 +21,9 @@ import java.util.concurrent.TimeUnit;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
-public class InfluxDbConnectionFactory implements Closeable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(InfluxDbConnectionFactory.class);
+@Slf4j
+public class InfluxDbConnectionFactory implements AutoCloseable {
+
 
     /**
      * The Influx db.
@@ -88,8 +90,9 @@ public class InfluxDbConnectionFactory implements Closeable {
 
         influxDb.setConsistency(InfluxDB.ConsistencyLevel.valueOf(props.getConsistencyLevel().toUpperCase()));
 
-        if (props.getPointsToFlush() > 0 && props.getBatchInterval() > 0) {
-            this.influxDb.enableBatch(props.getPointsToFlush(), props.getBatchInterval(), TimeUnit.MILLISECONDS);
+        if (props.getPointsToFlush() > 0 && StringUtils.isNotBlank(props.getBatchInterval())) {
+            final int interval = (int) Beans.newDuration(props.getBatchInterval()).toMillis();
+            this.influxDb.enableBatch(props.getPointsToFlush(), interval, TimeUnit.MILLISECONDS);
         }
 
         this.influxDbProperties = props;
@@ -104,6 +107,7 @@ public class InfluxDbConnectionFactory implements Closeable {
         this.influxDb.write(influxDbProperties.getDatabase(), influxDbProperties.getRetentionPolicy(), point);
     }
 
+
     /**
      * Write measurement point.
      *
@@ -114,6 +118,21 @@ public class InfluxDbConnectionFactory implements Closeable {
         this.influxDb.write(dbName, "autogen", point);
     }
 
+    /**
+     * Write synchronized batch.
+     *
+     * @param point the points to write immediately in sync fashion
+     */
+    public void writeBatch(final Point... point) {
+        final BatchPoints batchPoints = BatchPoints
+            .database(influxDbProperties.getDatabase())
+            .retentionPolicy(influxDbProperties.getRetentionPolicy())
+            .consistency(InfluxDB.ConsistencyLevel.valueOf(influxDbProperties.getConsistencyLevel()))
+            .build();
+        Arrays.stream(point).forEach(batchPoints::point);
+        influxDb.write(batchPoints);
+    }
+    
     /**
      * Query all result.
      *
@@ -146,6 +165,7 @@ public class InfluxDbConnectionFactory implements Closeable {
     public QueryResult query(final String fields, final String measurement, final String dbName) {
         final String filter = String.format("SELECT %s FROM %s", fields, measurement);
         final Query query = new Query(filter, dbName);
+
         return this.influxDb.query(query);
     }
 

@@ -1,6 +1,9 @@
 package org.apereo.cas.adaptors.x509.authentication.principal;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
+import lombok.AllArgsConstructor;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.services.persondir.IPersonAttributeDao;
 import org.cryptacular.x509.dn.Attribute;
@@ -9,9 +12,6 @@ import org.cryptacular.x509.dn.NameReader;
 import org.cryptacular.x509.dn.RDN;
 import org.cryptacular.x509.dn.RDNSequence;
 import org.cryptacular.x509.dn.StandardAttributeType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 /**
  * Credential to principal resolver that extracts one or more attribute values
  * from the certificate subject DN and combines them with intervening delimiters.
@@ -28,8 +27,10 @@ import java.util.regex.Pattern;
  * @author Marvin S. Addison
  * @since 3.4.4
  */
+@Slf4j
+@ToString(callSuper = true)
+@AllArgsConstructor
 public class X509SubjectPrincipalResolver extends AbstractX509PrincipalResolver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(X509SubjectPrincipalResolver.class);
 
     /**
      * Pattern used to extract attribute names from descriptor.
@@ -74,15 +75,10 @@ public class X509SubjectPrincipalResolver extends AbstractX509PrincipalResolver 
      *                                 <li>ST</li><li>UID</li><li>UNIQUEIDENTIFIER</li></ul>
      *                                 For a complete list of supported attributes, see {@link org.cryptacular.x509.dn.StandardAttributeType}.
      */
-    public X509SubjectPrincipalResolver(final IPersonAttributeDao attributeRepository, final PrincipalFactory principalFactory,
-                                        final boolean returnNullIfNoAttributes,
+    public X509SubjectPrincipalResolver(final IPersonAttributeDao attributeRepository,
+                                        final PrincipalFactory principalFactory, final boolean returnNullIfNoAttributes,
                                         final String principalAttributeName, final String descriptor) {
         super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName);
-        this.descriptor = descriptor;
-    }
-
-    public X509SubjectPrincipalResolver(final String descriptor) {
-        super();
         this.descriptor = descriptor;
     }
 
@@ -106,8 +102,7 @@ public class X509SubjectPrincipalResolver extends AbstractX509PrincipalResolver 
         while (m.find()) {
             name = m.group(1);
             if (!attrMap.containsKey(name)) {
-                values = getAttributeValues(rdnSequence,
-                        StandardAttributeType.fromName(name));
+                values = getAttributeValues(rdnSequence, StandardAttributeType.fromName(name));
                 attrMap.put(name, new AttributeContext(values));
             }
             context = attrMap.get(name);
@@ -141,21 +136,14 @@ public class X509SubjectPrincipalResolver extends AbstractX509PrincipalResolver 
                 }
             }
         }
-        return values.toArray(new String[values.size()]);
+        return values.toArray(new String[0]);
     }
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .appendSuper(super.toString())
-                .append("descriptor", descriptor)
-                .toString();
-    }
-
 
     private static class AttributeContext {
+
         private int currentIndex;
-        private final String[] values;
+
+        private final Object[] values;
 
         /**
          * Instantiates a new attribute context.
@@ -163,9 +151,8 @@ public class X509SubjectPrincipalResolver extends AbstractX509PrincipalResolver 
          * @param values the values
          */
         AttributeContext(final String[] values) {
-            this.values = values;
+            this.values = ArrayUtils.clone(values);
         }
-
 
         /**
          * Retrieve the next value, by incrementing the current index.
@@ -177,9 +164,7 @@ public class X509SubjectPrincipalResolver extends AbstractX509PrincipalResolver 
             if (this.currentIndex == this.values.length) {
                 throw new IllegalStateException("No values remaining for attribute");
             }
-            return this.values[this.currentIndex++];
+            return this.values[this.currentIndex++].toString();
         }
     }
-
-
 }

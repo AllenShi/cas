@@ -1,6 +1,7 @@
 package org.apereo.cas.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
@@ -20,13 +21,14 @@ import static org.junit.Assert.*;
  * This is test cases for
  * {@link DefaultRegisteredServiceAccessStrategy}.
  *
- * @author Misagh Moayyed mmoayyed@unicon.net
+ * @author Misagh Moayyed
  * @since 4.1
  */
+@Slf4j
 public class DefaultRegisteredServiceAccessStrategyTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "x509CertificateCredential.json");
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
     
     private static final String TEST = "test";
     private static final String PHONE = "phone";
@@ -38,7 +40,7 @@ public class DefaultRegisteredServiceAccessStrategyTests {
     @Test
     public void checkDefaultImpls() {
         final RegisteredServiceAccessStrategy authz = new DefaultRegisteredServiceAccessStrategy();
-        assertEquals(authz.getOrder(), 0);
+        assertEquals(0, authz.getOrder());
     }
 
     @Test
@@ -46,7 +48,7 @@ public class DefaultRegisteredServiceAccessStrategyTests {
         final RegisteredServiceAccessStrategy authz = new RegisteredServiceAccessStrategy() {
             private static final long serialVersionUID = -6993120869616143038L;
         };
-        assertEquals(authz.getOrder(), Integer.MAX_VALUE);
+        assertEquals(Integer.MAX_VALUE, authz.getOrder());
         assertTrue(authz.isServiceAccessAllowed());
         assertTrue(authz.isServiceAccessAllowedForSso());
         assertTrue(authz.doPrincipalAttributesAllowServiceAccess(null, null));

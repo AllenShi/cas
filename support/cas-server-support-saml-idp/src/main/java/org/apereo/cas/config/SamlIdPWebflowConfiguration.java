@@ -1,5 +1,6 @@
 package org.apereo.cas.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.ServicesManager;
@@ -7,6 +8,8 @@ import org.apereo.cas.support.saml.services.idp.metadata.cache.SamlRegisteredSer
 import org.apereo.cas.support.saml.web.flow.SamlIdPMetadataUIAction;
 import org.apereo.cas.support.saml.web.flow.SamlIdPMetadataUIWebflowConfigurer;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlan;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlanConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,7 +30,8 @@ import org.springframework.webflow.execution.Action;
  */
 @Configuration("samlIdPWebflowConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-public class SamlIdPWebflowConfiguration {
+@Slf4j
+public class SamlIdPWebflowConfiguration implements CasWebflowExecutionPlanConfigurer {
 
     @Autowired
     @Qualifier("servicesManager")
@@ -58,10 +62,8 @@ public class SamlIdPWebflowConfiguration {
     @Bean
     @DependsOn("defaultWebflowConfigurer")
     public CasWebflowConfigurer samlIdPMetadataUIWebConfigurer() {
-        final CasWebflowConfigurer w = new SamlIdPMetadataUIWebflowConfigurer(flowBuilderServices, 
+        return new SamlIdPMetadataUIWebflowConfigurer(flowBuilderServices,
                 loginFlowDefinitionRegistry, samlIdPMetadataUIParserAction(), applicationContext, casProperties);
-        w.initialize();
-        return w;
     }
 
     @ConditionalOnMissingBean(name = "samlIdPMetadataUIParserAction")
@@ -70,5 +72,10 @@ public class SamlIdPWebflowConfiguration {
         return new SamlIdPMetadataUIAction(servicesManager,
                 defaultSamlRegisteredServiceCachingMetadataResolver,
                 selectionStrategies);
+    }
+
+    @Override
+    public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
+        plan.registerWebflowConfigurer(samlIdPMetadataUIWebConfigurer());
     }
 }

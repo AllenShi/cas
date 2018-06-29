@@ -1,5 +1,6 @@
 package org.apereo.cas.shell.cli;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -8,8 +9,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.util.RegexUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.Banner;
 import org.springframework.core.env.Environment;
 
@@ -21,9 +20,10 @@ import java.util.regex.Pattern;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public class CasCommandLineParser {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CasCommandLineParser.class);
+
     private static final int WIDTH = 120;
 
     private final CommandLineParser parser;
@@ -40,6 +40,7 @@ public class CasCommandLineParser {
         options.addOption(CommandLineOptions.OPTION_GENERATE_KEY);
         options.addOption(CommandLineOptions.OPTION_GENERATE_JWT);
         options.addOption(CommandLineOptions.OPTION_SUBJECT);
+        options.addOption(CommandLineOptions.OPTION_UNDOCUMENTED_PROPERTIES);
 
         parser = new DefaultParser();
     }
@@ -69,17 +70,17 @@ public class CasCommandLineParser {
     public void printHelp() {
         final HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp(WIDTH, "java -jar [cas-server-support-shell-X-Y-Z.jar]",
-                "\nCAS Command-line Shell\n", options,
-                "\nThe CAS command-line shell provides the ability to query the CAS server "
-                        + "for help on available settings/modules and various other utility functions."
-                        + "The shell engine is presented as both a CLI utility and an interactive shell."
-                        + "\n\nExample use cases include: \n"
-                        + "1) Information on a property, such as description, defaults, hints and deprecation.\n"
-                        + "2) Generating signing/encryption keys for relevant CAS configuration.\n"
-                        + "3) Validating JSON/YAML service definitions for fun and profit.\n"
-                        + "4) Retrieving list of available settings for a given module/group.\n"
-                        + "5) etc.\n",
-                true);
+            "\nCAS Command-line Shell\n", options,
+            "\nThe CAS command-line shell provides the ability to query the CAS server "
+                + "for help on available settings/modules and various other utility functions."
+                + "The shell engine is presented as both a CLI utility and an interactive shell."
+                + "\n\nExample use cases include: \n"
+                + "1) Information on a property, such as description, defaults, hints and deprecation.\n"
+                + "2) Generating signing/encryption keys for relevant CAS configuration.\n"
+                + "3) Validating JSON/YAML service definitions for fun and profit.\n"
+                + "4) Retrieving list of available settings for a given module/group.\n"
+                + "5) etc.\n",
+            true);
     }
 
     /**
@@ -142,6 +143,15 @@ public class CasCommandLineParser {
         return hasOption(line, CommandLineOptions.OPTION_GENERATE_JWT);
     }
 
+    /**
+     * Is scanning undocumented properties boolean.
+     *
+     * @param line the line
+     * @return the boolean
+     */
+    public boolean isScanningUndocumentedProperties(final CommandLine line) {
+        return hasOption(line, CommandLineOptions.OPTION_UNDOCUMENTED_PROPERTIES);
+    }
 
     /**
      * Is summary boolean.
@@ -232,7 +242,7 @@ public class CasCommandLineParser {
     public static Banner.Mode getBannerMode(final String[] args) {
         final CasCommandLineParser parser = new CasCommandLineParser();
         final CommandLine line = parser.parse(args);
-        return (line != null && parser.isSkippingBanner(line) || isShell(args)) ? Banner.Mode.OFF : Banner.Mode.CONSOLE;
+        return (line != null && parser.isSkippingBanner(line)) || isShell(args) ? Banner.Mode.OFF : Banner.Mode.CONSOLE;
     }
 
     /**

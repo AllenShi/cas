@@ -3,8 +3,9 @@ package org.apereo.cas.token.authentication;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWSAlgorithm;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationHandler;
-import org.apereo.cas.authentication.HandlerResult;
+import org.apereo.cas.authentication.AuthenticationHandlerExecutionResult;
 import org.apereo.cas.config.CasCoreAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationHandlersConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationMetadataConfiguration;
@@ -55,24 +56,25 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {RefreshAutoConfiguration.class,
-        CasCoreAuthenticationPrincipalConfiguration.class,
-        CasCoreAuthenticationPolicyConfiguration.class,
-        CasCoreAuthenticationMetadataConfiguration.class,
-        CasCoreAuthenticationSupportConfiguration.class,
-        CasCoreAuthenticationHandlersConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        CasCoreUtilConfiguration.class,
-        CasCoreTicketCatalogConfiguration.class,
-        CasCoreTicketsConfiguration.class,
-        CasCoreWebConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class,
-        TokenAuthenticationHandlerTests.TestTokenAuthenticationConfiguration.class,
-        CasPersonDirectoryConfiguration.class,
-        CasCoreAuthenticationConfiguration.class, 
-        CasCoreServicesAuthenticationConfiguration.class,
-        CasCoreServicesConfiguration.class,
-        TokenAuthenticationConfiguration.class})
+    CasCoreAuthenticationPrincipalConfiguration.class,
+    CasCoreAuthenticationPolicyConfiguration.class,
+    CasCoreAuthenticationMetadataConfiguration.class,
+    CasCoreAuthenticationSupportConfiguration.class,
+    CasCoreAuthenticationHandlersConfiguration.class,
+    CasWebApplicationServiceFactoryConfiguration.class,
+    CasCoreHttpConfiguration.class,
+    CasCoreUtilConfiguration.class,
+    CasCoreTicketCatalogConfiguration.class,
+    CasCoreTicketsConfiguration.class,
+    CasCoreWebConfiguration.class,
+    CasWebApplicationServiceFactoryConfiguration.class,
+    TokenAuthenticationHandlerTests.TestTokenAuthenticationConfiguration.class,
+    CasPersonDirectoryConfiguration.class,
+    CasCoreAuthenticationConfiguration.class,
+    CasCoreServicesAuthenticationConfiguration.class,
+    CasCoreServicesConfiguration.class,
+    TokenAuthenticationConfiguration.class})
+@Slf4j
 public class TokenAuthenticationHandlerTests {
 
     private static final RandomStringGenerator RANDOM_STRING_GENERATOR = new DefaultRandomStringGenerator();
@@ -87,14 +89,13 @@ public class TokenAuthenticationHandlerTests {
     public void verifyKeysAreSane() throws Exception {
         final JwtGenerator<CommonProfile> g = new JwtGenerator<>();
         g.setSignatureConfiguration(new SecretSignatureConfiguration(SIGNING_SECRET, JWSAlgorithm.HS256));
-        g.setEncryptionConfiguration(new SecretEncryptionConfiguration(ENCRYPTION_SECRET,
-                JWEAlgorithm.DIR, EncryptionMethod.A192CBC_HS384));
+        g.setEncryptionConfiguration(new SecretEncryptionConfiguration(ENCRYPTION_SECRET, JWEAlgorithm.DIR, EncryptionMethod.A192CBC_HS384));
 
         final CommonProfile profile = new CommonProfile();
         profile.setId("casuser");
         final String token = g.generate(profile);
         final TokenCredential c = new TokenCredential(token, RegisteredServiceTestUtils.getService());
-        final HandlerResult result = this.tokenAuthenticationHandler.authenticate(c);
+        final AuthenticationHandlerExecutionResult result = this.tokenAuthenticationHandler.authenticate(c);
         assertNotNull(result);
         assertEquals(result.getPrincipal().getId(), profile.getId());
     }

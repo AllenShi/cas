@@ -1,10 +1,10 @@
 package org.apereo.cas.monitor.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.monitor.HazelcastMonitor;
-import org.apereo.cas.monitor.Monitor;
+import org.apereo.cas.monitor.HazelcastHealthIndicator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
@@ -18,18 +18,15 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration("hazelcastMonitorConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class HazelcastMonitorConfiguration {
 
-    /**
-     * CAS properties.
-     */
     @Autowired
-    protected CasConfigurationProperties casProperties;
+    private CasConfigurationProperties casProperties;
 
-    @ConditionalOnMissingBean(name = "hazelcastMonitor")
     @Bean
     @RefreshScope
-    public Monitor hazelcastMonitor() {
-        return new HazelcastMonitor(casProperties.getTicket().getRegistry().getHazelcast().getCluster().getInstanceName());
+    public HealthIndicator hazelcastHealthIndicator() {
+        return new HazelcastHealthIndicator(casProperties);
     }
 }

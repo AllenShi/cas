@@ -1,8 +1,10 @@
 package org.apereo.cas.web.pac4j;
 
+import lombok.extern.slf4j.Slf4j;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.engine.DefaultSecurityLogic;
+import org.pac4j.core.engine.decision.AlwaysUseSessionProfileStorageDecision;
 import org.pac4j.core.exception.HttpAction;
 import org.pac4j.springframework.web.SecurityInterceptor;
 
@@ -20,29 +22,23 @@ import org.springframework.web.servlet.view.RedirectView;
  * @author Arnold Bergner
  * @since 5.2.0
  */
+@Slf4j
 public class CasSecurityInterceptor extends SecurityInterceptor {
 
     public CasSecurityInterceptor(final Config config, final String clients) {
         super(config, clients);
     }
 
-    public CasSecurityInterceptor(final Config config, final String clients,
-            final String authorizers) {
-
+    public CasSecurityInterceptor(final Config config, final String clients, final String authorizers) {
         super(config, clients, authorizers);
 
         final DefaultSecurityLogic secLogic = new DefaultSecurityLogic() {
             @Override
             protected HttpAction unauthorized(final WebContext context, final List currentClients) {
-                return HttpAction.forbidden("Access Denied", context);
-            }
-
-            @Override
-            protected boolean loadProfilesFromSession(final WebContext context, final List currentClients) {
-                return true;
+                return HttpAction.forbidden(context);
             }
         };
-        secLogic.setSaveProfileInSession(true);
+        secLogic.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision());
         setSecurityLogic(secLogic);
     }
 

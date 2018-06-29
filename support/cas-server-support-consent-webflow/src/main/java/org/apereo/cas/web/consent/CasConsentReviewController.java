@@ -1,6 +1,9 @@
 package org.apereo.cas.web.consent;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.consent.ConsentDecision;
 import org.apereo.cas.consent.ConsentEngine;
 import org.apereo.cas.consent.ConsentRepository;
@@ -9,10 +12,8 @@ import org.apereo.inspektr.common.spi.PrincipalResolver;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.engine.CallbackLogic;
-import org.pac4j.core.http.J2ENopHttpActionAdapter;
+import org.pac4j.core.http.adapter.J2ENopHttpActionAdapter;
 import org.pac4j.core.profile.ProfileManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,34 +39,18 @@ import java.util.concurrent.Callable;
  */
 @Controller("casConsentReviewController")
 @RequestMapping("/consentReview")
+@Slf4j
+@AllArgsConstructor
 public class CasConsentReviewController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CasConsentReviewController.class);
+
     private static final String CONSENT_REVIEW_VIEW = "casConsentReviewView";
     private static final String CONSENT_LOGOUT_VIEW = "casConsentLogoutView";
-
+    
+    private final ConsentRepository consentRepository;
+    private final ConsentEngine consentEngine;
     private final Config pac4jConfig;
     private final CasConfigurationProperties casProperties;
-    
-    /**
-     * The consent repository.
-     */
-    private final ConsentRepository consentRepository;
-    
-    /**
-     * The consent engine.
-     */
-    private final ConsentEngine consentEngine;
 
-    public CasConsentReviewController(final ConsentRepository consentRepository,
-            final ConsentEngine consentEngine,
-            final Config pac4jConfig,
-            final CasConfigurationProperties casProperties) {
-        this.consentRepository = consentRepository;
-        this.consentEngine = consentEngine;
-        this.pac4jConfig = pac4jConfig;
-        this.casProperties = casProperties;
-    }
-    
     /**
      * Show consent decisions.
      *
@@ -99,7 +84,7 @@ public class CasConsentReviewController {
                 final Collection<ConsentDecision> consentDecisions = this.consentRepository.findConsentDecisions(principal);
                 LOGGER.debug("Resolved consent decisions for principal [{}]: {}", principal, consentDecisions);
                 final Collection<Map<String, Object>> result = new HashSet<>();
-                consentDecisions.stream().forEach(d -> {
+                consentDecisions.forEach(d -> {
                     final Map<String, Object> map = new HashMap<>();
                     map.put("decision", d);
                     map.put("attributes", this.consentEngine.resolveConsentableAttributesFrom(d));
@@ -109,7 +94,8 @@ public class CasConsentReviewController {
             }
             return null;
         };
-        return new WebAsyncTask<>(casProperties.getHttpClient().getAsyncTimeout(), asyncTask);
+        final long timeout = Beans.newDuration(casProperties.getHttpClient().getAsyncTimeout()).toMillis();
+        return new WebAsyncTask<>(timeout, asyncTask);
     }
     
     /**
@@ -153,7 +139,8 @@ public class CasConsentReviewController {
         
         final CallbackLogic logic = this.pac4jConfig.getCallbackLogic();
         final J2EContext context = Pac4jUtils.getPac4jJ2EContext(request, response);
+        final String defaultUrl = this.casProperties.getServer().getPrefix().concat("/consentReview");
         logic.perform(context, this.pac4jConfig, J2ENopHttpActionAdapter.INSTANCE,
-                this.casProperties.getServer().getPrefix().concat("/consentReview"), Boolean.FALSE, Boolean.FALSE);
+            defaultUrl, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, null);
     }
 }

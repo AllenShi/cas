@@ -12,7 +12,6 @@ import org.apache.logging.log4j.core.config.plugins.PluginConfiguration;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.springframework.util.Assert;
 
 /**
  * This is {@link CasAppender}.
@@ -36,9 +35,6 @@ public class CasAppender extends AbstractAppender {
      */
     public CasAppender(final String name, final Configuration config, final AppenderRef appenderRef) {
         super(name, null, PatternLayout.createDefaultLayout());
-        Assert.notNull(config, "Log configuration cannot be null");
-        Assert.notNull(config, "Appender reference configuration cannot be null");
-
         this.config = config;
         this.appenderRef = appenderRef;
     }

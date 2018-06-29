@@ -1,5 +1,6 @@
 package org.apereo.cas.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Collection;
@@ -12,13 +13,14 @@ import java.util.concurrent.ConcurrentSkipListSet;
  * @author Scott Battaglia
  * @since 3.1
  */
+@Slf4j
 public class DefaultServicesManager extends AbstractServicesManager {
     private static final long serialVersionUID = -8581398063126547772L;
 
     private Set<RegisteredService> orderedServices = new ConcurrentSkipListSet<>();
 
-    public DefaultServicesManager(final ServiceRegistryDao serviceRegistryDao, final ApplicationEventPublisher eventPublisher) {
-        super(serviceRegistryDao, eventPublisher);
+    public DefaultServicesManager(final ServiceRegistry serviceRegistry, final ApplicationEventPublisher eventPublisher) {
+        super(serviceRegistry, eventPublisher);
     }
 
     @Override

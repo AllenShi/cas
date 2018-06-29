@@ -20,9 +20,9 @@ The CAS server web application responds to the following strategies that dictate
 
 This is the default configuration mode which indicates that CAS does **NOT** require connections to an external configuration server
 and will run in an embedded *standalone mode*. When this option is turned on, CAS by default will attempt to locate settings and properties
-inside a given directory indicated under the setting name `cas.standalone.config` and otherwise falls back to using `/etc/cas/config` as the configuration directory.
-You may instruct CAS to use this setting via the methods [outlined here](Configuration-Management.html#overview). There also exists a `cas.standalone.config.file` which can 
-be used to directly feed a collection of properties to CAS in form of a file or classpath resource. 
+inside a given directory indicated under the setting name `cas.standalone.configurationDirectory` and otherwise falls back to using `/etc/cas/config` as the configuration directory.
+You may instruct CAS to use this setting via the methods [outlined here](Configuration-Management.html#overview). 
+There also exists a `cas.standalone.configurationFile` which can be used to directly feed a collection of properties to CAS in form of a file or classpath resource. 
 
 Similar to the Spring Cloud external configuration server, the contents of this directory include `(cas|application).(yml|properties)`
 files that can be used to control CAS behavior. Also note that this configuration directory can be monitored by CAS to auto-pick up changes
@@ -145,7 +145,7 @@ in which case the items in the list are tried on-by-one until one succeeds. This
 branch, for instance, when you might want to align the config label with your branch,
 but make it optional (e.g. `spring.cloud.config.label=myfeature,develop`).
 
-To lean more about CAS allows you to reload configuration changes,
+To lean more about how CAS allows you to reload configuration changes,
 please [review this guide](Configuration-Management-Reload.html).
 
 #### Profiles
@@ -217,7 +217,7 @@ Support is provided via the following dependency in the WAR overlay:
 ```xml
 <dependency>
      <groupId>org.apereo.cas</groupId>
-     <artifactId>cas-server-core-configuration-cloud-mongo</artifactId>
+     <artifactId>cas-server-support-configuration-cloud-mongo</artifactId>
      <version>${cas.version}</version>
 </dependency>
 ```
@@ -243,6 +243,11 @@ To see the relevant list of CAS properties for this feature, please [review this
 CAS is also able to use [Vault](https://www.vaultproject.io/) to
 locate properties and settings. [Please review this guide](Configuration-Properties-Security.html).
 
+##### HashiCorp Consul
+
+CAS is also able to use [Consul](https://www.consul.io/) to
+locate properties and settings. [Please review this guide](Service-Discovery-Guide-Consul.html).
+
 ##### Apache ZooKeeper
 
 CAS is also able to use [Apache ZooKeeper](https://zookeeper.apache.org/) to locate properties and settings.
@@ -252,14 +257,16 @@ Support is provided via the following dependency in the WAR overlay:
 ```xml
 <dependency>
      <groupId>org.apereo.cas</groupId>
-     <artifactId>cas-server-core-configuration-cloud-zookeeper</artifactId>
+     <artifactId>cas-server-support-configuration-cloud-zookeeper</artifactId>
      <version>${cas.version}</version>
 </dependency>
 ```
 
 To see the relevant list of CAS properties for this feature, please [review this guide](Configuration-Properties.html#zookeeper).
 
-You will need to map CAS settings to ZooKeeper's nodes that contain values. The parent node for all settings should match the configuration root value provided to CAS. Under the root, you could have folders such as `cas`, `cas,dev`, `cas,local`, etc where `dev` and `local` are Spring profiles.
+You will need to map CAS settings to ZooKeeper's nodes that contain values. The parent node for all settings should 
+match the configuration root value provided to CAS. Under the root, you could have folders such 
+as `cas`, `cas,dev`, `cas,local`, etc where `dev` and `local` are Spring profiles.
 
 To create nodes and values in Apache ZooKeeper, try the following commands
 as a sample:
@@ -272,16 +279,48 @@ create /cas/config/cas cas
 create /cas/config/cas/settingName casuser::Test
 ```
 
-Creating nodes and directories in Apache ZooKeeper may require providing a value. The above sample commands show that the value `cas` is provided when creating directories. Always check with the official Apache ZooKeeper guides. You may not need to do that step.
+Creating nodes and directories in Apache ZooKeeper may require providing a value. The above sample commands show that 
+the value `cas` is provided when creating directories. Always check with the official Apache ZooKeeper guides. You may not need to do that step.
 
 Finally in your CAS properties, the new `settingName` setting can be used as a reference.
 
 ```properties
-cas.something.something=${settingName}
+# cas.something.something=${settingName}
 ```
 
 ...where `${settingName}` gets the value of the contents of the Apache ZooKeeper node `cas/config/cas/settingName`.
 
+##### Amazon S3
+
+CAS is also able to use [Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/dev) to locate properties and settings.
+
+Support is provided via the following dependency in the WAR overlay:
+ 
+ ```xml
+ <dependency>
+      <groupId>org.apereo.cas</groupId>
+      <artifactId>cas-server-support-configuration-cloud-aws-s3</artifactId>
+      <version>${cas.version}</version>
+ </dependency>
+ ```
+ 
+ See [this guide](Configuration-Properties.html#amazon-s3) for relevant settings.
+
+##### Amazon Secrets Manager
+
+CAS is also able to use [Amazon Secret Manager](https://aws.amazon.com/secrets-manager/) to locate properties and settings.
+
+Support is provided via the following dependency in the WAR overlay:
+
+```xml
+<dependency>
+     <groupId>org.apereo.cas</groupId>
+     <artifactId>cas-server-support-configuration-cloud-aws-secretsmanager</artifactId>
+     <version>${cas.version}</version>
+</dependency>
+```
+
+See [this guide](Configuration-Properties.html#amazon-secrets-manager) for relevant settings.
 
 ##### DynamoDb
 
@@ -292,7 +331,7 @@ Support is provided via the following dependency in the WAR overlay:
 ```xml
 <dependency>
      <groupId>org.apereo.cas</groupId>
-     <artifactId>cas-server-core-configuration-cloud-dynamodb</artifactId>
+     <artifactId>cas-server-support-configuration-cloud-dynamodb</artifactId>
      <version>${cas.version}</version>
 </dependency>
 ```
@@ -307,7 +346,27 @@ The `DynamoDbCasProperties` table is automatically created by CAS with the follo
 }
 ```
 
-To see the relevant list of CAS properties for this feature, please [review this guide](Configuration-Properties.html#dynamodb).
+See [this guide](Configuration-Properties.html#dynamodb) for relevant settings.
+
+##### Azure KeyVault Secrets
+
+CAS is also able to use Microsoft Azure's KeyVault Secrets to locate properties and settings. Support is provided via the following dependency in the WAR overlay:
+
+```xml
+<dependency>
+     <groupId>org.apereo.cas</groupId>
+     <artifactId>cas-server-support-configuration-cloud-azure-keyvault</artifactId>
+     <version>${cas.version}</version>
+</dependency>
+```
+
+To see the relevant list of CAS properties for this feature, please [review this guide](Configuration-Properties.html#azure-keyvault-secrets).
+
+**IMPORTANT**: The allowed  name pattern in Azure Key Vault is `^[0-9a-zA-Z-]+$`. For properties that contain 
+that contain `.` in the name (i.e. `cas.some.property`),  replace `.` with `-` when you store the setting in Azure Key Vault (i.e. `cas-some-property`). 
+The module will handle the transformation for you. 
+
+See [this guide](Configuration-Properties.html#azure-keyvault-secrets) for relevant settings.
 
 ##### JDBC
 
@@ -318,7 +377,7 @@ Support is provided via the following dependency in the WAR overlay:
 ```xml
 <dependency>
      <groupId>org.apereo.cas</groupId>
-     <artifactId>cas-server-core-configuration-cloud-jdbc</artifactId>
+     <artifactId>cas-server-support-configuration-cloud-jdbc</artifactId>
      <version>${cas.version}</version>
 </dependency>
 ```
@@ -328,7 +387,12 @@ To see the relevant list of CAS properties for this feature, please [review this
 
 #### CAS Server Cloud Configuration
 
-The cloud configuration modules provided above on this page by the CAS project directky may also be used verbaitm inside a CAS server overlay. Remember that the primary objective for these modules is to simply retrieve settings and properties from a source. While they are mostly and primarily useful when activated inside the Spring Cloud Configuration server and can be set to honor profiles and such, they nonetheless may also be used inside a CAS server overlay directly to simply fetch settings from a source while running in standalone mode. In such scenarios, all sources of configuration regardless of format or syntax will work alongside each other to retrieve settings and you can certainly mix and match as you see fit.
+The cloud configuration modules provided above on this page by the CAS project directly may also be used verbatim inside 
+a CAS server overlay. Remember that the primary objective for these modules is to simply retrieve settings and properties 
+from a source. While they are mostly and primarily useful when activated inside the Spring Cloud Configuration server and 
+can be set to honor profiles and such, they nonetheless may also be used inside a CAS server overlay directly to simply 
+fetch settings from a source while running in standalone mode. In such scenarios, all sources of configuration regardless 
+of format or syntax will work alongside each other to retrieve settings and you can certainly mix and match as you see fit.
 
 #### Composite Sources
 
@@ -359,7 +423,11 @@ conflicts between repositories that contain values for the same properties.
 
 #### Property Overrides
 
-The configuration server has an "overrides" feature that allows the operator to provide configuration properties to all applications that cannot be accidentally changed by the application using the normal change events and hooks. To declare overrides add a map of name-value pairs to `spring.cloud.config.server.overrides`. For example:
+The configuration server has an "overrides" feature that allows the operator to provide configuration properties 
+to all applications that cannot be accidentally changed by the application using the normal change events and hooks. 
+To declare overrides add a map of name-value pairs to `spring.cloud.config.server.overrides`. 
+
+For example:
 
 ```yml
 spring:
@@ -378,7 +446,7 @@ To learn how sensitive CAS settings can be secured via encryption, [please revie
 
 ## Reloading Changes
 
-To lean more about CAS allows you to reload configuration changes,
+To lean more about how CAS allows you to reload configuration changes,
 please [review this guide](Configuration-Management-Reload.html).
 
 ## Clustered Deployments

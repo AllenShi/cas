@@ -1,8 +1,8 @@
 package org.apereo.cas.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.support.mongo.ticketregistry.MongoTicketRegistryProperties;
-import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.logout.LogoutManager;
 import org.apereo.cas.mongo.MongoDbConnectionFactory;
 import org.apereo.cas.ticket.TicketCatalog;
@@ -12,8 +12,7 @@ import org.apereo.cas.ticket.registry.NoOpTicketRegistryCleaner;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.ticket.registry.TicketRegistryCleaner;
 import org.apereo.cas.ticket.registry.support.LockingStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apereo.cas.util.CoreTicketUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -31,9 +30,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
  */
 @Configuration("mongoTicketRegistryConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class MongoDbTicketRegistryConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbTicketRegistryConfiguration.class);
-
     @Autowired
     private CasConfigurationProperties casProperties;
 
@@ -43,7 +41,7 @@ public class MongoDbTicketRegistryConfiguration {
     public TicketRegistry ticketRegistry(@Qualifier("ticketCatalog") final TicketCatalog ticketCatalog) {
         final MongoTicketRegistryProperties mongo = casProperties.getTicket().getRegistry().getMongo();
         final MongoDbTicketRegistry registry = new MongoDbTicketRegistry(ticketCatalog, mongoDbTicketRegistryTemplate(), mongo.isDropCollection());
-        registry.setCipherExecutor(Beans.newTicketRegistryCipherExecutor(mongo.getCrypto(), "mongo"));
+        registry.setCipherExecutor(CoreTicketUtils.newTicketRegistryCipherExecutor(mongo.getCrypto(), "mongo"));
         return registry;
     }
 

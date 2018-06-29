@@ -1,9 +1,15 @@
 package org.apereo.cas.web.flow.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.adaptive.AdaptiveAuthenticationPolicy;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.web.extractcert.RequestHeaderX509CertificateExtractor;
+import org.apereo.cas.web.extractcert.X509CertificateExtractor;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlan;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlanConfigurer;
 import org.apereo.cas.web.flow.X509CertificateCredentialsNonInteractiveAction;
+import org.apereo.cas.web.flow.X509CertificateCredentialsRequestHeaderAction;
 import org.apereo.cas.web.flow.X509WebflowConfigurer;
 import org.apereo.cas.web.flow.resolver.CasDelegatingWebflowEventResolver;
 import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
@@ -28,7 +34,8 @@ import org.springframework.webflow.execution.Action;
  */
 @Configuration("x509AuthenticationWebflowConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-public class X509AuthenticationWebflowConfiguration {
+@Slf4j
+public class X509AuthenticationWebflowConfiguration implements CasWebflowExecutionPlanConfigurer {
 
     @Autowired
     @Qualifier("adaptiveAuthenticationPolicy")
@@ -46,6 +53,7 @@ public class X509AuthenticationWebflowConfiguration {
     @Qualifier("loginFlowRegistry")
     private FlowDefinitionRegistry loginFlowDefinitionRegistry;
 
+
     @Autowired(required = false)
     private FlowBuilderServices flowBuilderServices;
 
@@ -54,20 +62,41 @@ public class X509AuthenticationWebflowConfiguration {
 
     @Autowired
     private CasConfigurationProperties casProperties;
-    
+
+    @Autowired(required = false)
+    private X509CertificateExtractor x509CertificateExtractor;
+
     @ConditionalOnMissingBean(name = "x509WebflowConfigurer")
     @ConditionalOnBean(name = "defaultWebflowConfigurer")
     @Bean
     @DependsOn("defaultWebflowConfigurer")
     public CasWebflowConfigurer x509WebflowConfigurer() {
-        final CasWebflowConfigurer w = new X509WebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry, applicationContext, casProperties);
-        w.initialize();
-        return w;
+        return new X509WebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry, applicationContext, casProperties);
     }
 
     @Bean
     public Action x509Check() {
-        return new X509CertificateCredentialsNonInteractiveAction(initialAuthenticationAttemptWebflowEventResolver, serviceTicketRequestWebflowEventResolver,
-                adaptiveAuthenticationPolicy);
+        final boolean extractCertFromRequestHeader = casProperties.getAuthn().getX509().isExtractCert();
+        if (extractCertFromRequestHeader) {
+            return new X509CertificateCredentialsRequestHeaderAction(initialAuthenticationAttemptWebflowEventResolver,
+                serviceTicketRequestWebflowEventResolver,
+                adaptiveAuthenticationPolicy,
+                x509CertificateExtractor);
+        }
+        return new X509CertificateCredentialsNonInteractiveAction(initialAuthenticationAttemptWebflowEventResolver,
+            serviceTicketRequestWebflowEventResolver,
+            adaptiveAuthenticationPolicy);
+    }
+
+    @ConditionalOnMissingBean(name = "x509ExtractSSLCertificate")
+    @Bean
+    public X509CertificateExtractor x509ExtractSSLCertificate() {
+        final String sslHeaderName = casProperties.getAuthn().getX509().getSslHeaderName();
+        return new RequestHeaderX509CertificateExtractor(sslHeaderName);
+    }
+
+    @Override
+    public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
+        plan.registerWebflowConfigurer(x509WebflowConfigurer());
     }
 }

@@ -14,7 +14,7 @@ public interface CacheStatistics {
      * @return Current cache size.
      */
     default long getSize() {
-        return Status.UNKNOWN.getCode().value();
+        return 0;
     }
 
     /**
@@ -23,7 +23,7 @@ public interface CacheStatistics {
      * @return Current cache capacity.
      */
     default long getCapacity() {
-        return Status.UNKNOWN.getCode().value();
+        return 0;
     }
 
     /**
@@ -32,7 +32,7 @@ public interface CacheStatistics {
      * @return Eviction count.
      */
     default long getEvictions() {
-        return Status.UNKNOWN.getCode().value();
+        return 0;
     }
 
     /**
@@ -40,8 +40,8 @@ public interface CacheStatistics {
      *
      * @return Percent of space/capacity free.
      */
-    default int getPercentFree() {
-        return Status.UNKNOWN.getCode().value();
+    default long getPercentFree() {
+        return 0;
     }
 
     /**
@@ -60,11 +60,28 @@ public interface CacheStatistics {
         return false;
     }
 
+    default long getLocalEntryCount() {
+        return 0l;
+    }
+
+    default long getBackupEntryCount() {
+        return 0l;
+    }
+
+    default long getMaxGetLatency() {
+        return 0l;
+    }
+
+    default long getMaxPutLatency() {
+        return 0l;
+    }
+
     /**
      * Writes a string representation of cache statistics to the given string builder.
      *
      * @param builder String builder to which string representation is appended.
+     * @return the string
      */
-    void toString(StringBuilder builder);
+    String toString(StringBuilder builder);
 
 }

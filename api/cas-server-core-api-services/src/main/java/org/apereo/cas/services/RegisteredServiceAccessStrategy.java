@@ -1,21 +1,24 @@
 package org.apereo.cas.services;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.core.Ordered;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This is {@link RegisteredServiceAccessStrategy}
  * that can decide if a service is recognized and authorized to participate
  * in the CAS protocol flow during authentication/validation events.
  *
- * @author Misagh Moayyed mmoayyed@unicon.net
+ * @author Misagh Moayyed
  * @since 4.1
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public interface RegisteredServiceAccessStrategy extends Serializable, Ordered {
 
     /**
@@ -23,6 +26,7 @@ public interface RegisteredServiceAccessStrategy extends Serializable, Ordered {
      *
      * @return true /false if service is enabled
      */
+    @JsonIgnore
     default boolean isServiceAccessAllowed() {
         return true;
     }
@@ -32,6 +36,7 @@ public interface RegisteredServiceAccessStrategy extends Serializable, Ordered {
      *
      * @return true /false if service can participate in sso
      */
+    @JsonIgnore
     default boolean isServiceAccessAllowedForSso() {
         return true;
     }
@@ -60,6 +65,7 @@ public interface RegisteredServiceAccessStrategy extends Serializable, Ordered {
      *                   given they may be coming from a source external to the principal itself. (Cached principal attributes, etc)
      * @return true /false if service access can be granted to principal
      */
+    @JsonIgnore
     default boolean doPrincipalAttributesAllowServiceAccess(final String principal, final Map<String, Object> attributes) {
         return true;
     }
@@ -87,6 +93,24 @@ public interface RegisteredServiceAccessStrategy extends Serializable, Ordered {
      *
      * @param enabled the value
      */
+    @JsonIgnore
     default void setServiceAccessAllowed(final boolean enabled) {
+    }
+
+    /**
+     * Return the delegated authentication policy for this service.
+     * @return authn policy
+     */
+    default RegisteredServiceDelegatedAuthenticationPolicy getDelegatedAuthenticationPolicy() {
+        return null;
+    }
+
+    /**
+     * Expose underlying attributes for auditing purposes.
+     *
+     * @return required attributes
+     */
+    default Map<String, Set<String>> getRequiredAttributes() {
+        return new HashMap<>();
     }
 }

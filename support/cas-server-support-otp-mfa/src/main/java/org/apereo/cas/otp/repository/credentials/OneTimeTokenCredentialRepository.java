@@ -1,5 +1,7 @@
 package org.apereo.cas.otp.repository.credentials;
 
+import org.apereo.cas.authentication.OneTimeTokenAccount;
+
 import java.util.List;
 
 /**
@@ -34,4 +36,17 @@ public interface OneTimeTokenCredentialRepository {
      * @return the one time token account
      */
     OneTimeTokenAccount create(String username);
+
+    /**
+     * Update an existing account.
+     *
+     * @param account the registration record
+     * @return the one time token account
+     */
+    OneTimeTokenAccount update(OneTimeTokenAccount account);
+
+    /**
+     * Delete all tokens in the repository.
+     */
+    void deleteAll();
 }

@@ -1,7 +1,10 @@
 package org.apereo.cas.web.flow.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlan;
+import org.apereo.cas.web.flow.CasWebflowExecutionPlanConfigurer;
 import org.apereo.cas.web.flow.OpenIdWebflowConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,7 +25,8 @@ import org.springframework.webflow.engine.builder.support.FlowBuilderServices;
  */
 @Configuration("openIdWebflowConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-public class OpenIdWebflowConfiguration {
+@Slf4j
+public class OpenIdWebflowConfiguration implements CasWebflowExecutionPlanConfigurer {
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -41,9 +45,11 @@ public class OpenIdWebflowConfiguration {
     @Bean
     @DependsOn("defaultWebflowConfigurer")
     public CasWebflowConfigurer openidWebflowConfigurer() {
-        final CasWebflowConfigurer w = new OpenIdWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry, 
-                applicationContext, casProperties);
-        w.initialize();
-        return w;
+        return new OpenIdWebflowConfigurer(flowBuilderServices, loginFlowDefinitionRegistry, applicationContext, casProperties);
+    }
+
+    @Override
+    public void configureWebflowExecutionPlan(final CasWebflowExecutionPlan plan) {
+        plan.registerWebflowConfigurer(openidWebflowConfigurer());
     }
 }

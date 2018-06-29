@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.DefaultAuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.DefaultAuthenticationServiceSelectionStrategy;
 import org.apereo.cas.authentication.principal.WebApplicationService;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.*;
  * @author Dmitriy Kopylenko
  * @since 3.5.0
  */
+@Slf4j
 public class ServiceAuthorizationCheckTests {
 
     @Rule
@@ -62,14 +64,14 @@ public class ServiceAuthorizationCheckTests {
     }
 
     @Test
-    public void noServiceProvided() throws Exception {
+    public void noServiceProvided() {
         final MockRequestContext mockRequestContext = new MockRequestContext();
         final Event event = this.serviceAuthorizationCheck.doExecute(mockRequestContext);
         assertEquals("success", event.getId());
     }
 
     @Test
-    public void authorizedServiceProvided() throws Exception {
+    public void authorizedServiceProvided() {
         final MockRequestContext mockRequestContext = new MockRequestContext();
         mockRequestContext.getFlowScope().put("service", this.authorizedService);
         final Event event = this.serviceAuthorizationCheck.doExecute(mockRequestContext);
@@ -77,26 +79,26 @@ public class ServiceAuthorizationCheckTests {
     }
 
     @Test
-    public void unauthorizedServiceProvided() throws Exception {
+    public void unauthorizedServiceProvided() {
         final MockRequestContext mockRequestContext = new MockRequestContext();
         mockRequestContext.getFlowScope().put("service", this.unauthorizedService);
 
         this.thrown.expect(UnauthorizedServiceException.class);
-        this.thrown.expectMessage("Service Management: Unauthorized Service Access. Service [null] is not allowed access via the service registry.");
+
 
         this.serviceAuthorizationCheck.doExecute(mockRequestContext);
         fail("Should have thrown UnauthorizedServiceException");
     }
 
     @Test
-    public void serviceThatIsNotRegisteredProvided() throws Exception {
+    public void serviceThatIsNotRegisteredProvided() {
         final MockRequestContext mockRequestContext = new MockRequestContext();
         mockRequestContext.getFlowScope().put("service", this.undefinedService);
 
         this.thrown.expect(UnauthorizedServiceException.class);
-        this.thrown.expectMessage("Service Management: missing service. Service [null] is not found in service registry.");
+
 
         this.serviceAuthorizationCheck.doExecute(mockRequestContext);
-        fail("Should have thrown UnauthorizedServiceException");
+        throw new AssertionError("Should have thrown UnauthorizedServiceException");
     }
 }

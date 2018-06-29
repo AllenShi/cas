@@ -1,5 +1,7 @@
 package org.apereo.cas.digest.util;
 
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.auth.DigestScheme;
@@ -14,10 +16,9 @@ import java.time.ZonedDateTime;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
-public final class DigestAuthenticationUtils {
-
-    private DigestAuthenticationUtils() {
-    }
+@Slf4j
+@UtilityClass
+public class DigestAuthenticationUtils {
 
     /**
      * Create nonce string.
@@ -26,7 +27,7 @@ public final class DigestAuthenticationUtils {
      */
     public static String createNonce() {
         final String fmtDate = ZonedDateTime.now().toString();
-        final SecureRandom rand = RandomUtils.getInstanceNative();
+        final SecureRandom rand = RandomUtils.getNativeInstance();
         final Integer randomInt = rand.nextInt();
         return DigestUtils.md5Hex(fmtDate + randomInt);
     }
@@ -60,7 +61,8 @@ public final class DigestAuthenticationUtils {
      * @return the header string
      */
     public static String createAuthenticateHeader(final String realm, final String authMethod, final String nonce) {
-        final StringBuilder stringBuilder = new StringBuilder("Digest realm=\"").append(realm).append("\",");
+        final StringBuilder stringBuilder = new StringBuilder("Digest realm=\"")
+            .append(realm).append("\",");
         if (StringUtils.isNotBlank(authMethod)) {
             stringBuilder.append("qop=").append(authMethod).append(',');
         }

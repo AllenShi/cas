@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.AbstractCentralAuthenticationServiceTests;
 import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.authentication.AuthenticationResult;
@@ -34,6 +35,7 @@ import static org.junit.Assert.*;
  */
 @DirtiesContext
 @Import(CasSupportActionsConfiguration.class)
+@Slf4j
 public class AuthenticationViaFormActionTests extends AbstractCentralAuthenticationServiceTests {
 
     private static final String TEST = "test";
@@ -78,8 +80,6 @@ public class AuthenticationViaFormActionTests extends AbstractCentralAuthenticat
         putCredentialInRequestScope(context, c);
 
         assertEquals(CasWebflowConstants.TRANSITION_ID_SUCCESS, this.action.execute(context).getId());
-        assertNotNull(WebUtils.getTicketGrantingTicketId(context));
-        assertNotNull(response.getCookie(this.warnCookieGenerator.getCookieName()));
     }
 
     @Test
@@ -140,7 +140,7 @@ public class AuthenticationViaFormActionTests extends AbstractCentralAuthenticat
         context.getFlowScope().put(CasProtocolConstants.PARAMETER_SERVICE, RegisteredServiceTestUtils.getService());
 
         final Event ev = this.action.execute(context);
-        assertEquals(CasWebflowConstants.STATE_ID_SUCCESS, ev.getId());
+        assertEquals(CasWebflowConstants.STATE_ID_WARN, ev.getId());
     }
 
     @Test

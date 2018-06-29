@@ -1,14 +1,14 @@
 package org.apereo.cas.trusted.authentication.storage;
 
 import com.mongodb.WriteResult;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.trusted.authentication.api.MultifactorAuthenticationTrustRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,28 +19,17 @@ import java.util.Set;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
+@RequiredArgsConstructor
 public class MongoDbMultifactorAuthenticationTrustStorage extends BaseMultifactorAuthenticationTrustStorage {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbMultifactorAuthenticationTrustStorage.class);
-    
     private final String collectionName;
     private final MongoOperations mongoTemplate;
-
-    /**
-     * Instantiates a new Mongo db multifactor authentication trust storage.
-     *
-     * @param collectionName the collection name
-     * @param mongoTemplate  the mongo template
-     */
-    public MongoDbMultifactorAuthenticationTrustStorage(final String collectionName, final MongoOperations mongoTemplate) {
-        this.collectionName = collectionName;
-        this.mongoTemplate = mongoTemplate;
-    }
 
     @Override
     public void expire(final String key) {
         try {
             final Query query = new Query();
-            query.addCriteria(Criteria.where("key").is(key));
+            query.addCriteria(Criteria.where("recordKey").is(key));
             final WriteResult res = this.mongoTemplate.remove(query, MultifactorAuthenticationTrustRecord.class, this.collectionName);
             LOGGER.info("Found and removed [{}]", res.getN());
         } catch (final Exception e) {
@@ -49,10 +38,10 @@ public class MongoDbMultifactorAuthenticationTrustStorage extends BaseMultifacto
     }
 
     @Override
-    public void expire(final LocalDate onOrBefore) {
+    public void expire(final LocalDateTime onOrBefore) {
         try {
             final Query query = new Query();
-            query.addCriteria(Criteria.where("date").lte(onOrBefore));
+            query.addCriteria(Criteria.where("recordDate").lte(onOrBefore));
             final WriteResult res = this.mongoTemplate.remove(query, MultifactorAuthenticationTrustRecord.class, this.collectionName);
             LOGGER.info("Found and removed [{}]", res.getN());
         } catch (final Exception e) {
@@ -61,11 +50,10 @@ public class MongoDbMultifactorAuthenticationTrustStorage extends BaseMultifacto
     }
 
     @Override
-    public Set<MultifactorAuthenticationTrustRecord> get(final LocalDate onOrAfterDate) {
+    public Set<MultifactorAuthenticationTrustRecord> get(final LocalDateTime onOrAfterDate) {
         final Query query = new Query();
-        query.addCriteria(Criteria.where("date").gte(onOrAfterDate));
-        final List<MultifactorAuthenticationTrustRecord> results =
-                this.mongoTemplate.find(query, MultifactorAuthenticationTrustRecord.class, this.collectionName);
+        query.addCriteria(Criteria.where("recordDate").gte(onOrAfterDate));
+        final List<MultifactorAuthenticationTrustRecord> results = mongoTemplate.find(query, MultifactorAuthenticationTrustRecord.class, this.collectionName);
         return new HashSet<>(results);
     }
 
@@ -74,7 +62,7 @@ public class MongoDbMultifactorAuthenticationTrustStorage extends BaseMultifacto
         final Query query = new Query();
         query.addCriteria(Criteria.where("principal").is(principal));
         final List<MultifactorAuthenticationTrustRecord> results =
-                this.mongoTemplate.find(query, MultifactorAuthenticationTrustRecord.class, this.collectionName);
+            this.mongoTemplate.find(query, MultifactorAuthenticationTrustRecord.class, this.collectionName);
         return new HashSet<>(results);
     }
 

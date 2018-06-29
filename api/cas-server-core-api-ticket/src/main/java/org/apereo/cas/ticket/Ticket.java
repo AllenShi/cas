@@ -11,7 +11,7 @@ import java.time.ZonedDateTime;
  * @author Scott Battaglia
  * @since 3.0.0
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public interface Ticket extends Serializable, Comparable<Ticket> {
 
     /**
@@ -35,7 +35,7 @@ public interface Ticket extends Serializable, Comparable<Ticket> {
      *
      * @return the ticket or null if it has no parent
      */
-    TicketGrantingTicket getGrantingTicket();
+    TicketGrantingTicket getTicketGrantingTicket();
 
     /**
      * Method to return the time the Ticket was created.
@@ -64,4 +64,9 @@ public interface Ticket extends Serializable, Comparable<Ticket> {
      * @return the prefix
      */
     String getPrefix();
+
+    /**
+     * Mark a ticket as expired.
+     */
+    void markTicketExpired();
 }

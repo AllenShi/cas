@@ -3,6 +3,10 @@ package org.apereo.cas.util;
 import com.unboundid.ldap.sdk.AddRequest;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.LDAPConnection;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.ResultCode;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.ldaptive.AttributeModification;
 import org.ldaptive.AttributeModificationType;
 import org.ldaptive.Connection;
@@ -12,14 +16,13 @@ import org.ldaptive.LdapEntry;
 import org.ldaptive.ModifyOperation;
 import org.ldaptive.ModifyRequest;
 import org.ldaptive.io.LdifReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -30,8 +33,9 @@ import java.util.stream.Collectors;
  * @author Marvin S. Addison
  * @since 4.0.0
  */
-public final class LdapTestUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LdapTestUtils.class);
+@Slf4j
+@UtilityClass
+public class LdapTestUtils {
 
     /**
      * Placeholder for base DN in LDIF files.
@@ -42,12 +46,6 @@ public final class LdapTestUtils {
      * System-wide newline character string.
      */
     private static final String NEWLINE = System.getProperty("line.separator");
-
-    /**
-     * Private constructor of utility class.
-     */
-    private LdapTestUtils() {
-    }
 
     /**
      * Reads an LDIF into a collection of LDAP entries. The components performs a simple property
@@ -61,15 +59,15 @@ public final class LdapTestUtils {
      */
     public static Collection<LdapEntry> readLdif(final InputStream ldif, final String baseDn) throws IOException {
         final String ldapString;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(ldif))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(ldif, StandardCharsets.UTF_8))) {
             ldapString = reader.lines()
-                    .map(line -> {
-                        if (line.contains(BASE_DN_PLACEHOLDER)) {
-                            return line.replace(BASE_DN_PLACEHOLDER, baseDn);
-                        }
-                        return line;
-                    })
-                    .collect(Collectors.joining(NEWLINE));
+                .map(line -> {
+                    if (line.contains(BASE_DN_PLACEHOLDER)) {
+                        return line.replace(BASE_DN_PLACEHOLDER, baseDn);
+                    }
+                    return line;
+                })
+                .collect(Collectors.joining(NEWLINE));
         }
         return new LdifReader(new StringReader(ldapString)).read().getEntries();
     }
@@ -85,14 +83,41 @@ public final class LdapTestUtils {
             for (final LdapEntry entry : entries) {
                 final Collection<Attribute> attrs = new ArrayList<>(entry.getAttributeNames().length);
                 attrs.addAll(entry.getAttributes().stream()
-                        .map(a -> new Attribute(a.getName(), a.getStringValues())).collect(Collectors.toList()));
+                    .map(a -> new Attribute(a.getName(), a.getStringValues()))
+                    .collect(Collectors.toList()));
 
                 final AddRequest ad = new AddRequest(entry.getDn(), attrs);
+                LOGGER.debug("Creating entry [{}] with attributes [{}]", entry, attrs);
                 connection.add(ad);
             }
+        } catch (final LDAPException e) {
+            if (e.getResultCode().equals(ResultCode.ENTRY_ALREADY_EXISTS)) {
+                modifyLdapEntries(connection, entries);
+            } else {
+                LOGGER.error(e.getMessage(), e);
+            }
         } catch (final Exception e) {
-            LOGGER.warn(e.getLocalizedMessage());
+            LOGGER.error(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Modify ldap entries.
+     *
+     * @param connection the connection
+     * @param entries    the entries
+     */
+    public static void modifyLdapEntries(final LDAPConnection connection, final Collection<LdapEntry> entries) {
+        for (final LdapEntry entry : entries) {
+            final Collection<Attribute> attrs = new ArrayList<>(entry.getAttributeNames().length);
+            attrs.addAll(entry.getAttributes().stream()
+                .map(a -> new Attribute(a.getName(), a.getStringValues()))
+                .collect(Collectors.toList()));
+            for (final LdapAttribute ldapAttribute : entry.getAttributes()) {
+                modifyLdapEntry(connection, entry, ldapAttribute);
+            }
+        }
+
     }
 
     /**

@@ -1,15 +1,18 @@
 package org.apereo.cas.config.support.authentication;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.adaptors.u2f.U2FAuthenticationHandler;
 import org.apereo.cas.adaptors.u2f.U2FMultifactorAuthenticationProvider;
+import org.apereo.cas.adaptors.u2f.U2FTokenCredential;
 import org.apereo.cas.adaptors.u2f.storage.U2FDeviceRepository;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationMetaDataPopulator;
+import org.apereo.cas.authentication.ByCredentialTypeAuthenticationHandlerResolver;
 import org.apereo.cas.authentication.MultifactorAuthenticationProviderBypass;
 import org.apereo.cas.authentication.MultifactorAuthenticationUtils;
 import org.apereo.cas.authentication.metadata.AuthenticationContextAttributeMetaDataPopulator;
-import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
+import org.apereo.cas.authentication.principal.PrincipalFactoryUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.support.mfa.U2FMultifactorProperties;
 import org.apereo.cas.services.MultifactorAuthenticationProvider;
@@ -32,6 +35,7 @@ import org.springframework.context.annotation.Lazy;
  */
 @Configuration("u2fAuthenticationEventExecutionPlanConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class U2FAuthenticationEventExecutionPlanConfiguration {
     @Autowired
     private CasConfigurationProperties casProperties;
@@ -63,7 +67,7 @@ public class U2FAuthenticationEventExecutionPlanConfiguration {
     @ConditionalOnMissingBean(name = "u2fPrincipalFactory")
     @Bean
     public PrincipalFactory u2fPrincipalFactory() {
-        return new DefaultPrincipalFactory();
+        return PrincipalFactoryUtils.newPrincipalFactory();
     }
 
     @Bean
@@ -90,6 +94,7 @@ public class U2FAuthenticationEventExecutionPlanConfiguration {
         return plan -> {
             plan.registerAuthenticationHandler(u2fAuthenticationHandler());
             plan.registerMetadataPopulator(u2fAuthenticationMetaDataPopulator());
+            plan.registerAuthenticationHandlerResolver(new ByCredentialTypeAuthenticationHandlerResolver(U2FTokenCredential.class));
         };
     }
 }

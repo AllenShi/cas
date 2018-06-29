@@ -1,12 +1,14 @@
 package org.apereo.cas.support.oauth.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
-import org.apereo.cas.services.AbstractRegisteredService;
-import org.apereo.cas.services.JsonServiceRegistryDao;
+import org.apereo.cas.services.JsonServiceRegistry;
 import org.apereo.cas.services.RegisteredService;
-import org.apereo.cas.services.ServiceRegistryDao;
+import org.apereo.cas.services.ServiceRegistry;
+import org.apereo.cas.services.replication.NoOpRegisteredServiceReplicationStrategy;
+import org.apereo.cas.services.resource.DefaultRegisteredServiceResourceNamingStrategy;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -22,33 +24,24 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 4.1
  */
+@Slf4j
 public class OAuthRegisteredServiceTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "oAuthRegisteredService.json");
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final ClassPathResource RESOURCE = new ClassPathResource("services");
 
-    private final ServiceRegistryDao dao;
+    private final ServiceRegistry dao;
 
     public OAuthRegisteredServiceTests() throws Exception {
-        this.dao = new JsonServiceRegistryDao(RESOURCE, false, mock(ApplicationEventPublisher.class));
+        this.dao = new JsonServiceRegistry(RESOURCE, false,
+                mock(ApplicationEventPublisher.class), new NoOpRegisteredServiceReplicationStrategy(),
+                     new DefaultRegisteredServiceResourceNamingStrategy());
     }
 
     @BeforeClass
     public static void prepTests() throws Exception {
         FileUtils.cleanDirectory(RESOURCE.getFile());
-    }
-
-    @Test
-    public void checkCloning() {
-        final AbstractRegisteredService r = new OAuthRegisteredService();
-        r.setName("checkCloning");
-        r.setServiceId("testId");
-        r.setTheme("theme");
-        r.setDescription("description");
-
-        final OAuthRegisteredService r2 = (OAuthRegisteredService) r.clone();
-        assertEquals(r, r2);
     }
 
     @Test

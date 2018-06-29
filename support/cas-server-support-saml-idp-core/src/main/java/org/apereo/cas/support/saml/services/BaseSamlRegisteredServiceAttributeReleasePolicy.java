@@ -1,5 +1,6 @@
 package org.apereo.cas.support.saml.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -12,8 +13,6 @@ import org.apereo.cas.support.saml.services.idp.metadata.SamlRegisteredServiceSe
 import org.apereo.cas.support.saml.services.idp.metadata.cache.SamlRegisteredServiceCachingMetadataResolver;
 import org.apereo.cas.util.spring.ApplicationContextProvider;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -28,13 +27,15 @@ import java.util.Optional;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
+@Slf4j
 public abstract class BaseSamlRegisteredServiceAttributeReleasePolicy extends ReturnAllowedAttributeReleasePolicy {
     private static final long serialVersionUID = -3301632236702329694L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(BaseSamlRegisteredServiceAttributeReleasePolicy.class);
+
 
     @Override
-    protected Map<String, Object> getAttributesInternal(final Principal principal,
-                                                        final Map<String, Object> attributes, final RegisteredService service) {
+    public Map<String, Object> getAttributesInternal(final Principal principal,
+                                                     final Map<String, Object> attributes,
+                                                     final RegisteredService service) {
         if (service instanceof SamlRegisteredService) {
             final SamlRegisteredService saml = (SamlRegisteredService) service;
             final HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
@@ -51,14 +52,19 @@ public abstract class BaseSamlRegisteredServiceAttributeReleasePolicy extends Re
                     try {
                         final URIBuilder builder = new URIBuilder(svcParam);
                         entityId = builder.getQueryParams().stream()
-                                .filter(p -> p.getName().equals(SamlProtocolConstants.PARAMETER_ENTITY_ID))
-                                .map(NameValuePair::getValue)
-                                .findFirst()
-                                .orElse(StringUtils.EMPTY);
+                            .filter(p -> p.getName().equals(SamlProtocolConstants.PARAMETER_ENTITY_ID))
+                            .map(NameValuePair::getValue)
+                            .findFirst()
+                            .orElse(StringUtils.EMPTY);
                     } catch (final Exception e) {
                         LOGGER.error(e.getMessage());
                     }
                 }
+            }
+
+            if (StringUtils.isBlank(entityId)) {
+                LOGGER.warn("Could not locate the entity id for SAML attribute release policy processing");
+                return super.getAttributesInternal(principal, attributes, service);
             }
 
             final ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
@@ -67,11 +73,10 @@ public abstract class BaseSamlRegisteredServiceAttributeReleasePolicy extends Re
                 return super.getAttributesInternal(principal, attributes, service);
             }
             final SamlRegisteredServiceCachingMetadataResolver resolver =
-                    ctx.getBean("defaultSamlRegisteredServiceCachingMetadataResolver",
-                            SamlRegisteredServiceCachingMetadataResolver.class);
+                ctx.getBean("defaultSamlRegisteredServiceCachingMetadataResolver", SamlRegisteredServiceCachingMetadataResolver.class);
 
             final Optional<SamlRegisteredServiceServiceProviderMetadataFacade> facade =
-                    SamlRegisteredServiceServiceProviderMetadataFacade.get(resolver, saml, entityId);
+                SamlRegisteredServiceServiceProviderMetadataFacade.get(resolver, saml, entityId);
 
             if (facade == null || !facade.isPresent()) {
                 LOGGER.warn("Could not locate metadata for [{}] to process attributes", entityId);

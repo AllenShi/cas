@@ -1,5 +1,7 @@
 package org.apereo.cas.oidc.web.controllers;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apereo.cas.audit.AuditableExecution;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.Service;
@@ -13,8 +15,7 @@ import org.apereo.cas.support.oauth.authenticator.OAuth20CasAuthenticationBuilde
 import org.apereo.cas.support.oauth.profile.OAuth20ProfileScopeToAttributesFilter;
 import org.apereo.cas.support.oauth.services.OAuthRegisteredService;
 import org.apereo.cas.support.oauth.util.OAuth20Utils;
-import org.apereo.cas.support.oauth.validator.OAuth20RequestValidator;
-import org.apereo.cas.support.oauth.validator.OAuth20Validator;
+import org.apereo.cas.support.oauth.validator.authorization.OAuth20AuthorizationRequestValidator;
 import org.apereo.cas.support.oauth.web.endpoints.OAuth20AuthorizeEndpointController;
 import org.apereo.cas.support.oauth.web.response.callback.OAuth20AuthorizationResponseBuilder;
 import org.apereo.cas.support.oauth.web.views.ConsentApprovalViewResolver;
@@ -23,8 +24,6 @@ import org.apereo.cas.ticket.code.OAuthCodeFactory;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.web.support.CookieRetrievingCookieGenerator;
 import org.pac4j.core.context.J2EContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
@@ -41,13 +40,10 @@ import java.util.Set;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Slf4j
 public class OidcAuthorizeEndpointController extends OAuth20AuthorizeEndpointController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(OidcAuthorizeEndpointController.class);
-
     public OidcAuthorizeEndpointController(final ServicesManager servicesManager,
                                            final TicketRegistry ticketRegistry,
-                                           final OAuth20Validator validator,
                                            final AccessTokenFactory accessTokenFactory,
                                            final PrincipalFactory principalFactory,
                                            final ServiceFactory<WebApplicationService> webApplicationServiceServiceFactory,
@@ -58,11 +54,13 @@ public class OidcAuthorizeEndpointController extends OAuth20AuthorizeEndpointCon
                                            final CookieRetrievingCookieGenerator ticketGrantingTicketCookieGenerator,
                                            final OAuth20CasAuthenticationBuilder authenticationBuilder,
                                            final Set<OAuth20AuthorizationResponseBuilder> oauthAuthorizationResponseBuilders,
-                                           final Set<OAuth20RequestValidator> oauthRequestValidators) {
-        super(servicesManager, ticketRegistry, validator, accessTokenFactory, principalFactory,
-                webApplicationServiceServiceFactory, oAuthCodeFactory, consentApprovalViewResolver,
-                scopeToAttributesFilter, casProperties, ticketGrantingTicketCookieGenerator,
-                authenticationBuilder, oauthAuthorizationResponseBuilders, oauthRequestValidators);
+                                           final Set<OAuth20AuthorizationRequestValidator> oauthRequestValidators,
+                                           final AuditableExecution registeredServiceAccessStrategyEnforcer) {
+        super(servicesManager, ticketRegistry, accessTokenFactory, principalFactory,
+            webApplicationServiceServiceFactory, oAuthCodeFactory, consentApprovalViewResolver,
+            scopeToAttributesFilter, casProperties, ticketGrantingTicketCookieGenerator,
+            authenticationBuilder, oauthAuthorizationResponseBuilders, oauthRequestValidators,
+            registeredServiceAccessStrategyEnforcer);
     }
 
     @GetMapping(value = '/' + OidcConstants.BASE_OIDC_URL + '/' + OAuth20Constants.AUTHORIZE_URL)
@@ -71,8 +69,8 @@ public class OidcAuthorizeEndpointController extends OAuth20AuthorizeEndpointCon
         final Collection<String> scopes = OAuth20Utils.getRequestedScopes(request);
         if (scopes.isEmpty() || !scopes.contains(OidcConstants.StandardScopes.OPENID.getScope())) {
             LOGGER.warn("Provided scopes [{}] are undefined by OpenID Connect, which requires that scope [{}] MUST be specified, "
-                            + "or the behavior is unspecified. CAS MAY allow this request to be processed for now.",
-                    scopes, OidcConstants.StandardScopes.OPENID.getScope());
+                    + "or the behavior is unspecified. CAS MAY allow this request to be processed for now.",
+                scopes, OidcConstants.StandardScopes.OPENID.getScope());
         }
 
         return super.handleRequest(request, response);

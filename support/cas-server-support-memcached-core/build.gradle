@@ -1,8 +1,8 @@
 description = "Apereo CAS Memcached Monitor Core"
 dependencies {
-    implementation project(":core:cas-server-core-configuration")
-    implementation project(":core:cas-server-core-util")
-    implementation libraries.memcached
+    implementation project(":core:cas-server-core-configuration-api")
+    implementation project(":core:cas-server-core-util-api")
+    
     implementation libraries.kryo
     
     provided project(":core:cas-server-core-authentication-attributes")
@@ -11,10 +11,13 @@ dependencies {
     provided project(":core:cas-server-core-tickets")
     provided project(":core:cas-server-core-services")
 
+    provided project(":support:cas-server-support-memcached-spy")
     compileOnly project(":support:cas-server-support-saml")
     compileOnly project(":support:cas-server-support-saml-googleapps-core")
 
     testImplementation project(":core:cas-server-core-tickets")
+    testImplementation project(":core:cas-server-core-configuration")
+    testImplementation project(path: ":core:cas-server-core-authentication-api", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core-services", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core-authentication", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core-tickets", configuration: "tests")

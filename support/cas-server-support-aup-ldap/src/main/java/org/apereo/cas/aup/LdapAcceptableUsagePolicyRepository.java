@@ -1,5 +1,6 @@
 package org.apereo.cas.aup;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.util.CollectionUtils;
@@ -9,8 +10,6 @@ import org.ldaptive.LdapException;
 import org.ldaptive.Response;
 import org.ldaptive.SearchFilter;
 import org.ldaptive.SearchResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.webflow.execution.RequestContext;
 
 /**
@@ -23,18 +22,17 @@ import org.springframework.webflow.execution.RequestContext;
  * @author Misagh Moayyed
  * @since 4.2
  */
+@Slf4j
 public class LdapAcceptableUsagePolicyRepository extends AbstractPrincipalAttributeAcceptableUsagePolicyRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LdapAcceptableUsagePolicyRepository.class);
-
     private static final long serialVersionUID = 1600024683199961892L;
 
-    private final ConnectionFactory connectionFactory;
+    private final transient ConnectionFactory connectionFactory;
     private final String searchFilter;
     private final String baseDn;
 
     public LdapAcceptableUsagePolicyRepository(final TicketRegistrySupport ticketRegistrySupport,
                                                final String aupAttributeName,
-                                               final ConnectionFactory connectionFactory, 
+                                               final ConnectionFactory connectionFactory,
                                                final String searchFilter, final String baseDn) {
         super(ticketRegistrySupport, aupAttributeName);
         this.connectionFactory = connectionFactory;
@@ -50,7 +48,7 @@ public class LdapAcceptableUsagePolicyRepository extends AbstractPrincipalAttrib
                 final String currentDn = response.getResult().getEntry().getDn();
                 LOGGER.debug("Updating [{}]", currentDn);
                 return LdapUtils.executeModifyOperation(currentDn, this.connectionFactory,
-                        CollectionUtils.wrap(this.aupAttributeName, CollectionUtils.wrap(Boolean.TRUE.toString())));
+                    CollectionUtils.wrap(this.aupAttributeName, CollectionUtils.wrapSet(Boolean.TRUE.toString())));
             }
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -67,8 +65,8 @@ public class LdapAcceptableUsagePolicyRepository extends AbstractPrincipalAttrib
      */
     private Response<SearchResult> searchForId(final String id) throws LdapException {
         final SearchFilter filter = LdapUtils.newLdaptiveSearchFilter(this.searchFilter,
-                LdapUtils.LDAP_SEARCH_FILTER_DEFAULT_PARAM_NAME,
-                CollectionUtils.wrap(id));
+            LdapUtils.LDAP_SEARCH_FILTER_DEFAULT_PARAM_NAME,
+            CollectionUtils.wrap(id));
         return LdapUtils.executeSearchOperation(this.connectionFactory, this.baseDn, filter);
     }
 }

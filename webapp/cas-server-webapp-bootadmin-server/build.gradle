@@ -13,7 +13,7 @@ bootRun {
 }
 
 war {
-    enabled = !rootProject.publishingRelease && !rootProject.publishSnapshots
+    enabled = !rootProject.publishingRelease
 }
 
 springBoot  {
@@ -28,5 +28,5 @@ bootRepackage {
 dependencies {
     providedRuntime libraries.springboottomcat
     implementation libraries.springbootadminserver
-    implementation project(":core:cas-server-core-util")
+    implementation project(":core:cas-server-core-util-api")
 }

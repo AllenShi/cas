@@ -1,9 +1,8 @@
 package org.apereo.cas.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
@@ -18,11 +17,12 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
+@Slf4j
 public abstract class AbstractServicesManagerTests {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractServicesManagerTests.class);
+
 
     private static final String TEST = "test";
-    protected ServiceRegistryDao serviceRegistryDao;
+    protected ServiceRegistry serviceRegistry;
     protected ServicesManager servicesManager;
     protected final List<RegisteredService> listOfDefaultServices = new ArrayList<>();
 
@@ -37,16 +37,16 @@ public abstract class AbstractServicesManagerTests {
 
     @Before
     public void setUp() {
-        this.serviceRegistryDao = getServiceRegistryInstance();
+        this.serviceRegistry = getServiceRegistryInstance();
         this.servicesManager = getServicesManagerInstance();
         this.servicesManager.load();
     }
 
     protected ServicesManager getServicesManagerInstance() {
-        return new DefaultServicesManager(serviceRegistryDao, mock(ApplicationEventPublisher.class));
+        return new DefaultServicesManager(serviceRegistry, mock(ApplicationEventPublisher.class));
     }
 
-    protected ServiceRegistryDao getServiceRegistryInstance() {
+    protected ServiceRegistry getServiceRegistryInstance() {
         return new InMemoryServiceRegistry(listOfDefaultServices);
     }
 

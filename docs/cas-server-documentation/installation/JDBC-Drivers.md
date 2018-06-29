@@ -114,6 +114,7 @@ Available drivers are:
 | `org.hibernate.dialect.PostgreSQL93Dialect`   
 | `org.hibernate.dialect.PostgreSQL94Dialect`   
 | `org.hibernate.dialect.PostgreSQL95Dialect`   
+| `org.hibernate.dialect.PostgresPlusDialect`
 
 ### MariaDB
 
@@ -126,11 +127,12 @@ Available drivers are:
 | `org.hibernate.dialect.MariaDBDialect`   
 | `org.hibernate.dialect.MariaDBDialect`   
 
-### Microsoft SQL Server (JTDS)
+### Microsoft SQL Server 
 
 Available drivers are:
 
 1. `net.sourceforge.jtds.jdbc.Driver`
+2. `com.microsoft.sqlserver.jdbc.SQLServerDriver`
 
 | Dialects             
 |------------------------------------------------

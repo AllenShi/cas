@@ -1,11 +1,10 @@
 package org.apereo.cas.authentication.principal;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.util.HttpRequestUtils;
 import org.apereo.cas.validation.ValidationResponseType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,9 +15,8 @@ import javax.servlet.http.HttpServletRequest;
  * @author Misagh Moayyed
  * @since 4.2
  */
+@Slf4j
 public class WebApplicationServiceFactory extends AbstractServiceFactory<WebApplicationService> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WebApplicationServiceFactory.class);
-
 
     /**
      * Determine web application format boolean.
@@ -54,6 +52,8 @@ public class WebApplicationServiceFactory extends AbstractServiceFactory<WebAppl
         final String id = cleanupUrl(serviceToUse);
         final AbstractWebApplicationService newService = new SimpleWebApplicationServiceImpl(id, serviceToUse, artifactId);
         determineWebApplicationFormat(request, newService);
+        final String source = getSourceParameter(request, CasProtocolConstants.PARAMETER_TARGET_SERVICE, CasProtocolConstants.PARAMETER_SERVICE);
+        newService.setSource(source);
         return newService;
     }
 
@@ -92,7 +92,7 @@ public class WebApplicationServiceFactory extends AbstractServiceFactory<WebAppl
     public WebApplicationService createService(final HttpServletRequest request) {
         final String serviceToUse = getRequestedService(request);
         if (StringUtils.isBlank(serviceToUse)) {
-            LOGGER.debug("No service is specified in the request. Skipping service creation");
+            LOGGER.trace("No service is specified in the request. Skipping service creation");
             return null;
         }
         return newWebApplicationService(request, serviceToUse);
@@ -102,4 +102,6 @@ public class WebApplicationServiceFactory extends AbstractServiceFactory<WebAppl
     public WebApplicationService createService(final String id) {
         return newWebApplicationService(HttpRequestUtils.getHttpServletRequestFromRequestAttributes(), id);
     }
+
+
 }

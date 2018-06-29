@@ -1,5 +1,6 @@
 package org.apereo.cas.adaptors.trusted.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.adaptors.trusted.authentication.handler.support.PrincipalBearingCredentialsAuthenticationHandler;
 import org.apereo.cas.adaptors.trusted.authentication.principal.PrincipalBearingPrincipalResolver;
 import org.apereo.cas.adaptors.trusted.authentication.principal.RemoteRequestPrincipalAttributesExtractor;
@@ -12,8 +13,8 @@ import org.apereo.cas.adaptors.trusted.web.flow.PrincipalFromRequestUserPrincipa
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationHandler;
 import org.apereo.cas.authentication.adaptive.AdaptiveAuthenticationPolicy;
-import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
+import org.apereo.cas.authentication.principal.PrincipalFactoryUtils;
 import org.apereo.cas.authentication.principal.PrincipalResolver;
 import org.apereo.cas.authentication.principal.resolvers.ChainingPrincipalResolver;
 import org.apereo.cas.authentication.principal.resolvers.EchoingPrincipalResolver;
@@ -42,6 +43,7 @@ import org.springframework.webflow.execution.Action;
  */
 @Configuration("trustedAuthenticationConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
+@Slf4j
 public class TrustedAuthenticationConfiguration {
 
     @Autowired
@@ -82,14 +84,14 @@ public class TrustedAuthenticationConfiguration {
         final TrustedAuthenticationProperties trusted = casProperties.getAuthn().getTrusted();
         final PrincipalBearingPrincipalResolver bearingPrincipalResolver = new PrincipalBearingPrincipalResolver(attributeRepository,
                 trustedPrincipalFactory(), trusted.isReturnNull(), trusted.getPrincipalAttribute());
-        resolver.setChain(CollectionUtils.wrapList(bearingPrincipalResolver, new EchoingPrincipalResolver()));
+        resolver.setChain(CollectionUtils.wrapList(new EchoingPrincipalResolver(), bearingPrincipalResolver));
         return resolver;
     }
 
     @ConditionalOnMissingBean(name = "trustedPrincipalFactory")
     @Bean
     public PrincipalFactory trustedPrincipalFactory() {
-        return new DefaultPrincipalFactory();
+        return PrincipalFactoryUtils.newPrincipalFactory();
     }
 
     @ConditionalOnMissingBean(name = "remoteRequestPrincipalAttributesExtractor")

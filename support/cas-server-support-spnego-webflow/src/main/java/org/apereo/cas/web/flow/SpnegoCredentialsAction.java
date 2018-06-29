@@ -1,5 +1,6 @@
 package org.apereo.cas.web.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.authentication.adaptive.AdaptiveAuthenticationPolicy;
 import org.apereo.cas.support.spnego.authentication.principal.SpnegoCredential;
@@ -9,8 +10,6 @@ import org.apereo.cas.web.flow.actions.AbstractNonInteractiveCredentialsAction;
 import org.apereo.cas.web.flow.resolver.CasDelegatingWebflowEventResolver;
 import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
 import org.apereo.cas.web.support.WebUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 import org.springframework.webflow.execution.RequestContext;
 
@@ -31,8 +30,9 @@ import java.nio.charset.Charset;
  * @see <a href="http://ietfreport.isoc.org/idref/rfc4559/#page-2">RFC 4559</a>
  * @since 3.1
  */
+@Slf4j
 public class SpnegoCredentialsAction extends AbstractNonInteractiveCredentialsAction {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SpnegoCredentialsAction.class);
+
     private final boolean ntlm;
     private final String messageBeginPrefix;
 
@@ -42,11 +42,12 @@ public class SpnegoCredentialsAction extends AbstractNonInteractiveCredentialsAc
      * <li>False : if an interactive view (eg: login page) should be send to user as SPNEGO failure fallback</li>
      * </ul>
      */
-    private boolean send401OnAuthenticationFailure = true;
+    private boolean send401OnAuthenticationFailure;
 
     public SpnegoCredentialsAction(final CasDelegatingWebflowEventResolver initialAuthenticationAttemptWebflowEventResolver,
                                    final CasWebflowEventResolver serviceTicketRequestWebflowEventResolver,
-                                   final AdaptiveAuthenticationPolicy adaptiveAuthenticationPolicy, final boolean ntlm,
+                                   final AdaptiveAuthenticationPolicy adaptiveAuthenticationPolicy,
+                                   final boolean ntlm,
                                    final boolean send401OnAuthenticationFailure) {
         super(initialAuthenticationAttemptWebflowEventResolver, serviceTicketRequestWebflowEventResolver, adaptiveAuthenticationPolicy);
         this.ntlm = ntlm;
@@ -68,7 +69,8 @@ public class SpnegoCredentialsAction extends AbstractNonInteractiveCredentialsAc
             LOGGER.debug("SPNEGO Authorization header found with [{}] bytes",
                     authorizationHeader.length() - this.messageBeginPrefix.length());
 
-            final byte[] token = EncodingUtils.decodeBase64(authorizationHeader.substring(this.messageBeginPrefix.length()));
+            final String base64 = authorizationHeader.substring(this.messageBeginPrefix.length());
+            final byte[] token = EncodingUtils.decodeBase64(base64);
             if (token == null) {
                 LOGGER.warn("Could not decode authorization header in Base64");
                 return null;

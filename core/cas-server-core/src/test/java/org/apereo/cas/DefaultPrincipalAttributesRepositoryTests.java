@@ -1,6 +1,7 @@
 package org.apereo.cas;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apereo.cas.authentication.principal.DefaultPrincipalAttributesRepository;
 import org.apereo.cas.authentication.principal.Principal;
@@ -24,6 +25,7 @@ import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguratio
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,44 +46,45 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
-        RefreshAutoConfiguration.class,
-        CasCoreConfiguration.class,
-        CasCoreTicketsConfiguration.class,
-        CasCoreLogoutConfiguration.class,
-        CasCoreServicesConfiguration.class,
-        CasCoreTicketIdGeneratorsConfiguration.class,
-        CasCoreTicketCatalogConfiguration.class,
-        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
-        CasCoreHttpConfiguration.class,
-        CasCoreWebConfiguration.class,
-        CasPersonDirectoryTestConfiguration.class,
-        CasCoreUtilConfiguration.class,
-        CasRegisteredServicesTestConfiguration.class,
-        CasWebApplicationServiceFactoryConfiguration.class,
-        CasAuthenticationEventExecutionPlanTestConfiguration.class,
-        CasDefaultServiceTicketIdGeneratorsConfiguration.class,
-        CasCoreAuthenticationPrincipalConfiguration.class
+    RefreshAutoConfiguration.class,
+    CasCoreConfiguration.class,
+    CasCoreTicketsConfiguration.class,
+    CasCoreLogoutConfiguration.class,
+    CasCoreServicesConfiguration.class,
+    CasCoreTicketIdGeneratorsConfiguration.class,
+    CasCoreTicketCatalogConfiguration.class,
+    CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
+    CasCoreHttpConfiguration.class,
+    CasCoreWebConfiguration.class,
+    CasPersonDirectoryTestConfiguration.class,
+    CasCoreUtilConfiguration.class,
+    CasRegisteredServicesTestConfiguration.class,
+    CasWebApplicationServiceFactoryConfiguration.class,
+    CasAuthenticationEventExecutionPlanTestConfiguration.class,
+    CasDefaultServiceTicketIdGeneratorsConfiguration.class,
+    CasCoreAuthenticationPrincipalConfiguration.class
 })
+@Slf4j
 public class DefaultPrincipalAttributesRepositoryTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "defaultPrincipalAttributesRepository.json");
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     @Autowired
     @Qualifier("principalFactory")
-    private PrincipalFactory principalFactory;
+    private ObjectProvider<PrincipalFactory> principalFactory;
 
     @Test
     public void checkDefaultAttributes() {
         final PrincipalAttributesRepository rep = new DefaultPrincipalAttributesRepository();
-        assertEquals(rep.getAttributes(this.principalFactory.createPrincipal("uid")).size(), 3);
+        assertEquals(3, rep.getAttributes(this.principalFactory.getIfAvailable().createPrincipal("uid")).size());
     }
 
     @Test
     public void checkInitialAttributes() {
-        final Principal p = this.principalFactory.createPrincipal("uid", Collections.singletonMap("mail", "final@example.com"));
+        final Principal p = this.principalFactory.getIfAvailable().createPrincipal("uid", Collections.singletonMap("mail", "final@example.com"));
         final PrincipalAttributesRepository rep = new DefaultPrincipalAttributesRepository();
-        assertEquals(rep.getAttributes(p).size(), 1);
+        assertEquals(1, rep.getAttributes(p).size());
         assertTrue(rep.getAttributes(p).containsKey("mail"));
     }
 
