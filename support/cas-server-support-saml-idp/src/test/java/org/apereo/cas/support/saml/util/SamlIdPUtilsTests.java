@@ -3,7 +3,6 @@ package org.apereo.cas.support.saml.util;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import org.apereo.cas.category.FileSystemCategory;
 import org.apereo.cas.support.saml.BaseSamlIdPConfigurationTests;
-import org.apereo.cas.support.saml.SamlIdPTestUtils;
 import org.apereo.cas.support.saml.SamlIdPUtils;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
 import org.apereo.cas.support.saml.services.idp.metadata.SamlRegisteredServiceServiceProviderMetadataFacade;
@@ -44,7 +43,7 @@ public class SamlIdPUtilsTests extends BaseSamlIdPConfigurationTests {
 
     @Test
     public void verifyMetadataForAllServices() throws Exception {
-        final SamlRegisteredService service = SamlIdPTestUtils.getSamlRegisteredService();
+        final SamlRegisteredService service = getSamlRegisteredServiceForTestShib();
         servicesManager.save(service);
         final MetadataResolver md = SamlIdPUtils.getMetadataResolverForAllSamlServices(servicesManager, service.getServiceId(),
             samlRegisteredServiceCachingMetadataResolver);
@@ -61,7 +60,7 @@ public class SamlIdPUtilsTests extends BaseSamlIdPConfigurationTests {
 
     @Test
     public void verifyAssertionConsumerServiceNoIndex() {
-        final SamlRegisteredService service = SamlIdPTestUtils.getSamlRegisteredService();
+        final SamlRegisteredService service = getSamlRegisteredServiceForTestShib();
         servicesManager.save(service);
 
         final AuthnRequest authnRequest = mock(AuthnRequest.class);
@@ -75,7 +74,7 @@ public class SamlIdPUtilsTests extends BaseSamlIdPConfigurationTests {
 
     @Test
     public void verifyAssertionConsumerServiceWithIndex() {
-        final SamlRegisteredService service = SamlIdPTestUtils.getSamlRegisteredService();
+        final SamlRegisteredService service = getSamlRegisteredServiceForTestShib();
         servicesManager.save(service);
 
         final AuthnRequest authnRequest = mock(AuthnRequest.class);
@@ -91,7 +90,7 @@ public class SamlIdPUtilsTests extends BaseSamlIdPConfigurationTests {
 
     @Test
     public void verifyAssertionConsumerServiceWithUrl() {
-        final SamlRegisteredService service = SamlIdPTestUtils.getSamlRegisteredService();
+        final SamlRegisteredService service = getSamlRegisteredServiceForTestShib();
         servicesManager.save(service);
         final AuthnRequest authnRequest = mock(AuthnRequest.class);
         final Issuer issuer = mock(Issuer.class);
