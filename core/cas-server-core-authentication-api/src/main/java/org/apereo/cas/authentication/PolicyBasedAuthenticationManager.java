@@ -19,17 +19,14 @@ import org.apereo.cas.support.events.authentication.CasAuthenticationPrincipalRe
 import org.apereo.cas.support.events.authentication.CasAuthenticationTransactionFailureEvent;
 import org.apereo.cas.support.events.authentication.CasAuthenticationTransactionStartedEvent;
 import org.apereo.cas.support.events.authentication.CasAuthenticationTransactionSuccessfulEvent;
+import org.apereo.cas.util.CollectionUtils;
 import org.apereo.inspektr.audit.annotation.Audit;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.GeneralSecurityException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -256,8 +253,7 @@ public class PolicyBasedAuthenticationManager implements AuthenticationManager {
             .filter(r -> r.supports(handlers, transaction))
             .map(r -> r.resolve(handlers, transaction))
             .flatMap(Set::stream)
-            .sorted()
-            .collect(Collectors.toSet());
+            .collect(Collectors.toCollection(LinkedHashSet::new));
 
         if (resolvedHandlers.isEmpty()) {
             LOGGER.debug("Authentication handler resolvers produced no candidate authentication handler. Using the default handler resolver instead...");

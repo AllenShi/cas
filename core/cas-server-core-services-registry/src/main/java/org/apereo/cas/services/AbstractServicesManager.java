@@ -204,7 +204,7 @@ public abstract class AbstractServicesManager implements ServicesManager {
             }, Function.identity(), (r, s) -> s == null ? r : s));
         loadInternal();
         publishEvent(new CasRegisteredServicesLoadedEvent(this, getAllServices()));
-        evaluateExpiredServiceDefinitions();
+        //evaluateExpiredServiceDefinitions();
         LOGGER.info("Loaded [{}] service(s) from [{}].", this.services.size(), this.serviceRegistry.getName());
         return services.values();
     }
