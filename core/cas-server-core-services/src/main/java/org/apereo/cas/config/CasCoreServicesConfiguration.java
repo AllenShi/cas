@@ -151,7 +151,12 @@ public class CasCoreServicesConfiguration {
     @Bean
     @RefreshScope
     public RegisteredServiceResourceNamingStrategy registeredServiceResourceNamingStrategy() {
-        return new DefaultRegisteredServiceResourceNamingStrategy();
+        return new RegisteredServiceResourceNamingStrategy() {
+            @Override
+            public String build(RegisteredService service, String extenstion) {
+                return "service-" + service.getId() + ".json";
+            }
+        };
     }
 
     @ConditionalOnMissingBean(name = "serviceRegistry")
