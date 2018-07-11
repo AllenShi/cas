@@ -252,7 +252,8 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements C
     public Collection<Ticket> getTicketsByUser(String user){
         return users.values((k) -> ((String)k.getKey()).matches(user))
                 .stream()
-                .flatMap(h -> h.stream())
+                .limit(10)
+                .flatMap(h -> h.stream().limit(100))
                 .map(s -> getTicket(s))
                 .collect(Collectors.toList());
     }
