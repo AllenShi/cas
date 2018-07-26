@@ -127,7 +127,7 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
                 final String authResult = response.get("result").asText().toUpperCase();
                 DuoUserAccountAuthStatus status = DuoUserAccountAuthStatus.valueOf(authResult);
                 if (status == DuoUserAccountAuthStatus.AUTH) {
-                    if (!response.hasNonNull("devices")) {
+                    if (response.get("devices").size() == 0) {
                         account.setStatus(DuoUserAccountAuthStatus.ENROLL);
                     }
                 } else if (status == DuoUserAccountAuthStatus.DENY) {
