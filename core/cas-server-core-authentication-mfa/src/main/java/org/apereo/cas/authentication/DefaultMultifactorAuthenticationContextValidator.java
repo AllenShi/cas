@@ -85,11 +85,7 @@ public class DefaultMultifactorAuthenticationContextValidator implements Authent
                 requestedProvider, bypassedId);
         }
         final Collection<MultifactorAuthenticationProvider> satisfiedProviders = getSatisfiedAuthenticationProviders(authentication, providerMap.values());
-        if (satisfiedProviders == null) {
-            LOGGER.warn("No satisfied multifactor authentication providers are recorded in the current authentication context.");
-            return Pair.of(Boolean.FALSE, requestedProvider);
-        }
-        if (!satisfiedProviders.isEmpty()) {
+        if (satisfiedProviders != null && !satisfiedProviders.isEmpty()) {
             final MultifactorAuthenticationProvider[] providers = satisfiedProviders.toArray(new MultifactorAuthenticationProvider[]{});
             OrderComparator.sortIfNecessary(providers);
             final Optional<MultifactorAuthenticationProvider> result = Arrays.stream(providers)
