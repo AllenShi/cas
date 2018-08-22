@@ -1296,8 +1296,8 @@ To learn more about this topic, [please review this guide](SMS-Messaging-Configu
 Send text messaging using Twilio.
 
 ```properties
-# cas.smsProviders.twilio.accountId=
-# cas.smsProviders.twilio.token=
+# cas.smsProvider.twilio.accountId=
+# cas.smsProvider.twilio.token=
 ```
 
 ### TextMagic
@@ -1305,9 +1305,9 @@ Send text messaging using Twilio.
 Send text messaging using TextMagic.
 
 ```properties
-# cas.smsProviders.textMagic.username=
-# cas.smsProviders.textMagic.token=
-# cas.smsProviders.textMagic.url=
+# cas.smsProvider.textMagic.username=
+# cas.smsProvider.textMagic.token=
+# cas.smsProvider.textMagic.url=
 ```
 
 ### Clickatell
@@ -1315,8 +1315,8 @@ Send text messaging using TextMagic.
 Send text messaging using Clickatell.
 
 ```properties
-# cas.smsProviders.clickatell.serverUrl=https://platform.clickatell.com/messages
-# cas.smsProviders.clickatell.token=
+# cas.smsProvider.clickatell.serverUrl=https://platform.clickatell.com/messages
+# cas.smsProvider.clickatell.token=
 ```
 
 ### Amazon SNS
@@ -1324,13 +1324,13 @@ Send text messaging using Clickatell.
 Send text messaging using Amazon SNS.
 
 ```properties
-# cas.smsProviders.sns.senderId=
-# cas.smsProviders.sns.maxPrice=
-# cas.smsProviders.sns.smsType=Transactional
+# cas.smsProvider.sns.senderId=
+# cas.smsProvider.sns.maxPrice=
+# cas.smsProvider.sns.smsType=Transactional
 ```
 
 AWS settings for this feature are available [here](Configuration-Properties-Common.html#amazon-integration-settings) 
-under the configuration key `cas.smsProviders.sns`.
+under the configuration key `cas.smsProvider.sns`.
 
 ## GeoTracking
 
@@ -2629,6 +2629,7 @@ Delegate authentication to an external CAS server.
 ```properties
 # cas.authn.pac4j.cas[0].loginUrl=
 # cas.authn.pac4j.cas[0].protocol=
+# cas.authn.pac4j.cas[0].usePathBasedCallbackUrl=false
 ```
 
 ### OAuth20
@@ -2643,6 +2644,7 @@ Delegate authentication to an generic OAuth2 server. Common settings for this id
 # cas.authn.pac4j.oauth2[0].profileVerb=GET|POST
 # cas.authn.pac4j.oauth2[0].profileAttrs.attr1=path-to-attr-in-profile
 # cas.authn.pac4j.oauth2[0].customParams.param1=value1
+# cas.authn.pac4j.oauth2[0].usePathBasedCallbackUrl=false
 ```
 
 ### OpenID Connect
@@ -2658,6 +2660,8 @@ Delegate authentication to an external OpenID Connect server. Common settings fo
 # cas.authn.pac4j.oidc[0].useNonce=
 # cas.authn.pac4j.oidc[0].preferredJwsAlgorithm=
 # cas.authn.pac4j.oidc[0].customParams.param1=value1
+# cas.authn.pac4j.oidc[0].azureTenantId=
+# cas.authn.pac4j.oidc[0].usePathBasedCallbackUrl=false
 ```
 
 ### SAML2
@@ -2811,6 +2815,7 @@ Created by CAS if and when users are to be warned when accessing CAS protected s
 # cas.tgc.secure=true
 # cas.tgc.httpOnly=true
 # cas.tgc.rememberMeMaxAge=1209600
+# cas.tgc.pinToSession=true
 ```
 
 ### Signing & Encryption
@@ -3735,6 +3740,8 @@ To learn more about this topic, [please review this guide](../protocol/REST-Prot
 ```properties
 # cas.rest.attributeName=
 # cas.rest.attributeValue=
+# cas.rest.headerAuth=
+# cas.rest.bodyAuth=
 ```
 
 ## Metrics
