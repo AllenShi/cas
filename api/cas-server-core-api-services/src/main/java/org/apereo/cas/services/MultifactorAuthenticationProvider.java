@@ -69,4 +69,8 @@ public interface MultifactorAuthenticationProvider extends Serializable, Ordered
                      RegisteredService registeredService,
                      HttpServletRequest request);
 
+    default RegisteredServiceMultifactorPolicy.FailureModes determineFailureMode(final RegisteredService service) {
+        return RegisteredServiceMultifactorPolicy.FailureModes.NONE;
+    }
+
 }

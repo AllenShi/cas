@@ -75,19 +75,7 @@ public abstract class AbstractMultifactorAuthenticationProvider implements Multi
 
     @Override
     public boolean isAvailable(final RegisteredService service) throws AuthenticationException {
-        RegisteredServiceMultifactorPolicy.FailureModes failureMode = CLOSED;
-        if (StringUtils.isNotBlank(this.globalFailureMode)) {
-            failureMode = RegisteredServiceMultifactorPolicy.FailureModes.valueOf(this.globalFailureMode);
-            LOGGER.debug("Using global multi-factor failure mode for [{}] defined as [{}]", service, failureMode);
-        }
-        if (service != null) {
-            LOGGER.debug("Evaluating multifactor authentication policy for service [{}}", service);
-            final RegisteredServiceMultifactorPolicy policy = service.getMultifactorPolicy();
-            if (policy != null && policy.getFailureMode() != NOT_SET) {
-                failureMode = policy.getFailureMode();
-                LOGGER.debug("Multi-factor failure mode for [{}] is defined as [{}]", service.getServiceId(), failureMode);
-            }
-        }
+        RegisteredServiceMultifactorPolicy.FailureModes failureMode = determineFailureMode(service);
         if (failureMode != RegisteredServiceMultifactorPolicy.FailureModes.NONE) {
             if (isAvailable()) {
                 return true;
@@ -104,6 +92,25 @@ public abstract class AbstractMultifactorAuthenticationProvider implements Multi
         LOGGER.debug("Failure mode is set to [{}]. Assuming the provider is available.", failureMode);
         return true;
     }
+
+    @Override
+    public RegisteredServiceMultifactorPolicy.FailureModes determineFailureMode(final RegisteredService service) {
+        RegisteredServiceMultifactorPolicy.FailureModes failureMode = CLOSED;
+        if (StringUtils.isNotBlank(this.globalFailureMode)) {
+            failureMode = RegisteredServiceMultifactorPolicy.FailureModes.valueOf(this.globalFailureMode);
+            LOGGER.debug("Using global multi-factor failure mode for [{}] defined as [{}]", service, failureMode);
+        }
+        if (service != null) {
+            LOGGER.debug("Evaluating multifactor authentication policy for service [{}}", service);
+            final RegisteredServiceMultifactorPolicy policy = service.getMultifactorPolicy();
+            if (policy != null && policy.getFailureMode() != NOT_SET) {
+                failureMode = policy.getFailureMode();
+                LOGGER.debug("Multi-factor failure mode for [{}] is defined as [{}]", service.getServiceId(), failureMode);
+            }
+        }
+        return failureMode;
+    }
+
 
     /**
      * Is provider available?

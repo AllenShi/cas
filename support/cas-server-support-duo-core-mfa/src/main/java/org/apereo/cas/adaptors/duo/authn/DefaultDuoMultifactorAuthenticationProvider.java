@@ -50,39 +50,10 @@ public class DefaultDuoMultifactorAuthenticationProvider extends AbstractMultifa
         return StringUtils.defaultIfBlank(super.getId(), DuoSecurityMultifactorProperties.DEFAULT_IDENTIFIER);
     }
 
-    @Override
-    protected boolean supportsInternal(final Event e, final Authentication authentication, final RegisteredService registeredService) {
-        if (!super.supportsInternal(e, authentication, registeredService)) {
-            return false;
-        }
-
-        return true;
-/*
-        final Principal principal = authentication.getPrincipal();
-        final DuoUserAccount acct = this.duoAuthenticationService.getDuoUserAccount(principal.getId());
-        LOGGER.debug("Found duo user account status [{}] for [{}]", acct, principal);
-        if (acct.getStatus() == DuoUserAccountAuthStatus.ALLOW) {
-            LOGGER.debug("Account status is set for allow/bypass for [{}]", principal);
-            return false;
-        }
-
-        if (acct.getStatus() == DuoUserAccountAuthStatus.ENROLL) {
-            LOGGER.debug("User is not enrolled in Duo");
-        }
-
-        if (acct.getStatus() == DuoUserAccountAuthStatus.DENY) {
-            LOGGER.warn("Account status is set to deny access to [{}]", principal);
-        }
-        return true;
-        */
-    }
 
     @Override
     public String getFriendlyName() {
         return "Duo Security";
     }
 
-    public DuoUserAccountAuthStatus performPreauth(String username) {
-        return duoAuthenticationService.getDuoUserAccount(username).getStatus();
-    }
 }
