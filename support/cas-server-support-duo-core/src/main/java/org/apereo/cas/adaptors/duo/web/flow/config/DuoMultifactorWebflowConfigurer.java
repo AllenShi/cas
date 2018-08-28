@@ -109,7 +109,6 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
         createDuoInitializeLoginAction(states);
         createDuoDetermineUserAccountAction(states);
         createDuoDetermineRequestAction(states);
-
         createDuoDoNonWebAuthenticationAction(states);
         createDuoFinalizeAuthenticationAction(states);
         createDuoLoginViewState(states);
@@ -122,10 +121,9 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
 
     private void createDuoSuccessEndState(final List<AbstractStateModel> states) {
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_SUCCESS));
-
-        states.add(new EndStateModel("duoUnavailable"));
-        states.add(new EndStateModel("duoEnrollUser"));
-        states.add(new EndStateModel("deniedByDuo"));
+        states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_DENY));
+        states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE));
+        states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_ENROLL));
 
     }
 
@@ -151,6 +149,16 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
         transModel = new TransitionModel();
         transModel.setOn(CasWebflowConstants.TRANSITION_ID_ERROR);
         transModel.setTo(CasWebflowConstants.STATE_ID_INIT_LOGIN_FORM);
+        trans.add(transModel);
+
+        transModel = new TransitionModel();
+        transModel.setOn(CasWebflowConstants.TRANSITION_ID_DENY);
+        transModel.setTo(CasWebflowConstants.TRANSITION_ID_DENY);
+        trans.add(transModel);
+
+        transModel = new TransitionModel();
+        transModel.setOn(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE);
+        transModel.setTo(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE);
         trans.add(transModel);
 
         actModel.setTransitions(trans);
@@ -254,47 +262,27 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
 
         transModel = new TransitionModel();
         transModel.setOn(CasWebflowConstants.TRANSITION_ID_ENROLL);
-        transModel.setTo("duoEnrollUser");
+        transModel.setTo(CasWebflowConstants.TRANSITION_ID_ENROLL);
         trans.add(transModel);
 
         transModel = new TransitionModel();
-        transModel.setOn("DENY");
-        transModel.setTo("deniedByDuo");
-        trans.add(transModel);
-
-        actModel.setTransitions(trans);
-        states.add(actModel);
-    }
-
-    private void createDuoPreAuthCheck(final List<AbstractStateModel> states) {
-        final ActionStateModel actModel = new ActionStateModel("duoPreAuthCheck");
-        final LinkedList<AbstractActionModel> actions = new LinkedList<>();
-        actions.add(new EvaluateModel("duoMultifactorAuthenticationProvider.findProvider('mfa-duo').performPreauth(conversationScope.authentication.principal.id)"));
-        actModel.setActions(actions);
-
-        final LinkedList<TransitionModel> trans = new LinkedList<>();
-        TransitionModel transModel = new TransitionModel();
-        transModel.setOn("ALLOW");
-        transModel.setTo("success");
-        trans.add(transModel);
-        transModel = new TransitionModel();
-        transModel.setOn("DENY");
-        transModel.setTo("deniedByDuo");
+        transModel.setOn(CasWebflowConstants.TRANSITION_ID_BYPASS);
+        transModel.setTo("finalizeAuthentication");
         trans.add(transModel);
 
         transModel = new TransitionModel();
-        transModel.setOn("AUTH");
-        transModel.setTo(STATE_ID_VIEW_LOGIN_FORM_DUO);
+        transModel.setOn(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE);
+        transModel.setTo(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE);
         trans.add(transModel);
 
         transModel = new TransitionModel();
-        transModel.setOn("ENROLL");
-        transModel.setTo("duoEnrollUser");
+        transModel.setOn(CasWebflowConstants.TRANSITION_ID_DENY);
+        transModel.setTo(CasWebflowConstants.TRANSITION_ID_DENY);
         trans.add(transModel);
 
         transModel = new TransitionModel();
-        transModel.setOn("UNAVAILABLE");
-        transModel.setTo("duoUnavailable");
+        transModel.setOn(CasWebflowConstants.TRANSITION_ID_ERROR);
+        transModel.setTo(CasWebflowConstants.STATE_ID_INIT_LOGIN_FORM);
         trans.add(transModel);
 
         actModel.setTransitions(trans);

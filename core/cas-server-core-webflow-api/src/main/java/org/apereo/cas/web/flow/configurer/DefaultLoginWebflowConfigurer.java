@@ -289,9 +289,6 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
         createInjectHeadersActionState(flow);
         createGenericLoginSuccessEndState(flow);
         createServiceWarningViewState(flow);
-        createDeniedByDuoEndState(flow);
-        createDuoEnrollUserEndState(flow);
-        createDuoUnavailableEndState(flow);
 
         createEndWebflowEndState(flow);
     }
@@ -351,35 +348,6 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
      */
     private void createServiceErrorEndState(final Flow flow) {
         createEndState(flow, CasWebflowConstants.STATE_ID_VIEW_SERVICE_ERROR, CasWebflowConstants.VIEW_ID_SERVICE_ERROR);
-    }
-
-    /**
-     * Create service error end state.
-     *
-     * @param flow the flow
-     */
-    private void createDeniedByDuoEndState(final Flow flow) {
-        createEndState(flow, "deniedByDuo", "duoDeniedView", true);
-    }
-
-    /**
-     * Create service error end state.
-     *
-     * @param flow the flow
-     */
-    private void createDuoEnrollUserEndState(final Flow flow) {
-        final EndState state = createEndState(flow, "duoEnrollUser", "enrollmnentView");
-        state.getEntryActionList().add(createEvaluateAction("sendTicketGrantingTicketAction"));
-    }
-
-    /**
-     * Create service error end state.
-     *
-     * @param flow the flow
-     */
-    private void createDuoUnavailableEndState(final Flow flow) {
-        final EndState state = createEndState(flow, "duoUnavailable", "duoUnavailable");
-        state.getEntryActionList().add(createEvaluateAction("sendTicketGrantingTicketAction"));
     }
 
     /**
