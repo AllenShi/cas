@@ -8,15 +8,9 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.adaptors.duo.DuoUserAccount;
-import org.apereo.cas.adaptors.duo.DuoUserAccountAuthStatus;
 import org.apereo.cas.authentication.AbstractMultifactorAuthenticationProvider;
-import org.apereo.cas.authentication.Authentication;
-import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.configuration.model.support.mfa.DuoSecurityMultifactorProperties;
-import org.apereo.cas.services.RegisteredService;
 import org.springframework.util.Assert;
-import org.springframework.webflow.execution.Event;
 
 /**
  * This is {@link DefaultDuoMultifactorAuthenticationProvider}.
@@ -55,5 +49,4 @@ public class DefaultDuoMultifactorAuthenticationProvider extends AbstractMultifa
     public String getFriendlyName() {
         return "Duo Security";
     }
-
 }

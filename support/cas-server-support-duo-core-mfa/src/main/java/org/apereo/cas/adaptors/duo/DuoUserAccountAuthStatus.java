@@ -24,7 +24,7 @@ public enum DuoUserAccountAuthStatus {
      */
     ENROLL,
     /**
-     * Duo service was unavailable
+     * Duo service was unavailable.
      */
     UNAVAILABLE
 }

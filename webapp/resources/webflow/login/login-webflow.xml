@@ -26,9 +26,9 @@
         <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
         <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
         <transition on="error" to="initializeLoginForm"/>
-        <transition on="deniedByDuo" to="deniedByDuo"/>
+        <transition on="mfaDenied" to="mfaDenied"/>
         <transition on="duoEnrollUser" to="duoEnrollUser"/>
-        <transition on="duoUnavailable" to="duoUnavailable"/>
+        <transition on="mfaUnavailable" to="mfaUnavailable"/>
     </action-state>
 
 
@@ -52,9 +52,6 @@
       <transition on="success" to="createTicketGrantingTicket"/>
     </view-state>
 
-    <!--  This state is reached when Duo Preauth Denies a user-->
-    <end-state id="deniedByDuo" view="duoDeniedView"/>
-
     <!--  This state is reached by a user who needs to enroll in Duo
       We send the the TGT so they do not have to re-enter credentials
       but will not be sent to their destination service.
@@ -65,14 +62,6 @@
         </on-entry>
     </end-state>
 
-    <!--  This screen is shown when Duo is not available and CAS is
-          set to fail closed.  We send the ticket still so they have
-          SSO for other services that do not require Duo.
-    -->
-    <end-state id="duoUnavailable" view="duoUnavailable">
-        <on-entry>
-            <evaluate expression="createTicketGrantingTicketAction"/>
-        </on-entry>
-    </end-state>
+
 
 </flow>

@@ -148,4 +148,3 @@ public class ServiceTicketRequestWebflowEventResolver extends AbstractCasWebflow
         }
     }
 }
-

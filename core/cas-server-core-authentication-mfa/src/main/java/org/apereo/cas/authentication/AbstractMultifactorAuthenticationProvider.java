@@ -75,7 +75,7 @@ public abstract class AbstractMultifactorAuthenticationProvider implements Multi
 
     @Override
     public boolean isAvailable(final RegisteredService service) throws AuthenticationException {
-        RegisteredServiceMultifactorPolicy.FailureModes failureMode = determineFailureMode(service);
+        final RegisteredServiceMultifactorPolicy.FailureModes failureMode = determineFailureMode(service);
         if (failureMode != RegisteredServiceMultifactorPolicy.FailureModes.NONE) {
             if (isAvailable()) {
                 return true;
@@ -90,6 +90,15 @@ public abstract class AbstractMultifactorAuthenticationProvider implements Multi
             return false;
         }
         LOGGER.debug("Failure mode is set to [{}]. Assuming the provider is available.", failureMode);
+        return true;
+    }
+
+    /**
+     * Is provider available?
+     *
+     * @return the true/false
+     */
+    protected boolean isAvailable() {
         return true;
     }
 
@@ -109,16 +118,6 @@ public abstract class AbstractMultifactorAuthenticationProvider implements Multi
             }
         }
         return failureMode;
-    }
-
-
-    /**
-     * Is provider available?
-     *
-     * @return the true/false
-     */
-    protected boolean isAvailable() {
-        return true;
     }
 
     @Override

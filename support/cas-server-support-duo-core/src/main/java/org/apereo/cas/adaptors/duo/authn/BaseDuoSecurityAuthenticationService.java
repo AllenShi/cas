@@ -31,6 +31,7 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
     private static final long serialVersionUID = -8044100706027708789L;
 
     private static final int AUTH_API_VERSION = 2;
+    private static final int RESULT_CODE_ERROR_THRESHOLD = 49999;
     private static final String RESULT_KEY_RESPONSE = "response";
     private static final String RESULT_KEY_STAT = "stat";
     private static final String RESULT_KEY_RESULT = "result";
@@ -125,8 +126,8 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
 
             final JsonNode result = MAPPER.readTree(jsonResponse);
             if (!result.has(RESULT_KEY_STAT)) {
-                LOGGER.warn("Response from Duo was received in unknown format : {0}", jsonResponse);
-                throw new Exception("Invalid response format received fro Duo");
+                LOGGER.warn("Duo admin response was received in unknown format : {0}", jsonResponse);
+                throw new Exception("Invalid response format received from Duo");
             }
             if (result.get(RESULT_KEY_STAT).asText().equalsIgnoreCase("OK")) {
 
@@ -149,20 +150,21 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
                 }
             } else {
                 final int code = result.get(RESULT_KEY_CODE).asInt();
-                if (code > 49999) {
-                    LOGGER.warn("Duo returned a FAIL response indicating a server error, Duo will be considered unavailable");
+                if (code > RESULT_CODE_ERROR_THRESHOLD) {
+                    LOGGER.warn("Duo returned a FAIL response with a code indicating a server error, Duo will be considered unavailable");
                     throw new Exception("Duo returned code 500");
                 }
                 LOGGER.warn("Duo returned an Invalid request response with message {0} and detail {1} "
-                        +"when determining user account.  This maybe a configuration error and Duo will still be considered available ",
+                        + "when determining user account.  This maybe a configuration error in the admin request and Duo will "
+                        + "still be considered available",
                         result.get(RESULT_KEY_MESSAGE).asText(),
                         result.get(RESULT_KEY_MESSAGE_DETAIL).asText());
             }
-
         } catch (final Exception e) {
             LOGGER.warn("Reaching Duo has failed with error: [{}]", e.getMessage(), e);
             account.setStatus(DuoUserAccountAuthStatus.UNAVAILABLE);
         }
+        account.setStatus(DuoUserAccountAuthStatus.DENY);
         return account;
     }
 
