@@ -1,6 +1,7 @@
 package org.apereo.cas.adaptors.duo.authn;
 
 import com.duosecurity.client.Http;
+import com.duosecurity.duoweb.DuoWebException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -127,7 +128,7 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
             final JsonNode result = MAPPER.readTree(jsonResponse);
             if (!result.has(RESULT_KEY_STAT)) {
                 LOGGER.warn("Duo admin response was received in unknown format : {0}", jsonResponse);
-                throw new Exception("Invalid response format received from Duo");
+                throw new DuoWebException("Invalid response format received from Duo");
             }
             if (result.get(RESULT_KEY_STAT).asText().equalsIgnoreCase("OK")) {
 
@@ -151,10 +152,11 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
             } else {
                 final int code = result.get(RESULT_KEY_CODE).asInt();
                 if (code > RESULT_CODE_ERROR_THRESHOLD) {
-                    LOGGER.warn("Duo returned a FAIL response with a code indicating a server error, Duo will be considered unavailable");
-                    throw new Exception("Duo returned code 500");
+                    LOGGER.warn("Duo returned a FAIL response with a code indicating a server error: [{}], Duo will be considered unavailable",
+                                 result.get(RESULT_KEY_MESSAGE));
+                    throw new DuoWebException("Duo returned code 500: " + result.get(RESULT_KEY_MESSAGE));
                 }
-                LOGGER.warn("Duo returned an Invalid request response with message {0} and detail {1} "
+                LOGGER.warn("Duo returned an Invalid request response with message [{}] and detail [{}] "
                         + "when determining user account.  This maybe a configuration error in the admin request and Duo will "
                         + "still be considered available",
                         result.get(RESULT_KEY_MESSAGE).asText(),
@@ -164,7 +166,6 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
             LOGGER.warn("Reaching Duo has failed with error: [{}]", e.getMessage(), e);
             account.setStatus(DuoUserAccountAuthStatus.UNAVAILABLE);
         }
-        account.setStatus(DuoUserAccountAuthStatus.DENY);
         return account;
     }
 

@@ -26,9 +26,6 @@
         <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
         <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
         <transition on="error" to="initializeLoginForm"/>
-        <transition on="mfaDenied" to="mfaDenied"/>
-        <transition on="duoEnrollUser" to="duoEnrollUser"/>
-        <transition on="mfaUnavailable" to="mfaUnavailable"/>
     </action-state>
 
 
@@ -51,17 +48,5 @@
     <view-state id="noTlsView" view="noTlsView">
       <transition on="success" to="createTicketGrantingTicket"/>
     </view-state>
-
-    <!--  This state is reached by a user who needs to enroll in Duo
-      We send the the TGT so they do not have to re-enter credentials
-      but will not be sent to their destination service.
-     -->
-    <end-state id="duoEnrollUser" view="enrollmentView">
-        <on-entry>
-            <evaluate expression="createTicketGrantingTicketAction"/>
-        </on-entry>
-    </end-state>
-
-
 
 </flow>

@@ -577,4 +577,11 @@ public interface CasWebflowConstants {
      */
     String VIEW_ID_MFA_DENIED = "mfaDeniedView";
 
+    /**
+     * STATE_ID_MFA_ENROLL.
+     */
+    String STATE_ID_MFA_ENROLL = "mfaEnroll";
+
+    String VIEW_ID_MFA_ENROLL = "mfaEnrollView";
+
 }

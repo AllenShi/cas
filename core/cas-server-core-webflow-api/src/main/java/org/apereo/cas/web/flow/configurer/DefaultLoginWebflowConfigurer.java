@@ -289,9 +289,6 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
         createInjectHeadersActionState(flow);
         createGenericLoginSuccessEndState(flow);
         createServiceWarningViewState(flow);
-        createMfaDeniedViewState(flow);
-        createMfaUnavailableViewState(flow);
-        createDuoEnrollUserEndState(flow);
 
         createEndWebflowEndState(flow);
     }
@@ -354,16 +351,6 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
     }
 
     /**
-     * Create service error end state.
-     *
-     * @param flow the flow
-     */
-    private void createDuoEnrollUserEndState(final Flow flow) {
-        final EndState state = createEndState(flow, "duoEnrollUser", "enrollmnentView");
-        state.getEntryActionList().add(createEvaluateAction("sendTicketGrantingTicketAction"));
-    }
-
-    /**
      * Create generic login success end state.
      *
      * @param flow the flow
@@ -371,20 +358,6 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
     private void createGenericLoginSuccessEndState(final Flow flow) {
         final EndState state = createEndState(flow, CasWebflowConstants.STATE_ID_VIEW_GENERIC_LOGIN_SUCCESS, CasWebflowConstants.VIEW_ID_GENERIC_SUCCESS);
         state.getEntryActionList().add(createEvaluateAction("genericSuccessViewAction"));
-    }
-
-    /*
-     * Create generic MFA denied end state.
-     */
-    private void createMfaDeniedViewState(final Flow flow) {
-        createEndState(flow, CasWebflowConstants.STATE_ID_MFA_DENIED, CasWebflowConstants.VIEW_ID_MFA_DENIED);
-    }
-
-    /**
-     * Create generic MFA denied end state.
-     */
-    private void createMfaUnavailableViewState(final Flow flow) {
-        createEndState(flow, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, CasWebflowConstants.VIEW_ID_MFA_UNAVAILABLE);
     }
 
     /**
