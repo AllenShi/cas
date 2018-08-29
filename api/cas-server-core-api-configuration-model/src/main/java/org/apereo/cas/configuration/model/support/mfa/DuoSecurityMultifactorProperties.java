@@ -65,6 +65,12 @@ public class DuoSecurityMultifactorProperties extends BaseMultifactorProviderPro
     private String registrationUrl;
 
     /**
+     * Amount of time in seconds to attempt to connect to Duo before we
+     * consider it unavailable.
+     */
+    private Integer preAuthTimeout = 60;
+
+    /**
      * Indicates whether this provider should support trusted devices.
      */
     private boolean trustedDeviceEnabled;

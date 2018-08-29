@@ -1,5 +1,11 @@
 package org.apereo.cas.adaptors.duo.authn;
 
+import org.apereo.cas.adaptors.duo.DuoUserAccount;
+import org.apereo.cas.adaptors.duo.DuoUserAccountAuthStatus;
+import org.apereo.cas.configuration.model.support.mfa.DuoSecurityMultifactorProperties;
+import org.apereo.cas.util.http.HttpClient;
+import org.apereo.cas.util.http.HttpMessage;
+
 import com.duosecurity.client.Http;
 import com.duosecurity.duoweb.DuoWebException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,11 +15,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apereo.cas.adaptors.duo.DuoUserAccount;
-import org.apereo.cas.adaptors.duo.DuoUserAccountAuthStatus;
-import org.apereo.cas.configuration.model.support.mfa.DuoSecurityMultifactorProperties;
-import org.apereo.cas.util.http.HttpClient;
-import org.apereo.cas.util.http.HttpMessage;
 import org.springframework.http.HttpMethod;
 
 import java.net.URL;
@@ -196,7 +197,8 @@ public abstract class BaseDuoSecurityAuthenticationService implements DuoSecurit
     protected Http buildHttpPostUserPreAuthRequest(final String username) {
         final Http usersRequest = new Http(HttpMethod.POST.name(),
             duoProperties.getDuoApiHost(),
-            String.format("/auth/v%s/preauth", AUTH_API_VERSION));
+            String.format("/auth/v%s/preauth", AUTH_API_VERSION),
+            duoProperties.getPreAuthTimeout());
         usersRequest.addParam("username", username);
         return usersRequest;
     }

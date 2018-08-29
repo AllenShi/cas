@@ -292,7 +292,7 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
     private LinkedList<AbstractActionModel> createDuoInitializeLoginAction(final List<AbstractStateModel> states) {
         final ActionStateModel actModel = new ActionStateModel(CasWebflowConstants.STATE_ID_INIT_LOGIN_FORM);
         final LinkedList<AbstractActionModel> actions = new LinkedList<>();
-        actions.add(new EvaluateModel("initializeLoginAction"));
+        actions.add(new EvaluateModel("duoInitializeLoginAction"));
         actModel.setActions(actions);
 
         final LinkedList<TransitionModel> trans = new LinkedList<>();
