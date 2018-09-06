@@ -3,7 +3,6 @@ package org.apereo.cas.web.flow.resolver.impl.mfa;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
@@ -50,15 +49,13 @@ public class RegisteredServiceMultifactorAuthenticationPolicyEventResolver exten
 
     @Override
     public Set<Event> resolveInternal(final RequestContext context) {
-        RegisteredService service = resolveRegisteredServiceInRequestContext(context);
+        final RegisteredService service = resolveRegisteredServiceInRequestContext(context);
         final Authentication authentication = WebUtils.getAuthentication(context);
 
         if (service == null || authentication == null) {
             LOGGER.debug("No service or authentication is available to determine event for principal");
             return null;
         }
-
-        service = checkForShibService(context,service);
 
         final RegisteredServiceMultifactorPolicy policy = service.getMultifactorPolicy();
         if (policy == null || policy.getMultifactorAuthenticationProviders().isEmpty()) {
@@ -106,19 +103,6 @@ public class RegisteredServiceMultifactorAuthenticationPolicyEventResolver exten
         LOGGER.debug("No multifactor authentication providers could be located for [{}]", service);
         return null;
     }
-
-    protected RegisteredService checkForShibService(final RequestContext context, RegisteredService pService) {
-        RegisteredService service = null;
-        String entityId = context.getRequestParameters().get(CasProtocolConstants.PARAMETER_ENTITY_ID);
-        if(StringUtils.isNotBlank(entityId)) {
-            service = this.servicesManager.findServiceBy(entityId);
-        }
-        if (service == null) {
-            return pService;
-        }
-        return service;
-    }
-
 
     @Audit(action = "AUTHENTICATION_EVENT",
             actionResolverName = "AUTHENTICATION_EVENT_ACTION_RESOLVER",
