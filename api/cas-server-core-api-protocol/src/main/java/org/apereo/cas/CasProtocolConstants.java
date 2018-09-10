@@ -100,9 +100,6 @@ public interface CasProtocolConstants {
      */
     String PARAMETER_PROXY_GRANTING_TICKET = "pgt";
 
-    /** Constant representing the entity id of the passed by ShibCas plugin */
-    String PARAMETER_ENTITY_ID = "entityId";
-
     /**
      * Constant representing the pgtIou parameter in the request.
      */

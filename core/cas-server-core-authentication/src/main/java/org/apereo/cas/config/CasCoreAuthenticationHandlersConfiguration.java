@@ -177,8 +177,7 @@ public class CasCoreAuthenticationHandlersConfiguration {
                 .stream()
                 .filter(jaas -> StringUtils.isNotBlank(jaas.getRealm()))
                 .map(jaas -> {
-                    final JaasAuthenticationHandler h = new JaasAuthenticationHandler(jaas.getName(),
-                        servicesManager,
+                    final JaasAuthenticationHandler h = new JaasAuthenticationHandler(jaas.getName(), servicesManager,
                         jaasPrincipalFactory(), jaas.getOrder());
 
                     h.setKerberosKdcSystemProperty(jaas.getKerberosKdcSystemProperty());

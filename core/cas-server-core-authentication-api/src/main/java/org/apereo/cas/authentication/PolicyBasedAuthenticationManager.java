@@ -19,14 +19,17 @@ import org.apereo.cas.support.events.authentication.CasAuthenticationPrincipalRe
 import org.apereo.cas.support.events.authentication.CasAuthenticationTransactionFailureEvent;
 import org.apereo.cas.support.events.authentication.CasAuthenticationTransactionStartedEvent;
 import org.apereo.cas.support.events.authentication.CasAuthenticationTransactionSuccessfulEvent;
-import org.apereo.cas.util.CollectionUtils;
 import org.apereo.inspektr.audit.annotation.Audit;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.GeneralSecurityException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**

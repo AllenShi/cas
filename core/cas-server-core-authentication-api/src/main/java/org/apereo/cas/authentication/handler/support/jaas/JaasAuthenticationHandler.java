@@ -123,10 +123,6 @@ public class JaasAuthenticationHandler extends AbstractUsernamePasswordAuthentic
             System.setProperty(SYS_PROP_KRB5_REALM, this.kerberosRealmSystemProperty);
         }
         */
-
-        final String username = credential.getUsername();
-        final String password = credential.getPassword();
-
         final Principal principal = authenticateAndGetPrincipal(credential);
         final AuthenticationPasswordPolicyHandlingStrategy strategy = getPasswordPolicyHandlingStrategy();
         if (principal != null && strategy != null) {

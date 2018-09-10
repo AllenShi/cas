@@ -357,12 +357,6 @@ public interface CasWebflowConstants {
     String ATTRIBUTE_ID_AUTHENTICATION_WARNINGS = "authenticationWarnings";
 
     /**
-     * Attribute key used to store Last MFA Auth time
-     */
-    String GLOBAL_MFA_LAST_AUTH = "globalMFALastAuth";
-
-
-    /**
      * View id 'casResetPasswordSendInstructions'.
      */
     String VIEW_ID_SEND_RESET_PASSWORD_ACCT_INFO = "casResetPasswordSendInstructionsView";
@@ -578,12 +572,17 @@ public interface CasWebflowConstants {
     String VIEW_ID_MFA_DENIED = "mfaDeniedView";
 
     /**
+     * State id for finding provider and inserting into flowscope.
+     */
+    String STATE_ID_MFA_INITIALIZE = "mfaInitialize";
+
+    /**
      * STATE_ID_MFA_ENROLL.
      */
     String STATE_ID_MFA_ENROLL = "mfaEnroll";
 
+    /**
+     * State for view of MFA Enroll.
+     */
     String VIEW_ID_MFA_ENROLL = "mfaEnrollView";
-
-    String STATE_ID_MFA_INITIALIZE = "mfaInitialize";
-
 }

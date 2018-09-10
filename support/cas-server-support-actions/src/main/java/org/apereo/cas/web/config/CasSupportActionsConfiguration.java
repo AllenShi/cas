@@ -1,6 +1,5 @@
 package org.apereo.cas.web.config;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Impersonators;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
