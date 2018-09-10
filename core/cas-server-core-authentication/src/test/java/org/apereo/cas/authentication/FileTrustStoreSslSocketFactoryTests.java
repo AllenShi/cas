@@ -78,8 +78,8 @@ public class FileTrustStoreSslSocketFactoryTests {
 
     private static SSLConnectionSocketFactory sslFactory(final Resource resource, final String password) {
         return new SSLConnectionSocketFactory(new DefaultCasSslContext(resource,
-            password,
-            KeyStore.getDefaultType()).getSslContext());
+                password,
+                KeyStore.getDefaultType()).getSslContext());
     }
 
     private static SSLConnectionSocketFactory sslFactory() {

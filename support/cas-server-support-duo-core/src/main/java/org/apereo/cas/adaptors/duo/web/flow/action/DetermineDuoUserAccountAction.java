@@ -35,15 +35,15 @@ public class DetermineDuoUserAccountAction extends AbstractAction {
         final Authentication authentication = WebUtils.getAuthentication(requestContext);
         final Principal p = authentication.getPrincipal();
         final RegisteredService service = WebUtils.getRegisteredService(requestContext);
-        final DuoMultifactorAuthenticationProvider duoProvider =
-                (DuoMultifactorAuthenticationProvider) WebUtils.getActiveMultifactorAuthenticationProvider(requestContext);
+        final DuoMultifactorAuthenticationProvider provider = requestContext.getFlowScope().get("provider",
+                DuoMultifactorAuthenticationProvider.class);
 
         final Event enrollEvent = new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_ENROLL);
         final Event denyEvent = new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_DENY);
         final Event unavailableEvent = new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE);
         final Event errorEvent = new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_ERROR);
 
-        final DuoSecurityAuthenticationService duoAuthenticationService = duoProvider.getDuoAuthenticationService();
+        final DuoSecurityAuthenticationService duoAuthenticationService = provider.getDuoAuthenticationService();
         final DuoUserAccount account = duoAuthenticationService.getDuoUserAccount(p.getId());
         switch (account.getStatus()) {
             case ENROLL:
@@ -54,13 +54,13 @@ public class DetermineDuoUserAccountAction extends AbstractAction {
                 requestContext.getFlowScope().put("duoRegistrationUrl", duoProvider.getRegistrationUrl());*/
                 return enrollEvent;
             case ALLOW:
-                return returnByPass(authentication, duoProvider.getId());
+                return returnByPass(authentication, provider.getId());
             case DENY:
                 return denyEvent;
             case UNAVAILABLE:
-                final RegisteredServiceMultifactorPolicy.FailureModes failureMode = duoProvider.determineFailureMode(service);
+                final RegisteredServiceMultifactorPolicy.FailureModes failureMode = provider.determineFailureMode(service);
                 if (failureMode != RegisteredServiceMultifactorPolicy.FailureModes.CLOSED) {
-                    return returnByPass(authentication, duoProvider.getId());
+                    return returnByPass(authentication, provider.getId());
                 }
                 return unavailableEvent;
             default:

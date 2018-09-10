@@ -584,4 +584,6 @@ public interface CasWebflowConstants {
 
     String VIEW_ID_MFA_ENROLL = "mfaEnrollView";
 
+    String STATE_ID_MFA_INITIALIZE = "mfaInitialize";
+
 }

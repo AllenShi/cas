@@ -3,7 +3,6 @@ package org.apereo.cas.authentication;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.principal.Service;
-import org.hibernate.criterion.Order;
 import org.springframework.core.OrderComparator;
 
 import java.util.Arrays;
