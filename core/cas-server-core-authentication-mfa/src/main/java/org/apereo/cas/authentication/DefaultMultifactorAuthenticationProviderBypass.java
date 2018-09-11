@@ -128,9 +128,9 @@ public class DefaultMultifactorAuthenticationProviderBypass implements Multifact
     protected static void updateAuthenticationToForgetBypass(final Authentication authentication,
                                                            final MultifactorAuthenticationProvider provider,
                                                            final Principal principal) {
-        LOGGER.debug("Bypass rules for service [{}] indicate the request may be ignored", principal.getId());
+        LOGGER.debug("Bypass rules for service [{}] indicate the request may NOT be ignored", principal.getId());
         authentication.addAttribute(AUTHENTICATION_ATTRIBUTE_BYPASS_MFA, Boolean.FALSE);
-        LOGGER.debug("Updated authentication session to remember bypass for [{}] via [{}]", provider.getId(), AUTHENTICATION_ATTRIBUTE_BYPASS_MFA);
+        LOGGER.debug("Updated authentication session to NOT remember bypass for [{}] via [{}]", provider.getId(), AUTHENTICATION_ATTRIBUTE_BYPASS_MFA);
     }
 
     /**
@@ -142,10 +142,10 @@ public class DefaultMultifactorAuthenticationProviderBypass implements Multifact
      */
     protected static void updateAuthenticationToRememberBypass(final Authentication authentication, final MultifactorAuthenticationProvider provider,
                                                              final Principal principal) {
-        LOGGER.debug("Bypass rules for service [{}] indicate the request may NOT be ignored", principal.getId());
+        LOGGER.debug("Bypass rules for service [{}] indicate the request may be ignored", principal.getId());
         authentication.addAttribute(AUTHENTICATION_ATTRIBUTE_BYPASS_MFA, Boolean.TRUE);
         authentication.addAttribute(AUTHENTICATION_ATTRIBUTE_BYPASS_MFA_PROVIDER, provider.getId());
-        LOGGER.debug("Updated authentication session to NOT remember bypass for [{}] via [{}]", provider.getId(), AUTHENTICATION_ATTRIBUTE_BYPASS_MFA);
+        LOGGER.debug("Updated authentication session to remember bypass for [{}] via [{}]", provider.getId(), AUTHENTICATION_ATTRIBUTE_BYPASS_MFA);
     }
 
     /**

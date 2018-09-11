@@ -113,6 +113,8 @@ public class MultifactorAuthenticationProviderBypassProperties implements Serial
     public static class Groovy extends SpringResourceProperties {
 
         private static final long serialVersionUID = 8079027843747126083L;
+
+        private boolean executeDefault = false;
     }
 
     @RequiresModule(name = "cas-server-core-authentication", automated = true)
@@ -121,5 +123,7 @@ public class MultifactorAuthenticationProviderBypassProperties implements Serial
     public static class Rest extends RestEndpointProperties {
 
         private static final long serialVersionUID = 1833594332973137011L;
+
+        private boolean executeDefault = false;
     }
 }
