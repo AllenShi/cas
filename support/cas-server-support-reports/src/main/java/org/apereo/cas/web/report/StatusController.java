@@ -71,7 +71,9 @@ public class StatusController extends BaseCasMvcEndpoint {
         sb.append("\n\t  Members: " + stats.clusterSize);
         sb.append("\n\t  Is Master: " +  stats.isMaster());
         for(String key : stats.maps.keySet()) {
-            sb.append("\n\t  Map: " + key + " - Size: " + formatMemory(stats.maps.get(key).memory));
+            sb.append("\n\t  Map: " + key);
+            sb.append(" - Entries: " + stats.maps.get(key).size + " - Size: " + formatMemory(stats.maps.get(key).memory));
+            sb.append(" using " + stats.maps.get(key).percentFree +"% of heap");
             sb.append("\n\t\tLocal Count: " + stats.maps.get(key).localCount);
             sb.append("\n\t\tBackup Count: " + stats.maps.get(key).backupCount);
             sb.append("\n\t\tGet Latency: " + stats.maps.get(key).getLatency);
@@ -100,7 +102,7 @@ public class StatusController extends BaseCasMvcEndpoint {
                 : casProperties.getHost().getName()
         );
         sb.append("\nServer:\t\t").append(casProperties.getServer().getName());
-        sb.append("\nVersion:\t").append(CasVersion.getVersion());
+        sb.append("\nVersion:\t").append(CasVersion.getVersion()).append("\n");
         response.setContentType(MediaType.TEXT_PLAIN_VALUE);
         try (Writer writer = response.getWriter()) {
             IOUtils.copy(new ByteArrayInputStream(sb.toString().getBytes(response.getCharacterEncoding())),
@@ -156,8 +158,8 @@ public class StatusController extends BaseCasMvcEndpoint {
     private static class HzMap {
         private int size;
         private int percentFree;
-        private int evictions;
-        private int capacity;
+        private long evictions;
+        private long capacity;
         private long localCount;
         private long backupCount;
         private long getLatency;
@@ -184,7 +186,7 @@ public class StatusController extends BaseCasMvcEndpoint {
             this.percentFree = percentFree;
         }
 
-        public int getEvictions() {
+        public long getEvictions() {
             return evictions;
         }
 
@@ -192,7 +194,7 @@ public class StatusController extends BaseCasMvcEndpoint {
             this.evictions = evictions;
         }
 
-        public int getCapacity() {
+        public long getCapacity() {
             return capacity;
         }
 

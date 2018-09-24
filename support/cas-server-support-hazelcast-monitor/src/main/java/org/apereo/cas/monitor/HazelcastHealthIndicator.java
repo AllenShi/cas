@@ -45,10 +45,11 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
         getClusterSize(instance);
         final boolean isMaster = instance.getOriginal().node.isMaster();
+        final MemoryStats memoryStats = instance.getOriginal().getMemoryStats();
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
             final IMap map = instance.getMap(key);
             LOGGER.debug("Starting to collect hazelcast statistics for map [{}] identified by key [{}]...", map, key);
-            statsList.add(new HazelcastStatistics(map, clusterSize, isMaster));
+            statsList.add(new HazelcastStatistics(map, clusterSize, isMaster, memoryStats));
 
         });
         return statsList.toArray(new CacheStatistics[0]);
@@ -80,21 +81,21 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         private boolean isMaster;
         private MemoryStats memoryStats;
 
-        protected HazelcastStatistics(final IMap map, final int clusterSize, final boolean isMaster) {
+        protected HazelcastStatistics(final IMap map, final int clusterSize, final boolean isMaster, final MemoryStats memoryStats) {
             this.map = map;
             this.clusterSize = clusterSize;
             this.isMaster = isMaster;
+            this.memoryStats = memoryStats;
         }
 
         @Override
         public long getSize() {
-            return this.map.size();
+            return this.map.getLocalMapStats().getOwnedEntryCount() + this.map.getLocalMapStats().getBackupEntryCount();
         }
 
         @Override
         public long getCapacity() {
-            return this.map.getLocalMapStats() != null ? this.map.getLocalMapStats().total() : 0;
-
+            return this.memoryStats.getCommittedHeap();
         }
 
         @Override
@@ -111,13 +112,17 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
             return this.map.getName();
         }
 
+        /**
+         * Hijacked this method to instead return Percent of heap used.
+         *
+         * @return - Percent of heap.
+         */
         @Override
         public long getPercentFree() {
-            final long capacity = getCapacity();
-            if (capacity == 0) {
-                return -1;
+            if (memoryStats.getCommittedHeap() > 0) {
+                return map.getLocalMapStats().getHeapCost() * PERCENTAGE_VALUE / memoryStats.getCommittedHeap();
             }
-            return (int) ((capacity - getSize()) * PERCENTAGE_VALUE / capacity);
+            return -1;
         }
 
         @Override
