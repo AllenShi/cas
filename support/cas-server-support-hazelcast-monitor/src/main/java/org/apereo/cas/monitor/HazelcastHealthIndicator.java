@@ -9,7 +9,9 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.configuration.model.core.monitor.MonitorWarningProperties;
 import org.apereo.cas.configuration.model.support.hazelcast.HazelcastTicketRegistryProperties;
+import org.springframework.boot.actuate.health.Status;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -202,4 +204,12 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         }
     }
 
+    @Override
+    protected Status status(CacheStatistics statistics) {
+        final MonitorWarningProperties warn = casProperties.getMonitor().getWarn();
+        if (statistics.getEvictions() > 0 && statistics.getEvictions() > warn.getEvictionThreshold()) {
+            return new Status("WARN");
+        }
+        return Status.UP;
+    }
 }
