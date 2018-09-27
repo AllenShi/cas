@@ -54,14 +54,10 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
     }
 
     private void getClusterSize(final HazelcastInstanceProxy instance) {
-        Runnable callForSize = new Runnable() {
-            @Override
-            public void run() {
-                HazelcastHealthIndicator.clusterSize = instance.getOriginal().node.getClusterService().getSize();
-            }
-        };
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(callForSize);
+        executorService.execute(() -> HazelcastHealthIndicator.clusterSize =
+                instance.getOriginal().node.getClusterService().getSize()
+        );
     }
 
     /**
