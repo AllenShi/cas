@@ -35,8 +35,6 @@ import java.util.List;
 @Slf4j
 public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCasWebflowConfigurer {
 
-    private static final String MFA_INITIALIZE_BEAN_ID = "mfaInitializeAction";
-
     public AbstractCasMultifactorWebflowConfigurer(final FlowBuilderServices flowBuilderServices,
                                                    final FlowDefinitionRegistry loginFlowDefinitionRegistry,
                                                    final ApplicationContext applicationContext,
@@ -104,16 +102,6 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
      */
     protected void registerMultifactorProviderAuthenticationWebflow(final Flow flow, final String subflowId, final FlowDefinitionRegistry mfaProviderFlowRegistry) {
         final Flow mfaFlow = (Flow) mfaProviderFlowRegistry.getFlowDefinition(subflowId);
-
-        // Set the mfaInitialize action
-        final ActionState initLoginState = getState(mfaFlow, CasWebflowConstants.STATE_ID_INIT_LOGIN_FORM, ActionState.class);
-        final Transition transition = (Transition) initLoginState.getTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS);
-        final String targetStateId = transition.getTargetStateId();
-        transition.setTargetStateResolver(new DefaultTargetStateResolver(CasWebflowConstants.STATE_ID_MFA_INITIALIZE));
-        final ActionState initializeAction = createActionState(mfaFlow,
-                CasWebflowConstants.STATE_ID_MFA_INITIALIZE,
-                createEvaluateAction(MFA_INITIALIZE_BEAN_ID));
-        createTransitionForState(initializeAction, CasWebflowConstants.TRANSITION_ID_SUCCESS, targetStateId);
 
         LOGGER.debug("Adding end state [{}] with transition to [{}] to flow 'login' for MFA", CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, CasWebflowConstants.VIEW_ID_MFA_UNAVAILABLE);
         createEndState(flow, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, CasWebflowConstants.VIEW_ID_MFA_UNAVAILABLE);

@@ -1,16 +1,14 @@
 package org.apereo.cas.monitor;
 
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.monitor.LocalMapStats;
-import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.core.monitor.MonitorWarningProperties;
-import org.apereo.cas.configuration.model.support.hazelcast.HazelcastTicketRegistryProperties;
 import org.springframework.boot.actuate.health.Status;
 
 import java.util.ArrayList;
@@ -30,21 +28,20 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
 
     private static int clusterSize;
 
-    public HazelcastHealthIndicator(final CasConfigurationProperties casProperties) {
+    /**
+     * CAS Hazelcast Instance.
+     */
+    private final HazelcastInstanceProxy instance;
+
+    public HazelcastHealthIndicator(final CasConfigurationProperties casProperties,
+                                    final HazelcastInstance instance) {
         super(casProperties);
-        final HazelcastTicketRegistryProperties hz = casProperties.getTicket().getRegistry().getHazelcast();
-        @NonNull
-        final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
-        getClusterSize(instance);
+        this.instance = (HazelcastInstanceProxy) instance;
     }
 
     @Override
     protected CacheStatistics[] getStatistics() {
         final List<CacheStatistics> statsList = new ArrayList<>();
-        final HazelcastTicketRegistryProperties hz = casProperties.getTicket().getRegistry().getHazelcast();
-        LOGGER.debug("Locating hazelcast instance [{}]...", hz.getCluster().getInstanceName());
-        @NonNull
-        final HazelcastInstanceProxy instance = (HazelcastInstanceProxy) Hazelcast.getHazelcastInstanceByName(hz.getCluster().getInstanceName());
         getClusterSize(instance);
         final boolean isMaster = instance.getOriginal().node.isMaster();
         final MemoryStats memoryStats = instance.getOriginal().getMemoryStats();
@@ -52,7 +49,6 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
             final IMap map = instance.getMap(key);
             LOGGER.debug("Starting to collect hazelcast statistics for map [{}] identified by key [{}]...", map, key);
             statsList.add(new HazelcastStatistics(map, clusterSize, isMaster, memoryStats));
-
         });
         return statsList.toArray(new CacheStatistics[0]);
     }
@@ -107,7 +103,6 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
             }
             return 0;
         }
-
 
         @Override
         public String getName() {

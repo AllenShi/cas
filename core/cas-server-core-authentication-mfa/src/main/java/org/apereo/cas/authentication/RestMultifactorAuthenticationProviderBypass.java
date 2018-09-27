@@ -46,8 +46,8 @@ public class RestMultifactorAuthenticationProviderBypass extends DefaultMultifac
             final Principal principal = authentication.getPrincipal();
             final MultifactorAuthenticationProviderBypassProperties.Rest rest = bypassProperties.getRest();
             LOGGER.debug("Evaluating multifactor authentication bypass properties for principal [{}], "
-                            + "service [{}] and provider [{}] via REST endpoint [{}]",
-                    principal.getId(), registeredService, provider, rest.getUrl());
+                    + "service [{}] and provider [{}] via REST endpoint [{}]",
+                principal.getId(), registeredService, provider, rest.getUrl());
 
             final Map<String, Object> parameters = CollectionUtils.wrap("principal", principal.getId(), "provider", provider.getId());
             if (registeredService != null) {
@@ -55,7 +55,7 @@ public class RestMultifactorAuthenticationProviderBypass extends DefaultMultifac
             }
 
             final HttpResponse response = HttpUtils.execute(rest.getUrl(), rest.getMethod(),
-                    rest.getBasicAuthUsername(), rest.getBasicAuthPassword(), parameters, new HashMap<>());
+                rest.getBasicAuthUsername(), rest.getBasicAuthPassword(), parameters, new HashMap<>());
             final boolean shouldExecute = response.getStatusLine().getStatusCode() == HttpStatus.ACCEPTED.value();
             if (shouldExecute) {
                 updateAuthenticationToForgetBypass(authentication, provider, principal);

@@ -6,11 +6,15 @@ import org.apereo.cas.adaptors.duo.DuoUserAccount;
 import org.apereo.cas.adaptors.duo.authn.DuoMultifactorAuthenticationProvider;
 import org.apereo.cas.adaptors.duo.authn.DuoSecurityAuthenticationService;
 import org.apereo.cas.authentication.Authentication;
+import org.apereo.cas.authentication.MultifactorAuthenticationUtils;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.RegisteredServiceMultifactorPolicy;
+import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.util.spring.ApplicationContextProvider;
 import org.apereo.cas.web.flow.CasWebflowConstants;
 import org.apereo.cas.web.support.WebUtils;
+import org.springframework.context.ApplicationContext;
 import org.springframework.util.StringUtils;
 import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.action.EventFactorySupport;
@@ -35,8 +39,11 @@ public class DetermineDuoUserAccountAction extends AbstractAction {
         final Authentication authentication = WebUtils.getAuthentication(requestContext);
         final Principal p = authentication.getPrincipal();
         final RegisteredService service = WebUtils.getRegisteredService(requestContext);
-        final DuoMultifactorAuthenticationProvider provider = requestContext.getFlowScope().get("provider",
-                DuoMultifactorAuthenticationProvider.class);
+        final String flowId = requestContext.getActiveFlow().getId();
+        final ApplicationContext applicationContext = ApplicationContextProvider.getApplicationContext();
+        final DuoMultifactorAuthenticationProvider provider = (DuoMultifactorAuthenticationProvider)
+                MultifactorAuthenticationUtils.getMultifactorAuthenticationProvidersByIds(CollectionUtils.wrap(flowId),
+                        applicationContext).iterator().next();
 
         final Event enrollEvent = new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_ENROLL);
         final Event denyEvent = new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_DENY);
@@ -47,11 +54,11 @@ public class DetermineDuoUserAccountAction extends AbstractAction {
         final DuoUserAccount account = duoAuthenticationService.getDuoUserAccount(p.getId());
         switch (account.getStatus()) {
             case ENROLL:
-                /*if (!StringUtils.hasText(duoProvider.getRegistrationUrl())) {
+                /*if (!StringUtils.hasText(provider.getRegistrationUrl())) {
                     LOGGER.error("Duo webflow resolved to event ENROLL, but no registration url was provided.");
                     return errorEvent;
                 }
-                requestContext.getFlowScope().put("duoRegistrationUrl", duoProvider.getRegistrationUrl());*/
+                requestContext.getFlowScope().put("duoRegistrationUrl", provider.getRegistrationUrl());*/
                 return enrollEvent;
             case ALLOW:
                 return returnByPass(authentication, provider.getId());
