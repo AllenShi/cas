@@ -195,7 +195,7 @@ public abstract class AbstractServicesManager implements ServicesManager {
     @Override
     @PostConstruct
     public Collection<RegisteredService> load() {
-        LOGGER.debug("Loading services from [{}]", this.serviceRegistry);
+        LOGGER.debug("Loading services from [{}]", this.serviceRegistry.getName());
         this.services = this.serviceRegistry.load()
             .stream()
             .collect(Collectors.toConcurrentMap(r -> {

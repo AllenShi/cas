@@ -17,13 +17,12 @@ import javax.servlet.http.HttpServletRequest;
  * @since 5.2.0
  */
 @Slf4j
-public class GroovyMultifactorAuthenticationProviderBypass extends DefaultMultifactorAuthenticationProviderBypass {
+public class GroovyMultifactorAuthenticationProviderBypass implements MultifactorAuthenticationProviderBypass {
     private static final long serialVersionUID = -4909072898415688377L;
 
     private final transient Resource groovyScript;
 
     public GroovyMultifactorAuthenticationProviderBypass(final MultifactorAuthenticationProviderBypassProperties bypass) {
-        super(bypass);
         this.groovyScript = bypass.getGroovy().getLocation();
     }
 
@@ -33,31 +32,15 @@ public class GroovyMultifactorAuthenticationProviderBypass extends DefaultMultif
                                                                   final MultifactorAuthenticationProvider provider,
                                                                   final HttpServletRequest request) {
         try {
-            if (bypassProperties.getGroovy().isExecuteDefault()) {
-                final boolean shouldExecute = super.shouldMultifactorAuthenticationProviderExecute(authentication,
-                        registeredService, provider, request);
-                if (!shouldExecute) {
-                    LOGGER.info("Default bypass provider determined this request may be passed, Groovy bypass will not" +
-                            "be consulted");
-                    return false;
-                }
-            }
             final Principal principal = authentication.getPrincipal();
             LOGGER.debug("Evaluating multifactor authentication bypass properties for principal [{}], "
                     + "service [{}] and provider [{}] via Groovy script [{}]",
                 principal.getId(), registeredService, provider, this.groovyScript);
-            final boolean shouldExecute = ScriptingUtils.executeGroovyScript(this.groovyScript,
+            return ScriptingUtils.executeGroovyScript(this.groovyScript,
                 new Object[]{authentication, principal, registeredService, provider, LOGGER, request}, Boolean.class);
-            if (shouldExecute) {
-                updateAuthenticationToForgetBypass(authentication, provider, principal);
-            } else {
-                LOGGER.info("Groovy bypass script determined [{}] would be passed for [{}]", principal.getId(), provider.getId());
-                updateAuthenticationToRememberBypass(authentication, provider, principal);
-            }
-            return shouldExecute;
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
+            return true;
         }
-        return super.shouldMultifactorAuthenticationProviderExecute(authentication, registeredService, provider, request);
     }
 }

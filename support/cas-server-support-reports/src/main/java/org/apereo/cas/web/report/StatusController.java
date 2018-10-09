@@ -198,7 +198,7 @@ public class StatusController extends BaseCasMvcEndpoint {
             return capacity;
         }
 
-        public void setCapacity(int capacity) {
+        public void setCapacity(long capacity) {
             this.capacity = capacity;
         }
 

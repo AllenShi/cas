@@ -108,7 +108,7 @@ public class DomainServicesManager extends AbstractServicesManager {
         } else {
             services = new TreeSet<>();
         }
-        LOGGER.debug("Added service [{}] mapped to domain definition [{}]", r, domain);
+        LOGGER.trace("Added service [{}] mapped to domain definition [{}]", r.getServiceId(), domain);
         services.add(r);
         map.put(domain, services);
     }

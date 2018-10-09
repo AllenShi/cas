@@ -47,7 +47,7 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
         final MemoryStats memoryStats = instance.getOriginal().getMemoryStats();
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
             final IMap map = instance.getMap(key);
-            LOGGER.debug("Starting to collect hazelcast statistics for map [{}] identified by key [{}]...", map, key);
+            LOGGER.debug("Starting to collect hazelcast statistics for map identified by key [{}]...", key);
             statsList.add(new HazelcastStatistics(map, clusterSize, isMaster, memoryStats));
         });
         return statsList.toArray(new CacheStatistics[0]);

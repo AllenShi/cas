@@ -9,7 +9,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.authentication.Credential;
-import org.apereo.cas.authentication.MultiInstanceMfaCredential;
+import org.apereo.cas.authentication.MultifactorAuthenticationCredential;
 
 /**
  * Represents the duo credential.
@@ -24,7 +24,7 @@ import org.apereo.cas.authentication.MultiInstanceMfaCredential;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = {"username"})
-public class DuoCredential implements Credential, MultiInstanceMfaCredential {
+public class DuoCredential implements Credential, MultifactorAuthenticationCredential {
 
     private static final long serialVersionUID = -7570600733132111037L;
 
@@ -37,16 +37,6 @@ public class DuoCredential implements Credential, MultiInstanceMfaCredential {
     @Override
     public String getId() {
         return this.username;
-    }
-
-    @Override
-    public void setMultifactorProviderId(final String providerId) {
-        this.providerId = providerId;
-    }
-
-    @Override
-    public String getMultifactorProviderId() {
-        return providerId;
     }
 
     public boolean isValid() {
