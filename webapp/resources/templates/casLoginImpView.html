@@ -1,16 +1,12 @@
 <!DOCTYPE html>
-<html layout:decorator="layout">
-
-<head>
-    <title th:text="#{cas.login.pagetitle}"></title>
-</head>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
 
 <body id="cas" class="login">
     <div layout:fragment="content">
-            <div th:replace="fragments/insecure"/>
-            <div th:replace="fragments/defaultauthn"/>
-            <div th:replace="fragments/cookies"/>
-            <div th:replace="fragments/loginProviders" />
+            <div th:replace="fragments/insecure :: insecure"/>
+            <div th:replace="fragments/defaultauthn :: staticAuthentication"/>
+            <div th:replace="fragments/cookies :: cookiesDisabled"/>
             <div id="testServerMsg" style="display:none;"></div>
             <div id="cookiesDisabled" class="errors" style="display: none;"></div>
             <div id="emailAddressTyped" style="display: none;"></div>

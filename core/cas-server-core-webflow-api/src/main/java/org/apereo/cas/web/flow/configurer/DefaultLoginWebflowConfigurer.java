@@ -90,6 +90,8 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
             createDefaultActionStates(flow);
             createDefaultViewStates(flow);
             createFlowVariable(flow, CasWebflowConstants.VAR_ID_CREDENTIAL, ImpUsernamePasswordCredential.class);
+
+            setStartState(flow, CasWebflowConstants.STATE_ID_INITIAL_AUTHN_REQUEST_VALIDATION_CHECK);
         }
 
     }
