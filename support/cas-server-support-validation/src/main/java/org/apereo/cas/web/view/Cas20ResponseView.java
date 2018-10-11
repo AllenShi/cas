@@ -13,6 +13,7 @@ import org.springframework.web.servlet.View;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,9 +49,9 @@ public class Cas20ResponseView extends AbstractDelegatingCasView {
     protected void prepareMergedOutputModel(final Map<String, Object> model, final HttpServletRequest request,
                                             final HttpServletResponse response) throws Exception {
 
-
         if (((Assertion)model.get("assertion")).isFromImpersonation()) {
-            super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL, new DefaultPrincipalFactory().createPrincipal((String) getPrimaryAuthenticationFrom(model).getAttributes().get("imp")));
+            final String impName = (String) ((List)getPrimaryAuthenticationFrom(model).getAttributes().get("imp")).get(0);
+            super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL, new DefaultPrincipalFactory().createPrincipal(impName));
         } else {
             super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL, getPrincipal(model));
         }

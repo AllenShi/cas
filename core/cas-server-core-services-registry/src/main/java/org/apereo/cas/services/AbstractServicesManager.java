@@ -199,7 +199,7 @@ public abstract class AbstractServicesManager implements ServicesManager {
         this.services = this.serviceRegistry.load()
             .stream()
             .collect(Collectors.toConcurrentMap(r -> {
-                LOGGER.debug("Adding registered service [{}]", r.getServiceId());
+                LOGGER.trace("Adding registered service [{}]", r.getServiceId());
                 return r.getId();
             }, Function.identity(), (r, s) -> s == null ? r : s));
         loadInternal();

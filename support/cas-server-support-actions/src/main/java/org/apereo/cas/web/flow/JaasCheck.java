@@ -2,12 +2,12 @@ package org.apereo.cas.web.flow;
 
 
 import org.apereo.cas.authentication.DefaultAuthentication;
+import org.apereo.cas.util.CollectionUtils;
 import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.core.collection.MutableAttributeMap;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
 
-import java.util.Map;
 import java.util.Set;
 
 public class JaasCheck extends AbstractAction {
@@ -30,7 +30,7 @@ public class JaasCheck extends AbstractAction {
         if (authMethod instanceof Set) {
             jaasUsed = ((Set)authMethod).contains("JaasAuthenticationHandler");
         } else {
-            jaasUsed = ((String)authMethod).equals("JaasAuthenticationHandler");
+            jaasUsed = CollectionUtils.firstElement(authMethod).get().equals("JaasAuthenticationHandler");
         }
         if (jaasCheck && jaasUsed
             && authentication.getFailures().size() > 0

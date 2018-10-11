@@ -50,6 +50,7 @@ public class MultifactorAuthenticationBypassAction extends AbstractMultifactorAu
         LOGGER.debug("Bypass rules determined MFA should NOT execute for user [{}] for provider [{}]",
                 authentication.getPrincipal().getId(), provider.getId());
         bypass.updateAuthenticationToRememberBypass(authentication, provider);
+
         LOGGER.debug("Authentication updated to remember bypass for user [{}] for provider [{}]",
                 authentication.getPrincipal().getId(), provider.getId());
         return yes();
