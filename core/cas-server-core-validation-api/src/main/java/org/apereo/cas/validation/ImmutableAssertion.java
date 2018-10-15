@@ -44,6 +44,4 @@ public class ImmutableAssertion implements Assertion, Serializable {
     /** The service we are asserting this ticket for. */
     @NonNull
     private final Service service;
-
-    private final boolean fromImpersonation;
 }

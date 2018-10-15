@@ -99,11 +99,6 @@ public class OAuthCodeImpl extends AbstractTicket implements OAuthCode {
     }
 
     @Override
-    public boolean isFromImpersonation() {
-        return false;
-    }
-
-    @Override
     public Authentication getAuthentication() {
         return this.authentication;
     }

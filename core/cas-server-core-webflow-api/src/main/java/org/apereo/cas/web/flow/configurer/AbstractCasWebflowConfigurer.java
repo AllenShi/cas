@@ -101,8 +101,6 @@ public abstract class AbstractCasWebflowConfigurer implements CasWebflowConfigur
      */
     protected final FlowDefinitionRegistry loginFlowDefinitionRegistry;
 
-    protected FlowDefinitionRegistry impersonateFlowDefinitionRegistry;
-
     /**
      * Application context.
      */
@@ -156,21 +154,6 @@ public abstract class AbstractCasWebflowConfigurer implements CasWebflowConfigur
             return (Flow) this.loginFlowDefinitionRegistry.getFlowDefinition(FLOW_ID_LOGIN);
         }
         LOGGER.error("Could not find flow definition [{}]. Available flow definition ids are [{}]", FLOW_ID_LOGIN, this.loginFlowDefinitionRegistry.getFlowDefinitionIds());
-        return null;
-    }
-
-    public Flow getImpersonateFlow() {
-        if (this.loginFlowDefinitionRegistry == null) {
-            LOGGER.error("Login flow registry is not configured correctly.");
-            return null;
-        }
-        final boolean found = Arrays.stream(this.loginFlowDefinitionRegistry.getFlowDefinitionIds())
-                .filter(f -> f.equals("impersonate")).findFirst().isPresent();
-        if (found) {
-            return (Flow) this.loginFlowDefinitionRegistry.getFlowDefinition("impersonate");
-        }
-        LOGGER.error("Could not find flow definition {}. Available flow definition ids are {}", "impersonate",
-                this.loginFlowDefinitionRegistry.getFlowDefinitionIds());
         return null;
     }
 
@@ -290,6 +273,7 @@ public abstract class AbstractCasWebflowConfigurer implements CasWebflowConfigur
         final Transition transition = createTransition(targetState);
         state.getTransitionSet().add(transition);
     }
+
 
     /**
      * Create state default transition.

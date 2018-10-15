@@ -1,6 +1,5 @@
 package org.apereo.cas.web.config;
 
-import org.apereo.cas.authentication.Impersonators;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
@@ -20,7 +19,6 @@ import org.apereo.cas.web.flow.logout.FrontChannelLogoutAction;
 import org.apereo.cas.web.flow.GatewayServicesManagementCheck;
 import org.apereo.cas.web.flow.GenerateServiceTicketAction;
 import org.apereo.cas.web.flow.ServiceAuthorizationCheck;
-import org.apereo.cas.web.flow.SingleSignOnParticipationStrategy;
 import org.apereo.cas.web.flow.TlsCheck;
 import org.apereo.cas.web.flow.actions.InitialAuthenticationAction;
 import org.apereo.cas.web.flow.login.CreateTicketGrantingTicketAction;
@@ -33,7 +31,6 @@ import org.apereo.cas.web.flow.login.SendTicketGrantingTicketAction;
 import org.apereo.cas.web.flow.login.ServiceWarningAction;
 import org.apereo.cas.web.flow.login.SetServiceUnauthorizedRedirectUrlAction;
 import org.apereo.cas.web.flow.login.TicketGrantingTicketCheckAction;
-import org.apereo.cas.web.flow.logout.FrontChannelLogoutAction;
 import org.apereo.cas.web.flow.logout.LogoutAction;
 import org.apereo.cas.web.flow.logout.LogoutViewSetupAction;
 import org.apereo.cas.web.flow.logout.TerminateSessionAction;
@@ -149,12 +146,6 @@ public class CasSupportActionsConfiguration {
     }
 
     @Bean
-    public Impersonators impersonators() {
-        return new Impersonators(casProperties.getServer().isImpersonate(),
-                                 casProperties.getServer().getImpersonateFile());
-    }
-
-    @Bean
     public Action doJaasCheck() {
         return new JaasCheck(casProperties.getServer().isJaasCheck());
     }
@@ -164,6 +155,8 @@ public class CasSupportActionsConfiguration {
         return new TlsCheck(casProperties.getServer().isTlsCheck());
     }
 
+    @RefreshScope
+    @ConditionalOnMissingBean(name = "serviceAuthorizationCheck")
     @Bean
     public Action serviceAuthorizationCheck() {
         return new ServiceAuthorizationCheck(this.servicesManager, authenticationRequestServiceSelectionStrategies);

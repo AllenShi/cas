@@ -64,15 +64,6 @@ public class ServiceTicketImpl extends AbstractTicket implements ServiceTicket {
     @Column(name = "TICKET_ALREADY_GRANTED", nullable = false)
     private Boolean grantedTicketAlready = Boolean.FALSE;
 
-    @Column(name = "FROM_IMPERSONATION", nullable = false)
-    private boolean fromImpersonation;
-
-    public ServiceTicketImpl(final String id,
-                             final TicketGrantingTicket ticket, final Service service,
-                             final boolean credentialProvided, final ExpirationPolicy policy) {
-        this(id,ticket,service,credentialProvided,policy,false);
-    }
-
     /**
      * Constructs a new ServiceTicket with a Unique Id, a TicketGrantingTicket,
      * a Service, Expiration Policy and a flag to determine if the ticket
@@ -86,37 +77,14 @@ public class ServiceTicketImpl extends AbstractTicket implements ServiceTicket {
      * @throws IllegalArgumentException if the TicketGrantingTicket or the Service are null.
      */
     @JsonCreator
-    public ServiceTicketImpl(@JsonProperty("id")
-                             final String id,
-                             @JsonProperty("grantingTicket")
-                             final TicketGrantingTicket ticket,
-                             @JsonProperty("service")
-                             final Service service,
-                             @JsonProperty("credentialProvided")
-                             final boolean credentialProvided,
-                             @JsonProperty("expirationPolicy")
-                             final ExpirationPolicy policy,
-                             @JsonProperty("fromImpersonation")
-                             final boolean fromImpersonation) {
+    public ServiceTicketImpl(@JsonProperty("id") final String id, @NonNull @JsonProperty("ticketGrantingTicket") final TicketGrantingTicket ticket,
+                             @NonNull @JsonProperty("service") final Service service, @JsonProperty("credentialProvided") final boolean credentialProvided,
+                             @JsonProperty("expirationPolicy") final ExpirationPolicy policy) {
         super(id, policy);
         this.ticketGrantingTicket = ticket;
         this.service = service;
         this.fromNewLogin = credentialProvided || ticket.getCountOfUses() == 0;
-        this.fromImpersonation = fromImpersonation;
     }
-
-    @Override
-    public boolean isFromNewLogin() {
-        return this.fromNewLogin;
-    }
-
-    @Override
-    public Service getService() {
-        return this.service;
-    }
-
-    @Override
-    public boolean isFromImpersonation() { return this.fromImpersonation; }
 
     /**
      * {@inheritDoc}

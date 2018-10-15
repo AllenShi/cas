@@ -5,7 +5,6 @@ import org.apereo.cas.authentication.ProtocolAttributeEncoder;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.authentication.AuthenticationAttributeReleasePolicy;
 import org.apereo.cas.services.web.view.AbstractCasView;
-import org.apereo.cas.validation.Assertion;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,15 +33,7 @@ public class Cas10ResponseView extends AbstractCasView {
     @Override
     protected void renderMergedOutputModel(final Map model, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
         if (this.successResponse) {
-            if (((Assertion)model.get("assertion")).isFromImpersonation()) {
-                response.getWriter().print(
-                        "yes\n" +
-                        getPrimaryAuthenticationFrom(model).getAttributes().get("imp") + '\n');
-            } else {
-                response.getWriter().print(
-                        "yes\n" +
-                         getPrimaryAuthenticationFrom(model).getPrincipal().getId() + '\n');
-            }
+            response.getWriter().print("yes\n" + getPrincipal(model).getId() + '\n');
         } else {
             response.getWriter().print("no\n\n");
         }

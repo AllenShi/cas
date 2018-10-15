@@ -17,7 +17,6 @@ import org.apereo.cas.configuration.model.support.oauth.OAuthRefreshTokenPropert
 import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.services.DenyAllAttributeReleasePolicy;
 import org.apereo.cas.services.RegexRegisteredService;
-import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.ServiceRegistryExecutionPlan;
 import org.apereo.cas.services.ServiceRegistryExecutionPlanConfigurer;
 import org.apereo.cas.services.ServicesManager;
@@ -561,22 +560,18 @@ public class CasOAuthConfiguration implements AuditTrailRecordResolutionPlanConf
     public Service oauthCallbackService() {
         final String oAuthCallbackUrl = casProperties.getServer().getPrefix()
             + BASE_OAUTH20_URL + '/' + CALLBACK_AUTHORIZE_URL_DEFINITION;
+        return this.webApplicationServiceFactory.createService(oAuthCallbackUrl);
+    }
 
-        final Service callbackService = this.webApplicationServiceFactory.createService(oAuthCallbackUrl);
-        final RegisteredService svc = servicesManager.findServiceBy(callbackService);
-
-        if (svc == null) {// || !svc.getServiceId().equals(oAuthCallbackUrl)) {
-            final RegexRegisteredService service = new RegexRegisteredService();
-            service.setId(Math.abs(RandomUtils.getNativeInstance().nextLong()));
-            service.setEvaluationOrder(0);
-            service.setName(service.getClass().getSimpleName());
-            service.setDescription("OAuth Authentication Callback Request URL");
-            service.setServiceId(oAuthCallbackUrl);
-            service.setAttributeReleasePolicy(new DenyAllAttributeReleasePolicy());
-
-            servicesManager.save(service);
-            servicesManager.load();
-        }
-        return callbackService;
+    @Override
+    public void configureServiceRegistry(final ServiceRegistryExecutionPlan plan) {
+        final RegexRegisteredService service = new RegexRegisteredService();
+        service.setId(Math.abs(RandomUtils.getNativeInstance().nextLong()));
+        service.setEvaluationOrder(0);
+        service.setName(service.getClass().getSimpleName());
+        service.setDescription("OAuth Authentication Callback Request URL");
+        service.setServiceId(oauthCallbackService().getId());
+        service.setAttributeReleasePolicy(new DenyAllAttributeReleasePolicy());
+        plan.registerServiceRegistry(new OAuth20ServiceRegistry(service));
     }
 }

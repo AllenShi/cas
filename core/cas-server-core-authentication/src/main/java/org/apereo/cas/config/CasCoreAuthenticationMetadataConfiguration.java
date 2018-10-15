@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationMetaDataPopulator;
-import org.apereo.cas.authentication.ImpersonateCredentialsMetaDataPopulator;
 import org.apereo.cas.authentication.metadata.AuthenticationCredentialTypeMetaDataPopulator;
 import org.apereo.cas.authentication.metadata.CacheCredentialsCipherExecutor;
 import org.apereo.cas.authentication.metadata.CacheCredentialsMetaDataPopulator;
@@ -44,10 +43,6 @@ public class CasCoreAuthenticationMetadataConfiguration {
         return new RememberMeAuthenticationMetaDataPopulator();
     }
 
-    @Bean ImpersonateCredentialsMetaDataPopulator impersonateCredentialsMetaDataPopulator() {
-        return new ImpersonateCredentialsMetaDataPopulator();
-    }
-
     @ConditionalOnMissingBean(name = "cacheCredentialsCipherExecutor")
     @Bean
     public CipherExecutor cacheCredentialsCipherExecutor() {
@@ -77,7 +72,6 @@ public class CasCoreAuthenticationMetadataConfiguration {
             plan.registerMetadataPopulator(successfulHandlerMetaDataPopulator());
             plan.registerMetadataPopulator(rememberMeAuthenticationMetaDataPopulator());
             plan.registerMetadataPopulator(authenticationCredentialTypeMetaDataPopulator());
-            plan.registerMetadataPopulator(impersonateCredentialsMetaDataPopulator());
 
             final ClearpassProperties cp = casProperties.getClearpass();
             if (cp.isCacheCredential()) {

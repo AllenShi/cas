@@ -25,7 +25,6 @@ import org.springframework.web.util.CookieGenerator;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -61,7 +60,6 @@ public class GroovyScriptMultifactorAuthenticationPolicyEventResolver extends Ba
         final Service service = resolveServiceFromAuthenticationRequest(context);
         final RegisteredService registeredService = resolveRegisteredServiceInRequestContext(context);
         final Authentication authentication = WebUtils.getAuthentication(context);
-        authentication.addAttribute("remote", ((HttpServletRequest)context.getExternalContext().getNativeRequest()).getRemoteAddr());
 
         if (groovyScript == null) {
             LOGGER.debug("No groovy script is configured for multifactor authentication");

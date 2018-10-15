@@ -46,7 +46,6 @@ import org.springframework.webflow.execution.FlowExecutionListener;
 import org.springframework.webflow.executor.FlowExecutor;
 import org.springframework.webflow.expression.spel.WebFlowSpringELExpressionParser;
 import org.springframework.webflow.mvc.builder.MvcViewFactoryCreator;
-import org.springframework.webflow.mvc.servlet.FlowHandler;
 import org.springframework.webflow.mvc.servlet.FlowHandlerAdapter;
 import org.springframework.webflow.mvc.servlet.FlowHandlerMapping;
 
@@ -140,20 +139,7 @@ public class CasWebflowContextConfiguration {
 
     @Bean
     public HandlerAdapter loginHandlerAdapter() {
-        final FlowHandlerAdapter handler = new FlowHandlerAdapter() {
-            @Override
-            public boolean supports(final Object handler) {
-                if (casProperties.getServer().isImpersonate()) {
-                    return super.supports(handler) && ( ((FlowHandler) handler)
-                            .getFlowId().equals(CasWebflowConfigurer.FLOW_ID_LOGIN) ||
-                            ((FlowHandler) handler)
-                                    .getFlowId().equals("impersonate"));
-                } else {
-                    return super.supports(handler) && ((FlowHandler) handler)
-                            .getFlowId().equals(CasWebflowConfigurer.FLOW_ID_LOGIN);
-                }
-            }
-        };
+        final FlowHandlerAdapter handler = new CasFlowHandlerAdapter(CasWebflowConfigurer.FLOW_ID_LOGIN);
         handler.setFlowExecutor(loginFlowExecutor());
         handler.setFlowUrlHandler(loginFlowUrlHandler());
         return handler;
@@ -212,9 +198,6 @@ public class CasWebflowContextConfiguration {
         final FlowDefinitionRegistryBuilder builder = new FlowDefinitionRegistryBuilder(this.applicationContext, builder());
         builder.setBasePath(BASE_CLASSPATH_WEBFLOW);
         builder.addFlowLocationPattern("/login/*-webflow.xml");
-        if (casProperties.getServer().isImpersonate()) {
-            builder.addFlowLocationPattern("/impersonate/*-webflow.xml");
-        }
         return builder.build();
     }
 
@@ -244,12 +227,6 @@ public class CasWebflowContextConfiguration {
         final DefaultLoginWebflowConfigurer c = new DefaultLoginWebflowConfigurer(builder(), loginFlowRegistry(), applicationContext, casProperties);
         c.setLogoutFlowDefinitionRegistry(logoutFlowRegistry());
         c.setOrder(Ordered.HIGHEST_PRECEDENCE);
-        c.initialize();
-
-        if(casProperties.getServer().isImpersonate()) {
-            c.setImpersonateFlow();
-        }
-
         return c;
     }
 

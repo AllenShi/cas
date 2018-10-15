@@ -119,14 +119,6 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
         return new ArrayList<>(0);
     }
 
-    @Override
-    public ServiceTicket grantServiceTicket(
-           final String ticketGrantingTicketId,
-           final Service service, final AuthenticationResult authenticationResult)
-           throws AuthenticationException, AbstractTicketException {
-       return grantServiceTicket(ticketGrantingTicketId,service,authenticationResult,false);
-    }
-
     @Audit(
         action = "SERVICE_TICKET",
         actionResolverName = "GRANT_SERVICE_TICKET_RESOLVER",
@@ -135,8 +127,8 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
     @Metered(name = "GRANT_SERVICE_TICKET_METER")
     @Counted(name = "GRANT_SERVICE_TICKET_COUNTER", monotonic = true)
     @Override
-    public ServiceTicket grantServiceTicket(final String ticketGrantingTicketId, final Service service, final AuthenticationResult authenticationResult, final boolean fromImpersonation)
-            throws AuthenticationException, AbstractTicketException {
+    public ServiceTicket grantServiceTicket(final String ticketGrantingTicketId, final Service service, final AuthenticationResult authenticationResult)
+        throws AuthenticationException, AbstractTicketException {
 
         final boolean credentialProvided = authenticationResult != null && authenticationResult.isCredentialProvided();
         final TicketGrantingTicket ticketGrantingTicket = getTicket(ticketGrantingTicketId, TicketGrantingTicket.class);
@@ -162,9 +154,7 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
         AuthenticationCredentialsThreadLocalBinder.bindCurrent(latestAuthentication);
         final Principal principal = latestAuthentication.getPrincipal();
         final ServiceTicketFactory factory = (ServiceTicketFactory) this.ticketFactory.get(ServiceTicket.class);
-        final ServiceTicket serviceTicket = factory.create(ticketGrantingTicket, service,
-            credentialProvided,
-            ServiceTicket.class,fromImpersonation);
+        final ServiceTicket serviceTicket = factory.create(ticketGrantingTicket, service, credentialProvided, ServiceTicket.class);
         this.ticketRegistry.updateTicket(ticketGrantingTicket);
         this.ticketRegistry.addTicket(serviceTicket);
 
@@ -327,7 +317,6 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
             final RegisteredServiceAttributeReleasePolicy attributePolicy = registeredService.getAttributeReleasePolicy();
             LOGGER.debug("Attribute policy [{}] is associated with service [{}]", attributePolicy, registeredService);
 
-
             final Map<String, Object> attributesToRelease = attributePolicy != null
                 ? attributePolicy.getAttributes(principal, selectedService, registeredService) : new HashMap<>();
 
@@ -352,12 +341,10 @@ public class DefaultCentralAuthenticationService extends AbstractCentralAuthenti
             AuthenticationCredentialsThreadLocalBinder.bindCurrent(finalAuthentication);
 
             final Assertion assertion = new DefaultAssertionBuilder(finalAuthentication)
-                    .with(selectedService)
-                    .with(serviceTicket.getTicketGrantingTicket().getChainedAuthentications())
-                    .with(serviceTicket.isFromNewLogin())
-                    .withImpersonation(serviceTicket.isFromImpersonation())
-                    .build();
-
+                .with(selectedService)
+                .with(serviceTicket.getTicketGrantingTicket().getChainedAuthentications())
+                .with(serviceTicket.isFromNewLogin())
+                .build();
             doPublishEvent(new CasServiceTicketValidatedEvent(this, serviceTicket, assertion));
 
             return assertion;

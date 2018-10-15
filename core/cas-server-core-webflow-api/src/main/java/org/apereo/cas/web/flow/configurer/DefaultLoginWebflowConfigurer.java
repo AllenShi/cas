@@ -1,7 +1,5 @@
 package org.apereo.cas.web.flow.configurer;
 
-import org.apereo.cas.authentication.ImpUsernamePasswordCredential;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.authentication.PrincipalException;
 import org.apereo.cas.authentication.RememberMeUsernamePasswordCredential;
@@ -77,23 +75,6 @@ public class DefaultLoginWebflowConfigurer extends AbstractCasWebflowConfigurer 
 
             setStartState(flow, CasWebflowConstants.STATE_ID_INITIAL_AUTHN_REQUEST_VALIDATION_CHECK);
         }
-    }
-
-    public void setImpersonateFlow() {
-        final Flow flow = getImpersonateFlow();
-
-        if (flow != null) {
-            createInitialFlowActions(flow);
-            createDefaultGlobalExceptionHandlers(flow);
-            createDefaultEndStates(flow);
-            createDefaultDecisionStates(flow);
-            createDefaultActionStates(flow);
-            createDefaultViewStates(flow);
-            createFlowVariable(flow, CasWebflowConstants.VAR_ID_CREDENTIAL, ImpUsernamePasswordCredential.class);
-
-            setStartState(flow, CasWebflowConstants.STATE_ID_INITIAL_AUTHN_REQUEST_VALIDATION_CHECK);
-        }
-
     }
 
     /**

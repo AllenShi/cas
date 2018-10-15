@@ -111,9 +111,4 @@ public class SamlArtifactTicketImpl extends AbstractTicket implements SamlArtifa
     public String getPrefix() {
         return SamlArtifactTicket.PREFIX;
     }
-
-    @Override
-    public boolean isFromImpersonation() {
-        return false;
-    }
 }

@@ -34,8 +34,6 @@ public class DefaultAssertionBuilder {
      */
     private boolean newLogin;
 
-    private boolean fromImpersonation;
-
     /**
      * Instantiates a new Default assertion builder.
      *
@@ -79,19 +77,11 @@ public class DefaultAssertionBuilder {
     }
 
     /**
-     *
-     */
-    public DefaultAssertionBuilder withImpersonation(final boolean fromImpersonation) {
-        this.fromImpersonation = fromImpersonation;
-        return this;
-    }
-
-    /**
      * Build assertion.
      *
      * @return the assertion
      */
     public Assertion build() {
-        return new ImmutableAssertion(this.auth, this.authentications, this.newLogin, this.service, this.fromImpersonation);
+        return new ImmutableAssertion(this.auth, this.authentications, this.newLogin, this.service);
     }
 }

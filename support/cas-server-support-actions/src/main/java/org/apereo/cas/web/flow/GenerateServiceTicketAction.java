@@ -95,9 +95,7 @@ public class GenerateServiceTicketAction extends AbstractAction {
             final AuthenticationResult authenticationResult = builder.build(principalElectionStrategy, service);
 
             LOGGER.debug("Built the final authentication result [{}] to grant service ticket to [{}]", authenticationResult, service);
-            final boolean fromImpersonation = context.getConversationScope().get("impersonation") != null;
-            final ServiceTicket serviceTicketId = this.centralAuthenticationService
-                    .grantServiceTicket(ticketGrantingTicket, service, authenticationResult,fromImpersonation);
+            final ServiceTicket serviceTicketId = this.centralAuthenticationService.grantServiceTicket(ticketGrantingTicket, service, authenticationResult);
             WebUtils.putServiceTicketInRequestScope(context, serviceTicketId);
             LOGGER.debug("Granted service ticket [{}] and added it to the request scope", serviceTicketId);
             return success();

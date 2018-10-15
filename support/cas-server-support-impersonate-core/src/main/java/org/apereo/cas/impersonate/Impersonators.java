@@ -1,4 +1,4 @@
-package org.apereo.cas.authentication;
+package org.apereo.cas.impersonate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

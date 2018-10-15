@@ -54,11 +54,6 @@ public class MockServiceTicket implements ServiceTicket, TicketState {
     }
 
     @Override
-    public boolean isFromImpersonation() {
-        return false;
-    }
-
-    @Override
     public boolean isValidFor(final Service service) {
         return this.service.equals(service);
     }

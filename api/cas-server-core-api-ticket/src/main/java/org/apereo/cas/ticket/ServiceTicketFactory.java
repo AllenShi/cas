@@ -24,20 +24,4 @@ public interface ServiceTicketFactory extends TicketFactory {
     <T extends Ticket> T create(TicketGrantingTicket ticketGrantingTicket,
                                 Service service,
                                 boolean credentialProvided, Class<T> clazz);
-
-    /**
-     * Create the ticket object.
-     *
-     * @param <T>                  the type parameter
-     * @param ticketGrantingTicket the ticket granting ticket
-     * @param service              the service
-     * @param credentialProvided   current credential if provided as part of primary authn, may be false.
-     * @param clazz                the clazz
-     * @param fromImpersonation    from impersonation
-     * @return the t
-     */
-    <T extends Ticket> T create(TicketGrantingTicket ticketGrantingTicket,
-                                Service service,
-                                boolean credentialProvided, Class<T> clazz,
-                                boolean fromImpersonation);
 }

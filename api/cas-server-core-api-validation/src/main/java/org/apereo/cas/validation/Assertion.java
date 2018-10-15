@@ -46,11 +46,4 @@ public interface Assertion {
      */
     Service getService();
 
-    /**
-     * Method to determine if the assertion is from an impersonation request
-     *
-     * @return true if part of an impersonation.
-     */
-    boolean isFromImpersonation();
-
 }
