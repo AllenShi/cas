@@ -48,21 +48,6 @@ public interface TicketGrantingTicket extends Ticket {
                                      boolean onlyTrackMostRecentSession);
 
     /**
-     * Grant a ServiceTicket for a specific service.
-     *
-     * @param id The unique identifier for this ticket.
-     * @param service The service for which we are granting a ticket
-     * @param expirationPolicy the expiration policy.
-     * @param credentialProvided if the credentials are provided.
-     * @param onlyTrackMostRecentSession track the most recent session by keeping the latest service ticket
-     * @param fromImpersonation determine if part of an impersonation request
-     * @return the service ticket granted to a specific service for the
-     * principal of the TicketGrantingTicket
-     */
-    ServiceTicket grantServiceTicket(String id, Service service,
-       ExpirationPolicy expirationPolicy, boolean credentialProvided, boolean onlyTrackMostRecentSession, boolean fromImpersonation);
-
-    /**
      * Gets an immutable map of service ticket and services accessed by this ticket-granting ticket.
      *
      * @return an immutable map of service ticket and services accessed by this ticket-granting ticket.

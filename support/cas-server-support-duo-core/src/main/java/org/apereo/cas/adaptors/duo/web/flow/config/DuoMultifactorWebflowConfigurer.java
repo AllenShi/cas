@@ -11,6 +11,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.webflow.config.FlowDefinitionRegistryBuilder;
 import org.springframework.webflow.definition.registry.FlowDefinitionRegistry;
+import org.springframework.webflow.engine.Flow;
 import org.springframework.webflow.engine.builder.FlowBuilder;
 import org.springframework.webflow.engine.builder.model.FlowModelFlowBuilder;
 import org.springframework.webflow.engine.builder.support.FlowBuilderServices;
@@ -60,8 +61,9 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
             final ConfigurableListableBeanFactory cfg = (ConfigurableListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
             cfg.registerSingleton(duo.getId(), duoFlowRegistry);
             registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), duo.getId(), duoFlowRegistry, duo.getId());
-            if (casProperties.getServer().isImpersonate()) {
-                registerMultifactorProviderAuthenticationWebflow(getImpersonateFlow(), duo.getId(), duoFlowRegistry, duo.getId());
+            if (loginFlowDefinitionRegistry.containsFlowDefinition("impersonate")) {
+                registerMultifactorProviderAuthenticationWebflow((Flow) loginFlowDefinitionRegistry.getFlowDefinition("impersonate"),
+                        duo.getId(), duoFlowRegistry, duo.getId());
             }
         });
 

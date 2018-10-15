@@ -60,11 +60,4 @@ public interface ServiceTicket extends Ticket {
                                                  Authentication authentication,
                                                  ExpirationPolicy expirationPolicy)
                                                  throws AbstractTicketException;
-
-    /**
-     * Determine if this ticket was granted as part of an impersonation
-     *
-     * @return true if request was from an impersonation.
-     */
-    boolean isFromImpersonation();
 }

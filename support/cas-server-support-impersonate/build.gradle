@@ -1,0 +1,8 @@
+description "UCD Impersonate support" 
+
+dependencies {
+    implementation project(":core:cas-server-core-webflow-api")
+    implementation project(":core:cas-server-core-web-api")
+    implementation project(":support:cas-server-support-validation")
+    implementation project(":support:cas-server-support-impersonate-core")
+}

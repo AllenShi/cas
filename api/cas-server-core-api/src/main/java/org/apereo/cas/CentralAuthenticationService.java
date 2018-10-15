@@ -151,27 +151,6 @@ public interface CentralAuthenticationService {
         throws AuthenticationException, AbstractTicketException;
 
     /**
-     * Grant a {@link org.apereo.cas.ticket.ServiceTicket} that may be used to access the given service
-     * by authenticating the given credentials.
-     * The details of the security policy around credential authentication and the definition
-     * of authentication success are dependent on the implementation, but it SHOULD be safe to assume
-     * that at least one credential MUST be authenticated for ticket creation to succeed.
-     * <p>
-     * The principal that is resolved from the authenticated credentials MUST be the same as that to which
-     * the given ticket-granting ticket was issued.
-     * </p>
-     *
-     * @param ticketGrantingTicketId Proof of prior authentication.
-     * @param service                The target service of the ServiceTicket.
-     * @param authenticationResult   The authentication context established if credentials provided
-     * @return Non -null service ticket identifier.
-     * @throws AuthenticationException on errors authenticating the credentials
-     * @throws AbstractTicketException if the ticket could not be created.
-     */
-    ServiceTicket grantServiceTicket(
-            String ticketGrantingTicketId, Service service, AuthenticationResult authenticationResult, boolean fromImpersonation)
-            throws AuthenticationException, AbstractTicketException;
-    /**
      * Grant a {@link ProxyTicket} that may be used to access the given service
      * by authenticating the given credentials.
      * The details of the security policy around credential authentication and the definition

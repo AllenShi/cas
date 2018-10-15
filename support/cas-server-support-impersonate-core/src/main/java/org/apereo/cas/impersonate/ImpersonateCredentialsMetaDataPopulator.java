@@ -1,12 +1,14 @@
-package org.apereo.cas.authentication;
+package org.apereo.cas.impersonate;
+
+import org.apereo.cas.authentication.AuthenticationBuilder;
+import org.apereo.cas.authentication.AuthenticationMetaDataPopulator;
+import org.apereo.cas.authentication.AuthenticationTransaction;
+import org.apereo.cas.authentication.Credential;
 
 /**
  * Created by tschmidt on 6/6/16.
  */
 public class ImpersonateCredentialsMetaDataPopulator implements AuthenticationMetaDataPopulator {
-
-    //@Value("${cas.allowed.to.impersonate:false}")
-    //Boolean allowedToImpersonate;
 
     @Override
     public boolean supports(Credential credential) {

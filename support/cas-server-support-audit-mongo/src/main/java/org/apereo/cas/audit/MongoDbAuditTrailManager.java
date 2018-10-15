@@ -16,10 +16,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * This is {@link MongoDbAuditTrailManager}.
  *
@@ -41,11 +37,6 @@ public class MongoDbAuditTrailManager implements AuditTrailManager {
     public MongoDbAuditTrailManager(final MongoTemplate mongoTemplate, final String collectionName) {
         this.mongoTemplate = mongoTemplate;
         this.collectionName = collectionName;
-    }
-
-    @Override
-    public Set<AuditActionContext> getAuditRecordsSince(final LocalDate localDate) {
-        return new HashSet<>(0);
     }
 
     @Override

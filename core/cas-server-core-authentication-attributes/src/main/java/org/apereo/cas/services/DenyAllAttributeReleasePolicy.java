@@ -56,11 +56,10 @@ public class DenyAllAttributeReleasePolicy extends AbstractRegisteredServiceAttr
     }
 
     @Override
-    protected Map<String, Object> returnFinalAttributesCollection(final Map<String, Object> attributesToRelease,
-                                                                  final RegisteredService service) {
-        LOGGER.debug("CAS will not authorize anything for release, given the service is denied access to all attributes. "
-                + "If there are any default attributes set to be released to all services, "
-                + "those are also skipped for [{}]", service.getName());
+    protected Map<String, Object> returnFinalAttributesCollection(final Map<String, Object> attributesToRelease, final RegisteredService service) {
+        LOGGER.info("CAS will not authorize anything for release, given the service is denied access to all attributes. "
+            + "If there are any default attributes set to be released to all services, "
+            + "those are also skipped for [{}]", service);
         return new HashMap<>(0);
     }
 }

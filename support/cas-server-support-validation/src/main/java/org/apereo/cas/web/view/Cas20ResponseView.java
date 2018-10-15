@@ -3,17 +3,14 @@ package org.apereo.cas.web.view;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CasViewConstants;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
-import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;
 import org.apereo.cas.authentication.ProtocolAttributeEncoder;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.authentication.AuthenticationAttributeReleasePolicy;
 import org.apereo.cas.services.web.view.AbstractDelegatingCasView;
-import org.apereo.cas.validation.Assertion;
 import org.springframework.web.servlet.View;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,13 +45,7 @@ public class Cas20ResponseView extends AbstractDelegatingCasView {
     @Override
     protected void prepareMergedOutputModel(final Map<String, Object> model, final HttpServletRequest request,
                                             final HttpServletResponse response) throws Exception {
-
-        if (((Assertion)model.get("assertion")).isFromImpersonation()) {
-            final String impName = (String) ((List)getPrimaryAuthenticationFrom(model).getAttributes().get("imp")).get(0);
-            super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL, new DefaultPrincipalFactory().createPrincipal(impName));
-        } else {
-            super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL, getPrincipal(model));
-        }
+        super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL, getPrincipal(model));
         super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_CHAINED_AUTHENTICATIONS, getChainedAuthentications(model));
         super.putIntoModel(model, CasViewConstants.MODEL_ATTRIBUTE_NAME_PRIMARY_AUTHENTICATION, getPrimaryAuthenticationFrom(model));
         LOGGER.debug("Prepared CAS response output model with attribute names [{}]", model.keySet());

@@ -114,6 +114,4 @@ public interface OAuth20Constants {
 
     /** The bearer type. */
     String TOKEN_TYPE_BEARER = "bearer";
-
-    String REVOKE_TOKEN_URL = "revoke";
 }

@@ -86,18 +86,6 @@ public class MockTicketGrantingTicket implements TicketGrantingTicket, TicketSta
     public ServiceTicket grantServiceTicket(final String id, final Service service, final ExpirationPolicy expirationPolicy,
                                             final boolean credentialProvided, final boolean onlyTrackMostRecentSession) {
         update();
-        return grantServiceTicket(id,service,expirationPolicy,credentialProvided,onlyTrackMostRecentSession,false);
-    }
-
-    @Override
-    public ServiceTicket grantServiceTicket(
-            final String id,
-            final Service service,
-            final ExpirationPolicy expirationPolicy,
-            final boolean credentialProvided,
-            final boolean onlyTrackMostRecentSession,
-            final boolean fromImpersonation) {
-        update();
         return new MockServiceTicket(id, service, this);
     }
 

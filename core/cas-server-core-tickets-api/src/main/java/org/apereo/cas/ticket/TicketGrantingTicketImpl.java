@@ -128,18 +128,6 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
         this(id, null, null, authentication, policy);
     }
 
-    @Override
-    public Authentication getAuthentication() {
-        return this.authentication;
-    }
-
-    @Override
-    public final synchronized ServiceTicket grantServiceTicket(final String id,
-                                                               final Service service, final ExpirationPolicy expirationPolicy,
-                                                               final boolean credentialProvided, final boolean onlyTrackMostRecentSession) {
-        return grantServiceTicket(id,service,expirationPolicy,credentialProvided,onlyTrackMostRecentSession,false);
-    }
-
     /**
      * {@inheritDoc}
      * <p>The state of the ticket is affected by this operation and the
@@ -148,14 +136,9 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
      * configuration, the ticket may be considered expired.
      */
     @Override
-    public synchronized ServiceTicket grantServiceTicket(final String id,
-                                                         final Service service, final ExpirationPolicy expirationPolicy,
-                                                         final boolean credentialProvided, final boolean onlyTrackMostRecentSession, final boolean fromImpersonation) {
-
-        final ServiceTicket serviceTicket = new ServiceTicketImpl(id, this,
-                service, credentialProvided,
-                expirationPolicy,fromImpersonation);
-
+    public synchronized ServiceTicket grantServiceTicket(final String id, final Service service, final ExpirationPolicy expirationPolicy,
+                                                         final boolean credentialProvided, final boolean onlyTrackMostRecentSession) {
+        final ServiceTicket serviceTicket = new ServiceTicketImpl(id, this, service, credentialProvided, expirationPolicy);
         trackServiceSession(serviceTicket.getId(), service, onlyTrackMostRecentSession);
         return serviceTicket;
     }

@@ -20,12 +20,7 @@ public enum OAuth20ResponseTypes {
     TOKEN("token"), /**
      * For implicit grant type.
      */
-    IDTOKEN_TOKEN("id_token token"),
-    /**
-     * For implicit grant type
-     */
-    IDTOKEN("id_token");
-
+    IDTOKEN_TOKEN("id_token token");
 
     private final String type;
 

@@ -35,19 +35,13 @@ public class DefaultServiceTicketFactory implements ServiceTicketFactory {
     @Override
     public <T extends Ticket> T create(final TicketGrantingTicket ticketGrantingTicket, final Service service,
                                        final boolean credentialProvided, final Class<T> clazz) {
-        return create(ticketGrantingTicket,service,credentialProvided, clazz, false);
-    }
-
-    @Override
-    public <T extends Ticket> T create(final TicketGrantingTicket ticketGrantingTicket, final Service service,
-                                       final boolean credentialProvided, final Class<T> clazz, final boolean fromImpersonation) {
         String ticketId = produceTicketIdentifier(service, ticketGrantingTicket, credentialProvided);
         if (this.cipherExecutor != null) {
             LOGGER.debug("Attempting to encode service ticket [{}]", ticketId);
             ticketId = this.cipherExecutor.encode(ticketId);
             LOGGER.debug("Encoded service ticket id [{}]", ticketId);
         }
-        return produceTicket(ticketGrantingTicket, service, credentialProvided, ticketId, clazz, fromImpersonation);
+        return produceTicket(ticketGrantingTicket, service, credentialProvided, ticketId, clazz);
     }
 
     /**
@@ -62,15 +56,13 @@ public class DefaultServiceTicketFactory implements ServiceTicketFactory {
      * @return the ticket
      */
     protected <T extends Ticket> T produceTicket(final TicketGrantingTicket ticketGrantingTicket, final Service service,
-                                                 final boolean credentialProvided, final String ticketId, final Class<T> clazz,
-                                                 final boolean fromImpersonation) {
+                                                 final boolean credentialProvided, final String ticketId, final Class<T> clazz) {
         final ServiceTicket result = ticketGrantingTicket.grantServiceTicket(
             ticketId,
             service,
             this.serviceTicketExpirationPolicy,
             credentialProvided,
-            trackMostRecentSession,
-                fromImpersonation);
+            trackMostRecentSession);
 
         if (!clazz.isAssignableFrom(result.getClass())) {
             throw new ClassCastException("Result [" + result
