@@ -147,7 +147,7 @@ dependencies {
     implementation project(":support:cas-server-support-validation")
     implementation project(":support:cas-server-support-pm-webflow")
     implementation project(":support:cas-server-support-duo")
-    //implementation project(":support:cas-server-support-ldap")
+    implementation project(":support:cas-server-support-ldap")
     implementation project(":support:cas-server-support-hazelcast")
     implementation project(":support:cas-server-support-hazelcast-monitor")
     implementation project(":support:cas-server-support-hazelcast-ticket-registry")
@@ -155,7 +155,7 @@ dependencies {
     implementation project(":support:cas-server-support-json-service-registry")
     implementation project(":support:cas-server-support-discovery-profile")
     //implementation project(":support:cas-server-support-oidc")
-    //implementation project(":support:cas-server-support-ldap-monitor")
+    implementation project(":support:cas-server-support-ldap-monitor")
     //compile project(":support:cas-server-support-gauth")11
     //compile project(":support:cas-server-support-grouper")
     //compile project(":support:cas-server-support-shibboleth-attributes")
