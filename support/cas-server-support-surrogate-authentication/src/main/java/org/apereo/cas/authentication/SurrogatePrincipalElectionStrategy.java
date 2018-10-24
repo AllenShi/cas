@@ -1,9 +1,11 @@
 package org.apereo.cas.authentication;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apereo.cas.authentication.principal.Principal;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -12,12 +14,14 @@ import java.util.Optional;
  * @author Misagh Moayyed
  * @since 5.3.0
  */
+@Slf4j
 public class SurrogatePrincipalElectionStrategy extends DefaultPrincipalElectionStrategy {
     private static final long serialVersionUID = -3112906686072339162L;
 
-    @SuppressFBWarnings("PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS")
     @Override
-    protected Principal getPrincipalFromAuthentication(final Collection<Authentication> authentications) {
+    public Principal nominate(final Collection<Authentication> authentications,
+                              final Map<String, Object> principalAttributes) {
+
         final Optional<SurrogatePrincipal> result = authentications
             .stream()
             .map(Authentication::getPrincipal)
@@ -25,8 +29,11 @@ public class SurrogatePrincipalElectionStrategy extends DefaultPrincipalElection
             .map(SurrogatePrincipal.class::cast)
             .findFirst();
         if (result.isPresent()) {
-            return result.get().getSurrogate();
+            final Principal surrogatePrincipal = result.get().getSurrogate();
+            LOGGER.debug("Nominated [{}] as the surrogate principal", surrogatePrincipal);
+            return surrogatePrincipal;
         }
-        return super.getPrincipalFromAuthentication(authentications);
+        return super.nominate(authentications, principalAttributes);
     }
+
 }

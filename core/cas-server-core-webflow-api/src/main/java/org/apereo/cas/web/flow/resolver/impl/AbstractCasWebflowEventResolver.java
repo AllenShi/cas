@@ -1,8 +1,5 @@
 package org.apereo.cas.web.flow.resolver.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.AuthenticationException;
@@ -23,6 +20,10 @@ import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.web.flow.CasWebflowConstants;
 import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
 import org.apereo.cas.web.support.WebUtils;
+
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.binding.message.MessageBuilder;
 import org.springframework.binding.message.MessageContext;
@@ -221,7 +222,8 @@ public abstract class AbstractCasWebflowEventResolver implements CasWebflowEvent
      * @param provider  the provider
      * @return the map
      */
-    protected static Map<String, Object> buildEventAttributeMap(final Principal principal, final RegisteredService service,
+    protected static Map<String, Object> buildEventAttributeMap(final Principal principal,
+                                                                final RegisteredService service,
                                                                 final MultifactorAuthenticationProvider provider) {
         final Map<String, Object> map = new HashMap<>();
         map.put(Principal.class.getName(), principal);
@@ -297,6 +299,11 @@ public abstract class AbstractCasWebflowEventResolver implements CasWebflowEvent
                                                            final RegisteredService service,
                                                            final RequestContext context,
                                                            final MultifactorAuthenticationProvider provider) {
+        if (provider == null) {
+            LOGGER.debug("No multifactor authentication provider is specified");
+            return null;
+        }
+
         LOGGER.debug("Provider [{}] is successfully verified", provider);
         final String id = provider.getId();
         final Event event = validateEventIdForMatchingTransitionInContext(id, context, buildEventAttributeMap(principal, service, provider));
