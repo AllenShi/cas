@@ -15,6 +15,7 @@ import org.apereo.cas.util.DigestUtils;
 import org.apereo.cas.util.serialization.SerializationUtils;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -82,6 +83,13 @@ public abstract class AbstractTicketRegistry implements TicketRegistry {
                 + "Message is: [{}] Returning unknown as [{}]", this.getClass().getName(), t.getMessage(), Long.MIN_VALUE);
             return Long.MIN_VALUE;
         }
+    }
+
+    @Override
+    public long userCount() {
+        LOGGER.debug("userCount() operation is not implemented by the ticket registry instance {}. Returning unknown as {}",
+                this.getClass().getName(), Long.MIN_VALUE);
+        return Long.MIN_VALUE;
     }
 
     @Override
@@ -264,5 +272,9 @@ public abstract class AbstractTicketRegistry implements TicketRegistry {
 
     protected boolean isCipherExecutorEnabled() {
         return this.cipherExecutor != null && this.cipherExecutor.isEnabled();
+    }
+
+    public Collection<Ticket> getTicketsByUser(String user) {
+        return Collections.EMPTY_LIST;
     }
 }

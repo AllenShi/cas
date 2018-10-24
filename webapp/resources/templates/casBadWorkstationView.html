@@ -10,13 +10,11 @@
 </head>
 
 <body id="cas">
-<main role="main" class="container mt-3 mb-3">
-    <div layout:fragment="content">
-        <div class="alert alert-danger">
-            <h2 th:utext="#{screen.badworkstation.heading}">You cannot login from this workstation.</h2>
-            <p th:utext="#{screen.badworkstation.message}">Please contact the system administrator to regain access.</p>
-        </div>
+<div layout:fragment="content">
+    <div id="msg" class="errors">
+        <h2 th:utext="#{screen.badworkstation.heading}"/>
+        <p th:utext="#{screen.badworkstation.message}"/>
     </div>
-</main>
+</div>
 </body>
 </html>

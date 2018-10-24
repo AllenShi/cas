@@ -11,6 +11,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.webflow.config.FlowDefinitionRegistryBuilder;
 import org.springframework.webflow.definition.registry.FlowDefinitionRegistry;
+import org.springframework.webflow.engine.Flow;
 import org.springframework.webflow.engine.builder.FlowBuilder;
 import org.springframework.webflow.engine.builder.model.FlowModelFlowBuilder;
 import org.springframework.webflow.engine.builder.support.FlowBuilderServices;
@@ -46,7 +47,7 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
 
     public DuoMultifactorWebflowConfigurer(final FlowBuilderServices flowBuilderServices, 
                                            final FlowDefinitionRegistry loginFlowDefinitionRegistry,
-                                           final boolean enableDeviceRegistration, 
+                                           final boolean enableDeviceRegistration,
                                            final ApplicationContext applicationContext,
                                            final CasConfigurationProperties casProperties) {
         super(flowBuilderServices, loginFlowDefinitionRegistry, enableDeviceRegistration, applicationContext, casProperties);
@@ -60,6 +61,10 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
             final ConfigurableListableBeanFactory cfg = (ConfigurableListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
             cfg.registerSingleton(duo.getId(), duoFlowRegistry);
             registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), duo.getId(), duoFlowRegistry, duo.getId());
+            if (loginFlowDefinitionRegistry.containsFlowDefinition("impersonate")) {
+                registerMultifactorProviderAuthenticationWebflow((Flow) loginFlowDefinitionRegistry.getFlowDefinition("impersonate"),
+                        duo.getId(), duoFlowRegistry, duo.getId());
+            }
         });
 
         casProperties.getAuthn().getMfa().getDuo()
@@ -115,6 +120,7 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_SUCCESS));
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_DENY));
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE));
+        states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_ENROLL));
 
     }
 
@@ -253,7 +259,7 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
 
         transModel = new TransitionModel();
         transModel.setOn(CasWebflowConstants.TRANSITION_ID_ENROLL);
-        transModel.setTo("redirectToDuoRegistration");
+        transModel.setTo(CasWebflowConstants.TRANSITION_ID_ENROLL);
         trans.add(transModel);
 
         transModel = new TransitionModel();

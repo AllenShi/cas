@@ -12,10 +12,14 @@ import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.web.FlowExecutionExceptionResolver;
+import org.apereo.cas.web.flow.JaasCheck;
+import org.apereo.cas.web.flow.InitializeLogoutViewAction;
+import org.apereo.cas.web.flow.SingleSignOnParticipationStrategy;
+import org.apereo.cas.web.flow.logout.FrontChannelLogoutAction;
 import org.apereo.cas.web.flow.GatewayServicesManagementCheck;
 import org.apereo.cas.web.flow.GenerateServiceTicketAction;
 import org.apereo.cas.web.flow.ServiceAuthorizationCheck;
-import org.apereo.cas.web.flow.SingleSignOnParticipationStrategy;
+import org.apereo.cas.web.flow.TlsCheck;
 import org.apereo.cas.web.flow.actions.InitialAuthenticationAction;
 import org.apereo.cas.web.flow.login.CreateTicketGrantingTicketAction;
 import org.apereo.cas.web.flow.login.GenericSuccessViewAction;
@@ -27,7 +31,6 @@ import org.apereo.cas.web.flow.login.SendTicketGrantingTicketAction;
 import org.apereo.cas.web.flow.login.ServiceWarningAction;
 import org.apereo.cas.web.flow.login.SetServiceUnauthorizedRedirectUrlAction;
 import org.apereo.cas.web.flow.login.TicketGrantingTicketCheckAction;
-import org.apereo.cas.web.flow.logout.FrontChannelLogoutAction;
 import org.apereo.cas.web.flow.logout.LogoutAction;
 import org.apereo.cas.web.flow.logout.LogoutViewSetupAction;
 import org.apereo.cas.web.flow.logout.TerminateSessionAction;
@@ -140,6 +143,16 @@ public class CasSupportActionsConfiguration {
         return new InitialAuthenticationAction(initialAuthenticationAttemptWebflowEventResolver,
             serviceTicketRequestWebflowEventResolver,
             adaptiveAuthenticationPolicy);
+    }
+
+    @Bean
+    public Action doJaasCheck() {
+        return new JaasCheck(casProperties.getServer().isJaasCheck());
+    }
+
+    @Bean
+    public Action doTlsCheck() {
+        return new TlsCheck(casProperties.getServer().isTlsCheck());
     }
 
     @RefreshScope
@@ -267,6 +280,12 @@ public class CasSupportActionsConfiguration {
     @Bean
     public Action logoutViewSetupAction() {
         return new LogoutViewSetupAction(casProperties);
+    }
+
+    @Bean
+    @RefreshScope
+    public Action initializeLogoutViewAction() {
+        return new InitializeLogoutViewAction(casProperties);
     }
 
     @Bean

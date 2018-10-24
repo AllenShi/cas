@@ -122,7 +122,7 @@ public class CasSecurityContextConfiguration extends WebMvcConfigurerAdapter {
 
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
-        registry.addInterceptor(statusInterceptor()).addPathPatterns("/status/**");
+        registry.addInterceptor(statusInterceptor()).addPathPatterns("/status/**").excludePathPatterns("/status/discovery*");
         registry.addInterceptor(webContentInterceptor()).addPathPatterns("/*");
     }
 
@@ -152,7 +152,7 @@ public class CasSecurityContextConfiguration extends WebMvcConfigurerAdapter {
         public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response,
                                  final Object handler) throws Exception {
             final String requestPath = request.getRequestURI();
-            final Pattern pattern = Pattern.compile("/status(/)*$");
+            final Pattern pattern = Pattern.compile("/status(/|/discovery)*$");
 
             if (pattern.matcher(requestPath).find()) {
                 return requiresAuthenticationStatusInterceptor().preHandle(request, response, handler);
@@ -164,7 +164,7 @@ public class CasSecurityContextConfiguration extends WebMvcConfigurerAdapter {
         public void postHandle(final HttpServletRequest request, final HttpServletResponse response,
                                final Object handler, final ModelAndView modelAndView) throws Exception {
             final String requestPath = request.getRequestURI();
-            final Pattern pattern = Pattern.compile("/status(/)*$");
+            final Pattern pattern = Pattern.compile("/status(/|/discovery)*$");
 
             if (pattern.matcher(requestPath).find()) {
                 requiresAuthenticationStatusInterceptor().postHandle(request, response, handler, modelAndView);

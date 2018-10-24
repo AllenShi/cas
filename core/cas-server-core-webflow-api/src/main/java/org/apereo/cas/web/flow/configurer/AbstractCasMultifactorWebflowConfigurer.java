@@ -90,6 +90,7 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS, CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS);
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE);
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_DENY, CasWebflowConstants.STATE_ID_MFA_DENIED);
+                    ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_ENROLL, CasWebflowConstants.STATE_ID_MFA_ENROLL);
 
                 });
             }
@@ -154,6 +155,9 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
         LOGGER.debug("Adding end state [{}] with transition to [{}] to flow 'login'for MFA", CasWebflowConstants.STATE_ID_MFA_DENIED, CasWebflowConstants.VIEW_ID_MFA_DENIED);
         createEndState(flow, CasWebflowConstants.STATE_ID_MFA_DENIED, CasWebflowConstants.VIEW_ID_MFA_DENIED);
 
+        LOGGER.debug("Adding end state [{}] with transition to [{}] to flow 'login'for MFA", CasWebflowConstants.STATE_ID_MFA_ENROLL, CasWebflowConstants.VIEW_ID_MFA_ENROLL);
+        createEndState(flow, CasWebflowConstants.STATE_ID_MFA_ENROLL, CasWebflowConstants.VIEW_ID_MFA_ENROLL);
+
         final SubflowState subflowState = createSubflowState(flow, subflowId, subflowId);
         final Collection<String> states = getCandidateStatesForMultifactorAuthentication();
         LOGGER.debug("Candidate states for multifactor authentication are [{}]", states);
@@ -168,6 +172,9 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
             LOGGER.debug("Adding transition [{}] to [{}] for [{}]", CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, s);
             createTransitionForState(actionState, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE);
 
+            LOGGER.debug("Adding transition [{}] to [{}] for [{}]", CasWebflowConstants.TRANSITION_ID_ENROLL, CasWebflowConstants.STATE_ID_MFA_ENROLL, s);
+            createTransitionForState(actionState, CasWebflowConstants.TRANSITION_ID_ENROLL, CasWebflowConstants.STATE_ID_MFA_ENROLL);
+
             LOGGER.debug("Locating transition id [{}] to process multifactor authentication for state [{}]", CasWebflowConstants.TRANSITION_ID_SUCCESS, s);
             final String targetSuccessId = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS).getTargetStateId();
 
@@ -180,6 +187,9 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
             LOGGER.debug("Location transition id [{}] to process multifactor authentication for stat [{}]", CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, s);
             final String targetDuoUnavailable = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE).getTargetStateId();
 
+            LOGGER.debug("Location transition id [{}] to process multifactor authentication for stat [{}]", CasWebflowConstants.TRANSITION_ID_ENROLL, s);
+            final String targetDuoEnroll = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_ENROLL).getTargetStateId();
+
             final List<DefaultMapping> mappings = new ArrayList<>();
             final Mapper inputMapper = createMapperToSubflowState(mappings);
             final SubflowAttributeMapper subflowMapper = createSubflowAttributeMapper(inputMapper, null);
@@ -191,6 +201,7 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
             transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS, targetWarningsId));
             transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_DENY, targetDeniedByDuo));
             transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, targetDuoUnavailable));
+            transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_ENROLL, targetDuoEnroll));
             LOGGER.debug("Creating transition [{}] for state [{}]", subflowId, actionState.getId());
             createTransitionForState(actionState, subflowId, subflowId);
 

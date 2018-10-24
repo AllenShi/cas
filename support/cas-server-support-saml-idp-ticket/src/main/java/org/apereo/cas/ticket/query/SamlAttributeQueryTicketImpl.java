@@ -104,4 +104,9 @@ public class SamlAttributeQueryTicketImpl extends AbstractTicket implements Saml
     public String getPrefix() {
         return SamlAttributeQueryTicket.PREFIX;
     }
+
+    @Override
+    public boolean isFromImpersonation() {
+        return false;
+    }
 }

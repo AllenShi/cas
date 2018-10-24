@@ -1,0 +1,40 @@
+#duo_iframe {
+    width: 100%;
+    min-width: 280px;
+    max-width: 600px;
+    height: 350px;
+}
+
+* {
+    /* So 100% means 100% */
+    box-sizing: border-box;
+}
+
+body {
+    margin: auto;
+    max-width: 600px;
+    margin-top: 2.5em;
+    margin-bottom: 0.5em;
+    /* http://marketingtoolbox.ucdavis.edu/identity/fonts.html */
+    font-family: "Lucida Grande", "Lucida Sans", Verdana, sans-serif;
+}
+
+#article {
+    width: 100%;
+    margin-left: 0px;
+    margin-right: 50px;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#footer {
+    margin-left: 50px;
+    margin-right: 50px;
+    margin-top: 2.5em;
+    font-size: 11px;
+    color: #002855;
+}
+
+#footer .emphasized {
+    font-weight: bolder;
+}

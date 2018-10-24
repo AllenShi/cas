@@ -44,6 +44,7 @@ import org.apereo.cas.ticket.registry.support.LockingStrategy;
 import org.apereo.cas.ticket.support.AlwaysExpiresExpirationPolicy;
 import org.apereo.cas.ticket.support.HardTimeoutExpirationPolicy;
 import org.apereo.cas.ticket.support.MultiTimeUseOrTimeoutExpirationPolicy;
+import org.apereo.cas.ticket.support.MultiTimeUseTGTOrTimeoutExpirationPolicy;
 import org.apereo.cas.ticket.support.NeverExpiresExpirationPolicy;
 import org.apereo.cas.ticket.support.RememberMeDelegatingExpirationPolicy;
 import org.apereo.cas.ticket.support.ThrottledUseAndTimeoutExpirationPolicy;
@@ -351,6 +352,12 @@ public class CasCoreTicketsConfiguration implements TransactionManagementConfigu
         if (tgt.getMaxTimeToLiveInSeconds() <= 0 && tgt.getTimeToKillInSeconds() <= 0) {
             LOGGER.warn("Ticket-granting ticket expiration policy is set to NEVER expire tickets.");
             return new NeverExpiresExpirationPolicy();
+        }
+
+        if (tgt.getNumberOfUses() > 0) {
+            LOGGER.debug("Ticket-granting ticket expiration policy is based on a usage count of [{}] or [{}] seconds",
+                    tgt.getNumberOfUses(),tgt.getTimeToKillInSeconds());
+            return new MultiTimeUseTGTOrTimeoutExpirationPolicy(tgt.getNumberOfUses(),tgt.getTimeToKillInSeconds());
         }
 
         if (tgt.getTimeout().getMaxTimeToLiveInSeconds() > 0) {

@@ -587,6 +587,16 @@ public interface CasWebflowConstants {
     String STATE_ID_CHECK_BYPASS = "checkBypass";
 
     /**
+     * STATE_ID_MFA_ENROLL.
+     */
+    String STATE_ID_MFA_ENROLL = "mfaEnroll";
+
+    /**
+     * State for view of MFA Enroll.
+     */
+    String VIEW_ID_MFA_ENROLL = "mfaEnrollView";
+
+    /**
      * State to determine the MFA failure mode and what action to take.
      */
     String TRANSITION_ID_FAILURE = "mfaFailure";

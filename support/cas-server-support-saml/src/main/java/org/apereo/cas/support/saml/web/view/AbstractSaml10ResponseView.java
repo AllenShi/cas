@@ -39,7 +39,7 @@ public abstract class AbstractSaml10ResponseView extends AbstractCasView {
      * Skew time.
      **/
     protected final int skewAllowance;
-    
+
     /**
      * Assertion validity period length.
      **/

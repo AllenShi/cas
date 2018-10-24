@@ -18,6 +18,7 @@ dependencies {
     compileOnly project(":core:cas-server-core-events")
     compileOnly project(":support:cas-server-support-discovery-profile")
     
+
     testImplementation project(":core:cas-server-core")
     testImplementation project(":core:cas-server-core-logout-api")
     testImplementation project(":core:cas-server-core-logout")

@@ -35,7 +35,7 @@ public class DateTimeAuthenticationRequestRiskCalculator extends BaseAuthenticat
                                         final RegisteredService service, final Collection<CasEvent> events) {
         final ZonedDateTime timestamp = ZonedDateTime.now(ZoneOffset.UTC);
         LOGGER.debug("Filtering authentication events for timestamp [{}]", timestamp);
-        
+
         final int hoursFromNow = timestamp.plusHours(windowInHours).getHour();
         final int hoursBeforeNow = timestamp.minusHours(windowInHours).getHour();
 

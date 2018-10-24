@@ -52,14 +52,25 @@ public abstract class AbstractCacheHealthIndicator extends AbstractHealthIndicat
                 builder.up();
             }
 
+            builder.withDetail("master", statistics[0].isMaster());
+            builder.withDetail("clusterSize", statistics[0].getNumberOfMembers());
+
+            Map<String, Map<String, Object>> maps = new HashMap<>();
             Arrays.stream(statistics).forEach(s -> {
-                final Map<String, Object> map = new HashMap<>();
+                Map<String, Object> map = new HashMap<>();
                 map.put("size", s.getSize());
+                map.put("memory", s.getMemoryCost());
                 map.put("capacity", s.getCapacity());
                 map.put("evictions", s.getEvictions());
                 map.put("percentFree", s.getPercentFree());
-                builder.withDetail(s.getName(), map);
+                map.put("localCount", s.getLocalEntryCount());
+                map.put("backupCount", s.getBackupEntryCount());
+                map.put("getLatency", s.getMaxGetLatency());
+                map.put("putLatency", s.getMaxPutLatency());
+                maps.put(s.getName(), map);
             });
+
+            builder.withDetail("maps", maps);
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
             builder.down(e);

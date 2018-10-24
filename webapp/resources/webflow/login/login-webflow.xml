@@ -20,10 +20,33 @@
     <action-state id="realSubmit">
         <evaluate expression="authenticationViaFormAction"/>
         <transition on="warn" to="warn"/>
-        <transition on="success" to="createTicketGrantingTicket"/>
+        <!--<transition on="success" to="createTicketGrantingTicket"/>-->
+        <transition on="success" to="jaasCheck"/>
+        <transition on="successWithWarnings" to="showMessages"/>
         <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
         <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
         <transition on="error" to="initializeLoginForm"/>
     </action-state>
+
+
+    <action-state id="jaasCheck">
+        <evaluate expression="doJaasCheck"/>
+        <transition on="yes" to="jaasView"/>
+        <transition on="no" to="noTlsCheck"/>
+    </action-state>
+
+    <view-state id="jaasView" view="jaasView">
+        <transition on="success" to="noTlsCheck"/>
+    </view-state>
+
+    <action-state id="noTlsCheck">
+      <evaluate expression="doTlsCheck"/>
+      <transition on="yes" to="noTlsView"/>
+      <transition on="no" to="createTicketGrantingTicket"/>
+    </action-state>
+
+    <view-state id="noTlsView" view="noTlsView">
+      <transition on="success" to="createTicketGrantingTicket"/>
+    </view-state>
 
 </flow>

@@ -155,6 +155,14 @@ public abstract class AbstractCentralAuthenticationService implements CentralAut
         return this.ticketRegistry.getTickets().stream().filter(predicate).collect(Collectors.toSet());
     }
 
+    @Override
+    public Collection<Ticket> getTickets(final String user, final Predicate<Ticket> predicate) {
+        return this.ticketRegistry.getTicketsByUser(user).stream()
+               .filter(predicate)
+               .collect(Collectors.toSet());
+    }
+
+
     @Transactional(transactionManager = "ticketTransactionManager")
     @Timed(name = "DELETE_TICKET_TIMER")
     @Metered(name = "DELETE_TICKET_METER")
@@ -262,4 +270,15 @@ public abstract class AbstractCentralAuthenticationService implements CentralAut
         }
         return !StringUtils.isEmpty(ticketId);
     }
+
+    @Override
+    public void setApplicationEventPublisher(final ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
+    }
+
+    @Override
+    public TicketRegistry getTicketRegistry() {
+        return this.ticketRegistry;
+    }
+
 }

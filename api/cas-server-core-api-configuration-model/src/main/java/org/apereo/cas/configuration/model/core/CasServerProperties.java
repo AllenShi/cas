@@ -47,6 +47,26 @@ public class CasServerProperties implements Serializable {
     private String prefix = name.concat("/cas");
 
     /**
+     * Flag to do Jaas trap.
+     */
+    private boolean jaasCheck = false;
+
+    /**
+     * Flag to dp TLS Check.
+     */
+    private boolean tlsCheck = false;
+
+    /**
+     * Flag to allow impersonation.
+     */
+    private boolean impersonate = false;
+
+    /**
+     * File containing allowed impersonators.
+     */
+    private String impersonateFile;
+
+    /**
      * Embedded container AJP settings.
      */
     @NestedConfigurationProperty

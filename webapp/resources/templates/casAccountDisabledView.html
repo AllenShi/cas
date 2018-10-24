@@ -9,15 +9,12 @@
     <link href="../../static/css/cas.css" rel="stylesheet" th:remove="tag" />
 </head>
 
-<body>
-<main role="main" class="container mt-3 mb-3">
-    <div layout:fragment="content">
-        <div class="alert alert-danger">
-            <h2 th:utext="#{screen.accountdisabled.heading}">This account has been disabled.</h2>
-            <p th:utext="#{screen.accountdisabled.message}">Please contact the system administrator to regain
-                access.</p>
-        </div>
-    </div>
-</main>
+<body id="cas">
+<div layout:fragment="content">
+  <div class="alert alert-danger">
+    <h2 th:utext="#{screen.accountdisabled.heading}" />
+    <p th:utext="#{screen.accountdisabled.message}" />
+  </div>
+</div>
 </body>
 </html>

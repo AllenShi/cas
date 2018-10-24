@@ -32,7 +32,7 @@ import java.util.Set;
  */
 @Slf4j
 public class HazelcastConfigurationFactory {
-    
+
     /**
      * Build map config map config.
      *

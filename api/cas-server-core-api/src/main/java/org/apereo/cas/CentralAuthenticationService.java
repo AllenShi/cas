@@ -11,6 +11,7 @@ import org.apereo.cas.ticket.Ticket;
 import org.apereo.cas.ticket.TicketGrantingTicket;
 import org.apereo.cas.ticket.proxy.ProxyGrantingTicket;
 import org.apereo.cas.ticket.proxy.ProxyTicket;
+import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.validation.Assertion;
 
 import java.util.Collection;
@@ -126,6 +127,8 @@ public interface CentralAuthenticationService {
      */
     Collection<Ticket> getTickets(Predicate<Ticket> predicate);
 
+    Collection<Ticket> getTickets(String user, Predicate<Ticket> predicate);
+
     /**
      * Grant a {@link ServiceTicket} that may be used to access the given service
      * by authenticating the given credentials.
@@ -196,5 +199,7 @@ public interface CentralAuthenticationService {
      * @throws AbstractTicketException if there was an error creating the ticket
      */
     ProxyGrantingTicket createProxyGrantingTicket(String serviceTicketId, AuthenticationResult authenticationResult)
-        throws AuthenticationException, AbstractTicketException;
+            throws AuthenticationException, AbstractTicketException;
+
+    TicketRegistry getTicketRegistry();
 }

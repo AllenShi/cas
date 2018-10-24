@@ -85,7 +85,7 @@ public class DefaultSingleLogoutServiceMessageHandler implements SingleLogoutSer
                                               final WebApplicationService selectedService,
                                               final RegisteredService registeredService,
                                               final URL logoutUrl) {
-        final DefaultLogoutRequest logoutRequest = new DefaultLogoutRequest(ticketId, selectedService, logoutUrl);
+        final DefaultLogoutRequest logoutRequest = new DefaultLogoutRequest(ticketId, selectedService, logoutUrl, registeredService.getName());
         LOGGER.debug("Logout request [{}] created for [{}] and ticket id [{}]", logoutRequest, selectedService, ticketId);
         final RegisteredService.LogoutType type = registeredService.getLogoutType() == null
             ? RegisteredService.LogoutType.BACK_CHANNEL : registeredService.getLogoutType();

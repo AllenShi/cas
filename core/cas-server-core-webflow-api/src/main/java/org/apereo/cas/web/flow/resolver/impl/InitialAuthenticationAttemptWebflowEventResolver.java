@@ -23,6 +23,8 @@ import org.apereo.cas.web.flow.CasWebflowConstants;
 import org.apereo.cas.web.flow.resolver.CasDelegatingWebflowEventResolver;
 import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
 import org.apereo.cas.web.support.WebUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.util.CookieGenerator;
 import org.springframework.webflow.execution.Event;
@@ -55,6 +57,8 @@ public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCa
 
     private CasWebflowEventResolver selectiveResolver;
 
+    private boolean jaasCheck;
+
     private final AuditableExecution registeredServiceAccessStrategyEnforcer;
 
     public InitialAuthenticationAttemptWebflowEventResolver(final AuthenticationSystemSupport authenticationSystemSupport,
@@ -71,11 +75,17 @@ public class InitialAuthenticationAttemptWebflowEventResolver extends AbstractCa
 
     }
 
+    public void setJaasCheck(boolean check) {
+        this.jaasCheck = check;
+    }
+
     @Override
     public Set<Event> resolveInternal(final RequestContext context) {
         try {
             final Credential credential = getCredentialFromContext(context);
             final Service service = WebUtils.getService(context);
+
+            context.getConversationScope().put("jaasCheck",jaasCheck);
             if (credential != null) {
                 final AuthenticationResultBuilder builder = this.authenticationSystemSupport.handleInitialAuthenticationTransaction(service, credential);
                 if (builder.getInitialAuthentication().isPresent()) {

@@ -113,15 +113,16 @@ public class JaasAuthenticationHandler extends AbstractUsernamePasswordAuthentic
     @Override
     protected AuthenticationHandlerExecutionResult authenticateUsernamePasswordInternal(final UsernamePasswordCredential credential,
                                                                                         final String originalPassword) throws GeneralSecurityException {
-        if (StringUtils.isNotBlank(this.kerberosKdcSystemProperty)) {
+        /*
+        if (this.kerberosKdcSystemProperty != null) {
             LOGGER.debug("Configured kerberos system property [{}] to [{}]", SYS_PROP_KERB5_KDC, this.kerberosKdcSystemProperty);
             System.setProperty(SYS_PROP_KERB5_KDC, this.kerberosKdcSystemProperty);
         }
-        if (StringUtils.isNotBlank(this.kerberosRealmSystemProperty)) {
+        if (this.kerberosRealmSystemProperty != null) {
             LOGGER.debug("Setting kerberos system property [{}] to [{}]", SYS_PROP_KRB5_REALM, this.kerberosRealmSystemProperty);
             System.setProperty(SYS_PROP_KRB5_REALM, this.kerberosRealmSystemProperty);
         }
-
+        */
         final Principal principal = authenticateAndGetPrincipal(credential);
         final AuthenticationPasswordPolicyHandlingStrategy strategy = getPasswordPolicyHandlingStrategy();
         if (principal != null && strategy != null) {
@@ -150,7 +151,7 @@ public class JaasAuthenticationHandler extends AbstractUsernamePasswordAuthentic
             if (principals != null && !principals.isEmpty()) {
                 final java.security.Principal secPrincipal = principals.iterator().next();
                 LOGGER.debug("JAAS principal detected from subject login context is [{}}", secPrincipal.getName());
-                principal = this.principalFactory.createPrincipal(secPrincipal.getName());
+                principal = this.principalFactory.createPrincipal(secPrincipal.getName().replace("@UCDAVIS.EDU", ""));
             }
         } finally {
             if (lc != null) {

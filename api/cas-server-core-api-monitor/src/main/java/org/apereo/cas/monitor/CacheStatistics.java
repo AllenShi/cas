@@ -51,6 +51,31 @@ public interface CacheStatistics {
      */
     String getName();
 
+
+    default int getNumberOfMembers() { return 0;}
+
+    default long getMemoryCost() { return 0l;}
+
+    default boolean isMaster() {
+        return false;
+    }
+
+    default long getLocalEntryCount() {
+        return 0l;
+    }
+
+    default long getBackupEntryCount() {
+        return 0l;
+    }
+
+    default long getMaxGetLatency() {
+        return 0l;
+    }
+
+    default long getMaxPutLatency() {
+        return 0l;
+    }
+
     /**
      * Writes a string representation of cache statistics to the given string builder.
      *

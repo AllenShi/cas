@@ -9,15 +9,13 @@
     <link href="../../static/css/cas.css" rel="stylesheet" th:remove="tag" />
 </head>
 
-<body>
-<main role="main" class="container mt-3 mb-3">
-    <div layout:fragment="content">
-        <div class="alert alert-danger">
-            <h2 th:utext="#{screen.service.error.header}">Application Not Authorized to Use CAS</h2>
-            <p th:if="${rootCauseException != null and rootCauseException.code != null}"
-               th:utext="#{${rootCauseException.code}}">rootCauseException.code</p>
-        </div>
+<body id="cas">
+<div layout:fragment="content">
+    <div id="msg" class="errors">
+        <h2 th:utext="#{screen.service.error.header}"/>
+        <p th:if="${rootCauseException != null and rootCauseException.code != null}"
+           th:utext="#{${rootCauseException.code}}"/>
     </div>
-</main>
+</div>
 </body>
 </html>

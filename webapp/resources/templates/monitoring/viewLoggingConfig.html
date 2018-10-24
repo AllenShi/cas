@@ -10,9 +10,9 @@
 
         var urls = {
             getConfiguration: /*[[@{/status/logging/getConfiguration}]]*/,
-            getAuditLog: /*[[@{/status/logging/getAuditLog}]]*/,
+            //getAuditLog: /*[[@{/status/logging/getAuditLog}]]*/,
             updateLevel: /*[[@{/status/logging/updateLoggerLevel}]]*/,
-            reportsWebsocket: /*[[@{/reports-websocket}]]*/
+            //logOutput: /*[[@{/logoutput}]]*/
         };
 
         /*]]>*/
@@ -55,19 +55,14 @@
         <div class="tabsContainer d-none">
             <div id="alert-container"></div>
 
-
-            <ul class="nav nav-tabs" id="myTab" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="logger-tab" data-toggle="tab" href="#loggersTab" role="tab"
-                       aria-controls="loggersTab" aria-selected="true">Loggers</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="logOutput-tab" href="#logOutputTab" aria-controls="logOutput"
-                       role="tab" data-toggle="tab">CAS Log</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="auditLog-tab" data-toggle="tab" href="#auditLogTab" role="tab" aria-controls="auditLog" aria-selected="false">Audit Log</a>
-                </li>
+                <!--
+                <li role="presentation"><a href="#activeLoggers" aria-controls="activeLoggers" role="tab" data-toggle="tab">Active
+                    Loggers</a></li>
+                 -->
+                <!--
+                <li role="presentation"><a href="#logOutput" aria-controls="logOutput" role="tab" data-toggle="tab">CAS Log</a></li>
+                <li role="presentation"><a href="#auditLog" aria-controls="auditLog" role="tab" data-toggle="tab">Audit Log</a></li>
+                -->
             </ul>
 
             <div class="tab-content" id="myTabContent">
@@ -93,10 +88,26 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="tab-pane fade" id="logOutputTab" role="tabpanel" aria-labelledby="logOutput-tab">
-                    <div id="websocketStatus" class="alert alert-info" style="visibility:hidden"></div>
-
-                    <textarea id="logoutputarea" rows="20" cols="20"></textarea>
+                <!--
+                <div role="tabpanel" class="tab-pane" id="activeLoggers">
+                    <table id="activeLoggersTable" class="display table table-striped table-bordered">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th th:text="#{cas.loggingdashboard.logger}"/>
+                            <th th:text="#{cas.loggingdashboard.additive}"/>
+                            <th th:text="#{cas.loggingdashboard.state}"/>
+                            <th th:text="#{cas.loggingdashboard.level}"/>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="tab-pane fade" id="auditLogTab" role="tabpanel" aria-labelledby="auditLog-tab">
@@ -114,6 +125,11 @@
                         <tbody/>
                     </table>
                 </div>
+                <div role="tabpanel" class="tab-pane" id="logOutput">
+                    <div id="websocketStatus" class="alert alert-info" style="visibility:hidden"/>
+                </div>
+                <textarea id="logoutputarea" rows="20" cols="20"></textarea>
+                -->
             </div>
             <div th:replace="monitoring/fragments/footerButtons"/>
         </div>

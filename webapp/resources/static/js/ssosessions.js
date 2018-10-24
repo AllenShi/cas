@@ -200,8 +200,22 @@ var ssoSessions = (function () {
             },
             'processing': true,
             'ajax': {
-                'url': urls.getSessions,
-                'dataSrc': 'activeSsoSessions'
+                'url': urls.getSessions+'?user='+$('#user').val(),
+                'dataSrc': function(json) {
+                    if (!json || json.activeSsoSessions.length == 0) {
+                        $('#loadingMessage').hide();
+                        $('#no-cas-sessions').show();
+                        $('#cas-sessions').hide();
+                        return '';
+                    } else {
+                        updateAdminPanels(json);
+
+                        $('#loadingMessage').hide();
+                        $('#no-cas-sessions').hide();
+                        $('#cas-sessions').show();
+                        return json.activeSsoSessions;
+                    }
+                }
             },
 
             columnDefs: [
@@ -333,7 +347,17 @@ var ssoSessions = (function () {
                 row.child(format(row.data()), 'info').show();
                 tr.addClass('shown');
             }
+        } );
+
+        $('#refresh').on('click', function(e) {
+            $('#ssoSessions').DataTable().ajax.reload();
         });
+
+        $('#user').on('change',function(e) {
+            $('#ssoSessions').DataTable().ajax.url(urls.getSessions+'?user='+$('#user').val()).load();
+        });
+
+
     };
 
     // initialization *******

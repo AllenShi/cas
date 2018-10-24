@@ -4,6 +4,9 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
+import org.apereo.cas.CentralAuthenticationService;;
+import org.apereo.cas.ticket.registry.TicketRegistry;
+import org.springframework.stereotype.Controller;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CentralAuthenticationService;
@@ -263,12 +266,15 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
         ensureEndpointAccessIsAuthorized(request, response);
         final Map<String, Object> model = new HashMap<>();
 
-        int unexpiredTgts = 0;
-        int unexpiredSts = 0;
+        TicketRegistry tr = this.centralAuthenticationService.getTicketRegistry();
+        int unexpiredTgts = (int)tr.sessionCount();
+        int unexpiredSts = (int)tr.serviceTicketCount();
         int expiredTgts = 0;
         int expiredSts = 0;
 
-        final Collection<Ticket> tickets = this.centralAuthenticationService.getTickets(ticket -> true);
+        /*
+        final Collection<Ticket> tickets =
+                this.centralAuthenticationService.getTickets(Predicates.alwaysTrue());
 
         for (final Ticket ticket : tickets) {
             if (ticket instanceof ServiceTicket) {
@@ -287,6 +293,7 @@ public class StatisticsController extends BaseCasMvcEndpoint implements ServletC
                 }
             }
         }
+        */
 
         model.put("unexpiredTgts", unexpiredTgts);
         model.put("unexpiredSts", unexpiredSts);

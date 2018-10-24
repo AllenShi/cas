@@ -1,4 +1,5 @@
-/* global logConfigFileLocation, SockJS, Stomp */
+/* logConfigFileLocation, SockJS, Stomp
+showLogs('');
 var stompClient = null;
 
 function setConnected(connected) {
@@ -44,11 +45,12 @@ function showLogs(message) {
         $('#logoutputarea').scrollTop(document.getElementById('logoutputarea').scrollHeight);
     }
 }
-
-disconnect();
-connect();
-setInterval(function () {
-}, 100);
+*/
+//disconnect();
+//connect();
+//setInterval(function () {
+//    getLogs();
+//}, 100);
 
 /*************
  *

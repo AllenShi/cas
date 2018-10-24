@@ -35,10 +35,10 @@ public class DetermineDuoUserAccountAction extends AbstractMultifactorAuthentica
         final DuoSecurityAuthenticationService duoAuthenticationService = provider.getDuoAuthenticationService();
         final DuoUserAccount account = duoAuthenticationService.getDuoUserAccount(p.getId());
         if (account.getStatus() == DuoUserAccountAuthStatus.ENROLL) {
-            if (StringUtils.isNotBlank(provider.getRegistrationUrl())) {
-                requestContext.getFlowScope().put("duoRegistrationUrl", provider.getRegistrationUrl());
+            /*if (StringUtils.isNotBlank(provider.getRegistrationUrl())) {
+                requestContext.getFlowScope().put("duoRegistrationUrl", provider.getRegistrationUrl());*/
                 return new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_ENROLL);
-            }
+            //}
         }
         if (account.getStatus() == DuoUserAccountAuthStatus.ALLOW) {
             return new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_BYPASS);

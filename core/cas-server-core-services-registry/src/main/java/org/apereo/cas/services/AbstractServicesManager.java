@@ -195,16 +195,16 @@ public abstract class AbstractServicesManager implements ServicesManager {
     @Override
     @PostConstruct
     public Collection<RegisteredService> load() {
-        LOGGER.debug("Loading services from [{}]", this.serviceRegistry);
+        LOGGER.debug("Loading services from [{}]", this.serviceRegistry.getName());
         this.services = this.serviceRegistry.load()
             .stream()
             .collect(Collectors.toConcurrentMap(r -> {
-                LOGGER.debug("Adding registered service [{}]", r.getServiceId());
+                LOGGER.trace("Adding registered service [{}]", r.getServiceId());
                 return r.getId();
             }, Function.identity(), (r, s) -> s == null ? r : s));
         loadInternal();
         publishEvent(new CasRegisteredServicesLoadedEvent(this, getAllServices()));
-        evaluateExpiredServiceDefinitions();
+        //evaluateExpiredServiceDefinitions();
         LOGGER.info("Loaded [{}] service(s) from [{}].", this.services.size(), this.serviceRegistry.getName());
         return services.values();
     }
@@ -227,55 +227,21 @@ public abstract class AbstractServicesManager implements ServicesManager {
     private Predicate<RegisteredService> getRegisteredServicesFilteringPredicate(final Predicate<RegisteredService>... p) {
         final List<Predicate<RegisteredService>> predicates = new ArrayList<>();
 
-        final Predicate<RegisteredService> expirationPolicyPredicate = getRegisteredServiceExpirationPolicyPredicate();
-        predicates.add(expirationPolicyPredicate);
+        //predicates.add(RegisteredServiceAccessStrategyUtils.getRegisteredServiceExpirationPolicyPredicate());
 
         predicates.addAll(Stream.of(p).collect(Collectors.toList()));
         return predicates.stream().reduce(x -> true, Predicate::and);
     }
 
-    /**
-     * Returns a predicate that determined whether a service has expired.
-     *
-     * @return true if the service is still valid. false if service has expired.
-     */
-    private Predicate<RegisteredService> getRegisteredServiceExpirationPolicyPredicate() {
-        return service -> {
-            try {
-                if (service == null) {
-                    return false;
-                }
-                final RegisteredServiceExpirationPolicy policy = service.getExpirationPolicy();
-                if (policy == null || StringUtils.isBlank(policy.getExpirationDate())) {
-                    return true;
-                }
-                final LocalDateTime now = getCurrentSystemTime();
-                final LocalDateTime expirationDate = DateTimeUtils.localDateTimeOf(policy.getExpirationDate());
-                LOGGER.debug("Service expiration date is [{}] while now is [{}]", expirationDate, now);
-                return !now.isAfter(expirationDate);
-            } catch (final Exception e) {
-                LOGGER.warn(e.getMessage(), e);
-            }
-            return false;
-        };
-    }
-
-    /**
-     * Gets current system time.
-     *
-     * @return the current system time
-     */
-    protected LocalDateTime getCurrentSystemTime() {
-        return LocalDateTime.now();
-    }
-
     private RegisteredService validateRegisteredService(final RegisteredService registeredService) {
-        final RegisteredService result = checkServiceExpirationPolicyIfAny(registeredService);
-        return result;
+        //final RegisteredService result = checkServiceExpirationPolicyIfAny(registeredService);
+        //return result;
+        return registeredService;
     }
 
     private RegisteredService checkServiceExpirationPolicyIfAny(final RegisteredService registeredService) {
-        if (registeredService == null || getRegisteredServiceExpirationPolicyPredicate().test(registeredService)) {
+        if (registeredService == null ||
+            RegisteredServiceAccessStrategyUtils.ensureServiceIsNotExpired(registeredService)) {
             return registeredService;
         }
         return processExpiredRegisteredService(registeredService);

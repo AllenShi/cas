@@ -7,18 +7,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
 
     <title th:text="#{screen.error.page.title.permissiondenied}">Error - Permission Denied</title>
-    <link href="../../static/css/cas.css" rel="stylesheet" th:remove="tag" />
+    <link href="../../static/css/cas.css" rel="stylesheet" th:href="@{${#themes.code('cas.standard.css.file')}}"/>
 </head>
 
-<body>
-<main role="main" class="container mt-3 mb-3">
-    <div layout:fragment="content">
-        <div class="alert alert-danger">
-            <h2 th:utext="#{screen.error.page.authdenied}">Authorization Denied</h2>
-            <p th:utext="#{screen.error.page.permissiondenied}">You do not have permission to view this page.</p>
-            <a class="btn btn-submit" th:href="@{/login}" th:utext="#{screen.error.page.loginagain}">Login Again</a>
-        </div>
+<body id="cas">
+<div layout:fragment="content">
+    <div id="msg" class="errors">
+        <h2>Access Forbidden</h2>
+        <p>You have attempted to access a service that is forbidden.  Contact ITX for further help.</p>
     </div>
-</main>
+</div>
 </body>
 </html>

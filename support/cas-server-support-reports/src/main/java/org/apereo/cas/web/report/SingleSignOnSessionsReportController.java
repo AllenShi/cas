@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -108,10 +109,10 @@ public class SingleSignOnSessionsReportController extends BaseCasMvcEndpoint {
      * @param option the option
      * @return the sso sessions
      */
-    private Collection<Map<String, Object>> getActiveSsoSessions(final SsoSessionReportOptions option) {
+    private Collection<Map<String, Object>> getActiveSsoSessions(final SsoSessionReportOptions option, final String user) {
         final Collection<Map<String, Object>> activeSessions = new ArrayList<>();
         final ISOStandardDateFormat dateFormat = new ISOStandardDateFormat();
-        getNonExpiredTicketGrantingTickets().stream().map(TicketGrantingTicket.class::cast)
+        getNonExpiredTicketGrantingTickets(user).stream().map(TicketGrantingTicket.class::cast)
             .filter(tgt -> !(option == SsoSessionReportOptions.DIRECT && tgt.getProxiedBy() != null))
             .forEach(tgt -> {
                 final Authentication authentication = tgt.getAuthentication();
@@ -144,8 +145,8 @@ public class SingleSignOnSessionsReportController extends BaseCasMvcEndpoint {
      *
      * @return the non expired ticket granting tickets
      */
-    private Collection<Ticket> getNonExpiredTicketGrantingTickets() {
-        return this.centralAuthenticationService.getTickets(ticket -> ticket instanceof TicketGrantingTicket && !ticket.isExpired());
+    private Collection<Ticket> getNonExpiredTicketGrantingTickets(final String user) {
+        return this.centralAuthenticationService.getTickets(user, ticket -> ticket instanceof TicketGrantingTicket && !ticket.isExpired());
     }
 
     /**
@@ -158,13 +159,14 @@ public class SingleSignOnSessionsReportController extends BaseCasMvcEndpoint {
      */
     @GetMapping(value = "/getSsoSessions")
     @ResponseBody
-    public WebAsyncTask<Map<String, Object>> getSsoSessions(@RequestParam(defaultValue = "ALL") final String type,
+    public WebAsyncTask<Map<String, Object>> getSsoSessions(@RequestParam final String user,
+                                                            @RequestParam(defaultValue = "ALL") final String type,
                                                             final HttpServletRequest request, final HttpServletResponse response) {
         ensureEndpointAccessIsAuthorized(request, response);
         final Callable<Map<String, Object>> asyncTask = () -> {
             final Map<String, Object> sessionsMap = new HashMap<>(1);
             final SsoSessionReportOptions option = SsoSessionReportOptions.valueOf(type);
-            final Collection<Map<String, Object>> activeSsoSessions = getActiveSsoSessions(option);
+            final Collection<Map<String, Object>> activeSsoSessions = getActiveSsoSessions(option, user);
             sessionsMap.put("activeSsoSessions", activeSsoSessions);
             long totalTicketGrantingTickets = 0;
             long totalProxyGrantingTickets = 0;
@@ -228,21 +230,20 @@ public class SingleSignOnSessionsReportController extends BaseCasMvcEndpoint {
     /**
      * Endpoint for destroying SSO Sessions.
      *
-     * @param type     the type
      * @param request  the request
      * @param response the response
      * @return result map
      */
     @PostMapping(value = "/destroySsoSessions")
     @ResponseBody
-    public Map<String, Object> destroySsoSessions(@RequestParam(defaultValue = "ALL") final String type,
-                                                  final HttpServletRequest request, final HttpServletResponse response) {
+    public Map<String, Object> destroySsoSessions(@RequestParam(defaultValue = "tickets[]") final List<String> tickets,
+                                                  final HttpServletRequest request,
+                                                  final HttpServletResponse response) {
         ensureEndpointAccessIsAuthorized(request, response);
         final Map<String, Object> sessionsMap = new HashMap<>();
         final Map<String, String> failedTickets = new HashMap<>();
-        final SsoSessionReportOptions option = SsoSessionReportOptions.valueOf(type);
-        final Collection<Map<String, Object>> collection = getActiveSsoSessions(option);
-        collection.stream().map(sso -> sso.get(SsoSessionAttributeKeys.TICKET_GRANTING_TICKET.getAttributeKey()).toString()).forEach(ticketGrantingTicket -> {
+
+        tickets.forEach(ticketGrantingTicket -> {
             try {
                 this.centralAuthenticationService.destroyTicketGrantingTicket(ticketGrantingTicket);
             } catch (final Exception e) {

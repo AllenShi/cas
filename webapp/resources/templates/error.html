@@ -20,13 +20,14 @@
     </script>
 </head>
 
-<body>
-<main role="main" class="container mt-3 mb-3">
+<body id="cas">
 <div layout:fragment="content">
-    <div class="alert alert-danger">
-        <h2 th:utext="#{screen.unavailable.heading(${status},${error})}">CAS is unable to process this request: "{0}:{1}"</h2>
-        <div th:utext="#{screen.unavailable.message}">screen.unavailable.message would go here</div>
-        <pre id="errorMsg" class="mt-4" style="white-space: pre-wrap;" th:text="${'Error: ' + message}">error message would go here</pre>
+    <div id="msg" class="errors">
+        <h2 th:utext="#{screen.unavailable.heading(${status},${error})}" />
+        <p th:utext="#{screen.unavailable.message}" />
+        <p id="errorMsg">
+        <pre th:text="${'Error: ' + message}" />
+        </p>
         <p id="errorDetails">
             <button type="button" class="btn btn-shutdown"
                     onclick="showErrorDetails();">View Details
@@ -34,6 +35,5 @@
         </p>
     </div>
 </div>
-</main>
 </body>
 </html>

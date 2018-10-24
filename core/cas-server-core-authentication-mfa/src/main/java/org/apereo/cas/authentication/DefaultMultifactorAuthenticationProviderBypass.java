@@ -28,7 +28,10 @@ public class DefaultMultifactorAuthenticationProviderBypass implements Multifact
 
     private static final long serialVersionUID = 3720922341350004543L;
 
-    private final MultifactorAuthenticationProviderBypassProperties bypassProperties;
+    /**
+     * Bypass settings for this provider.
+     */
+    protected final MultifactorAuthenticationProviderBypassProperties bypassProperties;
 
     private final Pattern httpRequestRemoteAddressPattern;
     private final Set<Pattern> httpRequestHeaderPatterns;

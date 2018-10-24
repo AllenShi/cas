@@ -8,7 +8,8 @@
 <body id="cas">
 <div layout:fragment="content">
     <link rel="stylesheet" th:href="@{/css/ssosessions.css}"/>
-
+    <link rel="stylesheet" href="/cas/css/admin.css"/>
+    
     <div id="content">
 
         <script type="text/javascript" th:inline="javascript">
@@ -28,12 +29,16 @@
         </script>
 
         <div class="ssoSessions">
-            <div id="loadingMessage"><h3 th:text="#{cas.ssosessions.loading}"/></div>
+            <div id="loadingMessage" style="display:none;"><h3 th:text="#{cas.ssosessions.loading}"/></div>
 
-            <div id="no-cas-sessions">
-                <h3 th:text="#{cas.ssosessions.nosessionsfound}"/>
-                <p/>
+            <div style="display:flex;padding-bottom:5px;">
+                <input id="user" name="user" placeholder="Enter user to search"/>
+                <div id="no-cas-sessions" style="display:none;position:relative;top:10px;left:5px;">
+                    <h3 th:text="#{cas.ssosessions.nosessionsfound}"/><p/>
+                </div>
             </div>
+
+
 
             <div id="cas-sessions">
                 <div id="alertWrapper"></div>
@@ -155,8 +160,12 @@
                     </div>
                 </div>
             </div>
+            <div>
+                <p/>
+                <a class="btn btn-success" th:href="@{/status/dashboard}" th:text="#{cas.dashboard.section.dashboard.title}" />
+                <a id="refresh" class="btn btn-success" th:text="#{cas.ssosessions.button.refresh}" />
+            </div>
         </div>
-        <div th:replace="monitoring/fragments/footerButtons"/>
     </div>
 
 </div>

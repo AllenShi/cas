@@ -47,4 +47,11 @@ public interface LogoutRequest extends Serializable {
      */
     URL getLogoutUrl();
 
+    /**
+     * Gets name of service.
+     *
+     * @return the service name
+     */
+    String getName();
+
 }

@@ -151,7 +151,7 @@ public interface CasProtocolConstants {
      * Constant representing logout.
      */
     String ENDPOINT_LOGOUT = "/logout";
-    
+
     /**
      * Constant representing proxy validate.
      */

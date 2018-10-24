@@ -9,35 +9,26 @@
     <link href="../../static/css/cas.css" rel="stylesheet" th:remove="tag" />
 </head>
 
-<body>
-<main role="main" class="container mt-3 mb-3">
-    <div layout:fragment="content" class="confirmView">
-        <div class="alert alert-info">
-            <h4 th:text="#{screen.confirmation.message}">You asked to be warned before logging into applications. Please
-                proceed.</h4>
+<body id="cas">
+<div layout:fragment="content" class="confirmView">
+    <div id="msg" class="success">
+      <h4 th:text="#{screen.confirmation.message}" />
 
-            <form method="post" id="form" class="fm-v clearfix">
-                <input type="hidden" name="execution" th:value="${flowExecutionKey}"/>
+        <form method="post" id="form" class="fm-v clearfix">
+            <input type="hidden" name="execution" th:value="${flowExecutionKey}"/>
 
-                <div class="form-group">
-                    <div class="form-check">
-                        <input id="ignorewarn"
-                               class="form-check-input"
-                               name="ignorewarn"
-                               value="true"
-                               tabindex="1"
-                               type="checkbox"/>
-                        <label for="ignorewarn" class="form-check-label" th:utext="#{screen.welcome.label.warnremove}">Do
-                            not warn me again</label>
-                    </div>
-                </div>
+            <input id="ignorewarn"
+                   name="ignorewarn"
+                   value="true"
+                   tabindex="1"
+                   type="checkbox" />
+            <label for="ignorewarn" th:utext="#{screen.welcome.label.warnremove}"/>
+            <br/><br/>
+            <input class="btn btn-submit" name="_eventId_success" accesskey="l"
+                   th:value="#{screen.button.continue}" tabindex="4" type="submit"/>
+        </form>
 
-                <input class="btn btn-submit" name="_eventId_success" accesskey="l"
-                       th:value="#{screen.button.continue}" tabindex="4" type="submit" value="Continue"/>
-            </form>
-
-        </div>
     </div>
-</main>
+</div>
 </body>
 </html>
