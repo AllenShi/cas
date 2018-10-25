@@ -51,46 +51,11 @@
         <evaluate expression="authenticationViaFormAction"/>
         <transition on="warn" to="warn"/>
         <transition on="success" to="createTicketGrantingTicket"/>
-        <!--<transition on="success" to="jaasView"/>-->
         <transition on="successWithWarnings" to="showMessages"/>
         <transition on="successWithWarnings" to="showAuthenticationWarningMessages"/>
         <transition on="authenticationFailure" to="handleAuthenticationFailure"/>
         <transition on="error" to="initializeLoginForm"/>
-        <transition on="deniedByDuo" to="deniedByDuo"/>
-        <transition on="duoEnrollUser" to="duoEnrollUser"/>
-        <transition on="duoUnavailable" to="duoUnavailable"/>
     </action-state>
-
-
-    <!--
-        <action-state id="redirect">
-            <evaluate expression="flowScope.service.getResponse(requestScope.serviceTicketId)"
-                      result-type="org.apereo.cas.authentication.principal.Response" result="requestScope.response"/>
-            <transition to="postRedirectDecision"/>
-        </action-state>
-    -->
-    <!--  This state is reached when Duo Preauth Denies a user-->
-    <end-state id="deniedByDuo" view="duoDeniedView"/>
-
-    <!--  This state is reached by a user who needs to enroll in Duo
-      We send the the TGT so they do not have to re-enter credentials
-      but will not be sent to their destination service.
-     -->
-    <end-state id="duoEnrollUser" view="enrollmentView">
-        <on-entry>
-            <evaluate expression="TicketGrantingTicketAction"/>
-        </on-entry>
-    </end-state>
-
-    <!--  This screen is shown when Duo is not available and CAS is
-          set to fail closed.  We send the ticket still so they have
-          SSO for other services that do not require Duo.
-    -->
-    <end-state id="duoUnavailable" view="duoUnavailable">
-        <on-entry>
-            <evaluate expression="sendTicketGrantingTicketAction"/>
-        </on-entry>
-    </end-state>
 
     <end-state id="notAllowedImpersonation" view="notAllowedImpersonationView"/>
 

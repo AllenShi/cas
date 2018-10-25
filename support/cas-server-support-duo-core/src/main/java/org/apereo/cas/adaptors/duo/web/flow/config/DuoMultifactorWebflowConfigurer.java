@@ -60,10 +60,16 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
             applicationContext.getAutowireCapableBeanFactory().initializeBean(duoFlowRegistry, duo.getId());
             final ConfigurableListableBeanFactory cfg = (ConfigurableListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
             cfg.registerSingleton(duo.getId(), duoFlowRegistry);
-            registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), duo.getId(), duoFlowRegistry, duo.getId());
-            if (loginFlowDefinitionRegistry.containsFlowDefinition("impersonate")) {
-                registerMultifactorProviderAuthenticationWebflow((Flow) loginFlowDefinitionRegistry.getFlowDefinition("impersonate"),
-                        duo.getId(), duoFlowRegistry, duo.getId());
+            createMultifactorProviderAuthenticationWebflow(duo.getId(), duoFlowRegistry, duo.getId());
+            registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), duo.getId(), duoFlowRegistry, loginFlowDefinitionRegistry);
+            try {
+                final FlowDefinitionRegistry impersonate = applicationContext.getBean("impersonateFlowRegistry", FlowDefinitionRegistry.class);
+                if (impersonate != null) {
+                    registerMultifactorProviderAuthenticationWebflow((Flow) impersonate.getFlowDefinition("impersonate"),
+                            duo.getId(), duoFlowRegistry, impersonate);
+                }
+            } catch (final Exception e) {
+                // do nothing impersonate not available
             }
         });
 
