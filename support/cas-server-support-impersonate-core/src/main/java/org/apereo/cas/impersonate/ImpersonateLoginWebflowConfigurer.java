@@ -35,6 +35,7 @@ public class ImpersonateLoginWebflowConfigurer extends DefaultLoginWebflowConfig
     public void doInitialize() {
         final Flow flow = getLoginFlow();
 
+        if (flow != null) {
             createInitialFlowActions(flow);
             createDefaultGlobalExceptionHandlers(flow);
             createDefaultEndStates(flow);
@@ -44,6 +45,8 @@ public class ImpersonateLoginWebflowConfigurer extends DefaultLoginWebflowConfig
             createFlowVariable(flow, CasWebflowConstants.VAR_ID_CREDENTIAL, ImpUsernamePasswordCredential.class);
 
             setStartState(flow, CasWebflowConstants.STATE_ID_INITIAL_AUTHN_REQUEST_VALIDATION_CHECK);
+        }
+
     }
 
     @Override

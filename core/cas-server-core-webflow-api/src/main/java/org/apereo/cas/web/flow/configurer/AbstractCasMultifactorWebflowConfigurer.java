@@ -54,12 +54,13 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
      *
      * @param sourceRegistry the source registry
      */
-    protected void registerMultifactorFlowDefinitionIntoLoginFlowRegistry(final FlowDefinitionRegistry sourceRegistry) {
+    protected void registerMultifactorFlowDefinitionIntoLoginFlowRegistry(final FlowDefinitionRegistry sourceRegistry,
+                                                                          final FlowDefinitionRegistry destinationRegistry) {
         final String[] flowIds = sourceRegistry.getFlowDefinitionIds();
         for (final String flowId : flowIds) {
             final FlowDefinition definition = sourceRegistry.getFlowDefinition(flowId);
             LOGGER.debug("Registering flow definition [{}]", flowId);
-            this.loginFlowDefinitionRegistry.registerFlowDefinition(definition);
+            destinationRegistry.registerFlowDefinition(definition);
         }
     }
 
@@ -100,22 +101,21 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
     }
 
     /**
-     * Register multifactor provider authentication webflow.
+     * Creates multifactor provider authentication webflow.
      *
-     * @param flow                    the flow
      * @param subflowId               the subflow id
      * @param mfaProviderFlowRegistry the registry
      * @param providerId              the provider id
      */
-    protected void registerMultifactorProviderAuthenticationWebflow(final Flow flow, final String subflowId,
-                                                                    final FlowDefinitionRegistry mfaProviderFlowRegistry,
-                                                                    final String providerId) {
+    protected void createMultifactorProviderAuthenticationWebflow(final String subflowId,
+                                                                  final FlowDefinitionRegistry mfaProviderFlowRegistry,
+                                                                  final String providerId) {
         final Flow mfaFlow = (Flow) mfaProviderFlowRegistry.getFlowDefinition(subflowId);
 
         // Set providerId into flowScope.
         mfaFlow.getStartActionList().add(
                 new SetAction(createExpression("flowScope.".concat(CasWebflowConstants.VAR_ID_PROVIDER_ID)),
-                              createExpression(StringUtils.quote(providerId)))
+                        createExpression(StringUtils.quote(providerId)))
         );
 
         // Insert bypass, available and failure actions into the flow.
@@ -148,7 +148,20 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
                 createEvaluateAction(MFA_CHECK_FAILURE_BEAN_ID));
         createTransitionForState(failureAction, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE);
         createTransitionForState(failureAction, CasWebflowConstants.TRANSITION_ID_BYPASS, CasWebflowConstants.TRANSITION_ID_SUCCESS);
+    }
 
+
+    /**
+     * Register multifactor provider authentication webflow.
+     *
+     * @param flow                    the flow
+     * @param subflowId               the subflow id
+     * @param mfaProviderFlowRegistry the registry
+     * @param destFlowRegistry        the provider id
+     */
+    protected void registerMultifactorProviderAuthenticationWebflow(final Flow flow, final String subflowId,
+                                                                    final FlowDefinitionRegistry mfaProviderFlowRegistry,
+                                                                    final FlowDefinitionRegistry destFlowRegistry) {
         LOGGER.debug("Adding end state [{}] with transition to [{}] to flow 'login' for MFA", CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, CasWebflowConstants.VIEW_ID_MFA_UNAVAILABLE);
         createEndState(flow, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, CasWebflowConstants.VIEW_ID_MFA_UNAVAILABLE);
 
@@ -205,7 +218,7 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
             LOGGER.debug("Creating transition [{}] for state [{}]", subflowId, actionState.getId());
             createTransitionForState(actionState, subflowId, subflowId);
 
-            registerMultifactorFlowDefinitionIntoLoginFlowRegistry(mfaProviderFlowRegistry);
+            registerMultifactorFlowDefinitionIntoLoginFlowRegistry(mfaProviderFlowRegistry, destFlowRegistry);
             augmentMultifactorProviderFlowRegistry(mfaProviderFlowRegistry);
 
             final TransitionableState state = getTransitionableState(flow, CasWebflowConstants.STATE_ID_INITIAL_AUTHN_REQUEST_VALIDATION_CHECK);
