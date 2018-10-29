@@ -138,11 +138,12 @@ function removeSession(ticketId) {
     factory.httpHeaders[$('meta[name=\'_csrf_header\']').attr('content')] = $('meta[name=\'_csrf\']').attr('content');
 
     factory.ticketId = ticketId;
+    factory.user = $('#user').val;
 
 
     if (ticketId && (ticketId == 'ALL' || ticketId == 'PROXIED' || ticketId == 'DIRECT' )) {
         factory.url = urls.destroy.all;
-        factory.data = {type: ticketId};
+        factory.data = {user: factory.user, type: ticketId};
         factory.messages.success = 'Removed <strong>' + ticketId + '</strong> tickets successfully.';
         factory.messages.error = 'Could not remove <strong>' + ticketId + '</strong> tickets.';
     } else {
