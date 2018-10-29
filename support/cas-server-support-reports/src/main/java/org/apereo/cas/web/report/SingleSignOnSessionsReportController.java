@@ -261,6 +261,41 @@ public class SingleSignOnSessionsReportController extends BaseCasMvcEndpoint {
     }
 
     /**
+     * Endpoint for destroying SSO Sessions.
+     *
+     * @param request  the request
+     * @param response the response
+     * @return result map
+     */
+    @PostMapping(value = "/destroySsoSessionsByUser")
+    @ResponseBody
+    public Map<String, Object> destroySsoSessions(@RequestParam String user,
+                                                  @RequestParam(defaultValue = "ALL") String type,
+                                                  final HttpServletRequest request,
+                                                  final HttpServletResponse response) {
+        ensureEndpointAccessIsAuthorized(request, response);
+        final Map<String, Object> sessionsMap = new HashMap<>();
+        final Map<String, String> failedTickets = new HashMap<>();
+        final Collection<Ticket> tickets = getNonExpiredTicketGrantingTickets(user);
+
+        tickets.forEach(ticketGrantingTicket -> {
+            try {
+                this.centralAuthenticationService.destroyTicketGrantingTicket(ticketGrantingTicket.getId());
+            } catch (final Exception e) {
+                LOGGER.error(e.getMessage(), e);
+                failedTickets.put(ticketGrantingTicket.getId(), e.getMessage());
+            }
+        });
+        if (failedTickets.isEmpty()) {
+            sessionsMap.put(STATUS, HttpServletResponse.SC_OK);
+        } else {
+            sessionsMap.put(STATUS, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            sessionsMap.put("failedTicketGrantingTickets", failedTickets);
+        }
+        return sessionsMap;
+    }
+
+    /**
      * Show sso sessions.
      *
      * @param request  the request
