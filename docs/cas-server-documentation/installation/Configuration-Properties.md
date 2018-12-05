@@ -1996,8 +1996,8 @@ strategies when collecting principal attributes:
 
 | Type                 | Description
 |----------------------|------------------------------------------------------------------------------------------------
-| `CAS`                | Use attributes provided by the delegated WS-Fed instance.
-| `WSFED`              | Use attributes provided by CAS' own attribute resolution mechanics and repository.
+| `CAS`                | Use attributes provided by CAS' own attribute resolution mechanics and repository.
+| `WSFED`              | Use attributes provided by the delegated WS-Fed instance.
 | `BOTH`               | Combine both the above options, where CAS attribute repositories take precedence over WS-Fed.
 
 ```properties
@@ -2248,6 +2248,7 @@ To learn more about this topic, [please review this guide](RADIUS-Authentication
 ```properties
 # cas.authn.mfa.radius.rank=0
 # cas.authn.mfa.radius.trustedDeviceEnabled=false
+# cas.authn.mfa.radius.allowedAuthenticationAttempts=-1
 # cas.authn.mfa.radius.name=
 ```
 

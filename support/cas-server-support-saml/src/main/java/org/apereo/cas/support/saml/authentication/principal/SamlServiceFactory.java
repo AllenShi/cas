@@ -1,6 +1,7 @@
 package org.apereo.cas.support.saml.authentication.principal;
 
 import org.apereo.cas.authentication.principal.AbstractServiceFactory;
+import org.apereo.cas.support.saml.SamlIdPConstants;
 import org.apereo.cas.support.saml.SamlProtocolConstants;
 import org.apereo.cas.support.saml.util.Saml10ObjectBuilder;
 
@@ -35,6 +36,15 @@ public class SamlServiceFactory extends AbstractServiceFactory<SamlService> {
 
     @Override
     public SamlService createService(final HttpServletRequest request) {
+        /**
+          * As per http://docs.oasis-open.org/security/saml/Post2.0/saml-ecp/v2.0/saml-ecp-v2.0.html we cannot create service from SAML ECP Request.
+          * This will result in NullPointerException, when trying to get samlp:Request from S:Body.
+          */
+        if (request.getRequestURI().contains(SamlIdPConstants.ENDPOINT_SAML2_IDP_ECP_PROFILE_SSO)) {
+            LOGGER.trace("The {} request on {} seems to be a SOAP ECP Request, skip creating service from it.", request.getMethod(), request.getRequestURI());
+            return null;
+        }
+
         final String service = request.getParameter(SamlProtocolConstants.CONST_PARAM_TARGET);
         final String requestBody = request.getMethod().equalsIgnoreCase(HttpMethod.POST.name()) ? getRequestBody(request) : null;
 
@@ -48,6 +58,8 @@ public class SamlServiceFactory extends AbstractServiceFactory<SamlService> {
         final String id = cleanupUrl(service);
 
         if (StringUtils.hasText(requestBody)) {
+            LOGGER.debug("Request Body: [{}]", requestBody);
+
             request.setAttribute(SamlProtocolConstants.PARAMETER_SAML_REQUEST, requestBody);
 
             final Document document = saml10ObjectBuilder.constructDocumentFromXml(requestBody);
@@ -71,7 +83,7 @@ public class SamlServiceFactory extends AbstractServiceFactory<SamlService> {
             }
         }
 
-        LOGGER.debug("Request Body: [{}]\n\"Extracted ArtifactId: [{}]. Extracted Request Id: [{}]", requestBody, artifactId, requestId);
+        LOGGER.debug("Extracted ArtifactId: [{}]. Extracted Request Id: [{}]", artifactId, requestId);
         final SamlService samlService = new SamlService(id, service, artifactId, requestId);
         samlService.setSource(SamlProtocolConstants.CONST_PARAM_TARGET);
         return samlService;
