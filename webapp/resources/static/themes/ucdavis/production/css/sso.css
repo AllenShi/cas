@@ -162,3 +162,12 @@ form label {
     margin-bottom : 10px;
     text-justify: distribute;
 }
+
+.noTLsUrl {
+	font-family: monospace;
+	font-size: large;
+	width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
