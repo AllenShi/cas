@@ -1,8 +1,7 @@
 package org.apereo.cas.services.web.support;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.BooleanUtils;
+import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
+import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.WebApplicationService;
 import org.apereo.cas.security.ResponseHeadersEnforcementFilter;
 import org.apereo.cas.services.RegisteredService;
@@ -10,6 +9,10 @@ import org.apereo.cas.services.RegisteredServiceProperty;
 import org.apereo.cas.services.RegisteredServiceProperty.RegisteredServiceProperties;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.web.support.ArgumentExtractor;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +31,7 @@ import java.util.Optional;
 public class RegisteredServiceResponseHeadersEnforcementFilter extends ResponseHeadersEnforcementFilter {
     private final ServicesManager servicesManager;
     private final ArgumentExtractor argumentExtractor;
+    private final AuthenticationServiceSelectionPlan authenticationRequestServiceSelectionStrategies;
 
     @Override
     protected void decideInsertContentSecurityPolicyHeader(final HttpServletResponse httpServletResponse, final HttpServletRequest httpServletRequest) {
@@ -53,7 +57,8 @@ public class RegisteredServiceResponseHeadersEnforcementFilter extends ResponseH
     protected void decideInsertXFrameOptionsHeader(final HttpServletResponse httpServletResponse, final HttpServletRequest httpServletRequest) {
         if (shouldHttpHeaderBeInjectedIntoResponse(httpServletRequest,
             RegisteredServiceProperties.HTTP_HEADER_ENABLE_XFRAME_OPTIONS)) {
-            super.insertXFrameOptionsHeader(httpServletResponse, httpServletRequest);
+            final String xFrameOptions = getStringProperty(httpServletRequest, RegisteredServiceProperties.HTTP_HEADER_XFRAME_OPTIONS);
+            super.insertXFrameOptionsHeader(httpServletResponse, httpServletRequest, xFrameOptions);
         } else {
             super.decideInsertXFrameOptionsHeader(httpServletResponse, httpServletRequest);
         }
@@ -89,6 +94,19 @@ public class RegisteredServiceResponseHeadersEnforcementFilter extends ResponseH
         }
     }
 
+    private String getStringProperty(final HttpServletRequest request,
+                                     final RegisteredServiceProperties property) {
+        final Optional<RegisteredService> result = getRegisteredServiceFromRequest(request);
+        if (result.isPresent()) {
+            final Map<String, RegisteredServiceProperty> properties = result.get().getProperties();
+            if (properties.containsKey(property.getPropertyName())) {
+                final RegisteredServiceProperty prop = properties.get(property.getPropertyName());
+                return prop.getValue();
+            }
+        }
+        return null;
+    }
+
     private boolean shouldHttpHeaderBeInjectedIntoResponse(final HttpServletRequest request,
                                                            final RegisteredServiceProperties property) {
         final Optional<RegisteredService> result = getRegisteredServiceFromRequest(request);
@@ -117,7 +135,9 @@ public class RegisteredServiceResponseHeadersEnforcementFilter extends ResponseH
     private Optional<RegisteredService> getRegisteredServiceFromRequest(final HttpServletRequest request) {
         final WebApplicationService service = this.argumentExtractor.extractService(request);
         if (service != null) {
-            return Optional.ofNullable(this.servicesManager.findServiceBy(service));
+            final Service resolved = authenticationRequestServiceSelectionStrategies.resolveService(service);
+            return Optional.ofNullable(this.servicesManager.findServiceBy(resolved));
+
         }
         return Optional.empty();
     }
