@@ -13,6 +13,7 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -37,10 +38,25 @@ public class StatusController extends BaseCasMvcEndpoint {
     private static final int PERCENTAGE_VALUE = 100;
     private static final double BYTES_PER_MB = 1048510.0;
     private static final double BYTEST_PER_KB = 1024.0;
+    private static Status status;
+    private static Health health;
 
     public StatusController(final CasConfigurationProperties casProperties, final HealthEndpoint healthEndpoint) {
         super("status", StringUtils.EMPTY, casProperties.getMonitor().getEndpoints().getStatus(), casProperties);
         this.healthEndpoint = healthEndpoint;
+        StatusController.status = Status.UP;
+        checkHealth();
+    }
+
+    @Scheduled(fixedDelayString = "PT15S", initialDelayString = "PT15S")
+    protected void checkHealth() {
+        if ("MAINTENANCE".equals(StatusController.status.getCode())) {
+            LOGGER.debug("Server is in Maintenance and not accepting traffic");
+            return;
+        }
+        LOGGER.debug("Performing health check");
+        StatusController.health = this.healthEndpoint.invoke();
+        StatusController.status = health.getStatus();
     }
 
     /**
@@ -54,18 +70,31 @@ public class StatusController extends BaseCasMvcEndpoint {
     @ResponseBody
     protected void handleRequestInternal(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
         ensureEndpointAccessIsAuthorized(request, response);
+        if (request.getParameterMap().containsKey("maintenance") && request.getRemoteAddr().equals("127.0.0.1")) {
+            if (request.getParameter("maintenance").equals("on")) {
+                StatusController.status = new Status("MAINTENANCE");
+            } else {
+                StatusController.status = Status.UP;
+            }
+        }
+
         final StringBuilder sb = new StringBuilder();
-        final Health health = this.healthEndpoint.invoke();
-        final Status status = health.getStatus();
-        
+        final Status status = StatusController.status;
+
         if (status.equals(Status.DOWN) || status.equals(Status.OUT_OF_SERVICE)) {
             response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
         }
 
         sb.append("Health: ").append(status.getCode());
 
+        if (status.getCode().equals("MAINTENANCE")) {
+            sb.append("\n");
+            writeResponse(response, sb);
+            return;
+        }
+
         ObjectMapper mapper = new ObjectMapper();
-        HzStats stats = mapper.convertValue(health.getDetails().get("hazelcast"), HzStats.class);
+        final HzStats stats = mapper.convertValue(health.getDetails().get("hazelcast"), HzStats.class);
 
         sb.append("\n\n\tHazelcast: " + stats.getStatus());
         sb.append("\n\t  Members: " + stats.clusterSize);
@@ -103,11 +132,15 @@ public class StatusController extends BaseCasMvcEndpoint {
         );
         sb.append("\nServer:\t\t").append(casProperties.getServer().getName());
         sb.append("\nVersion:\t").append(CasVersion.getVersion()).append("\n");
+        writeResponse(response, sb);
+    }
+
+    private void writeResponse(final HttpServletResponse response, final StringBuilder sb) throws Exception {
         response.setContentType(MediaType.TEXT_PLAIN_VALUE);
         try (Writer writer = response.getWriter()) {
             IOUtils.copy(new ByteArrayInputStream(sb.toString().getBytes(response.getCharacterEncoding())),
-                writer,
-                StandardCharsets.UTF_8);
+                    writer,
+                    StandardCharsets.UTF_8);
             writer.flush();
         }
     }
