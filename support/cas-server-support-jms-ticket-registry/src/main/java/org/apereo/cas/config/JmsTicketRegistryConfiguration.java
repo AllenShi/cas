@@ -1,14 +1,13 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.StringBean;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.support.jms.JmsTicketRegistryProperties;
 import org.apereo.cas.ticket.registry.JmsTicketRegistry;
 import org.apereo.cas.ticket.registry.JmsTicketRegistryReceiver;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.util.CoreTicketUtils;
+
+import lombok.val;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
@@ -30,7 +29,6 @@ import javax.jms.ConnectionFactory;
  */
 @Configuration("jmsTicketRegistryConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@Slf4j
 public class JmsTicketRegistryConfiguration {
     @Autowired
     private CasConfigurationProperties casProperties;
@@ -51,8 +49,8 @@ public class JmsTicketRegistryConfiguration {
     @Lazy
     @Bean
     public TicketRegistry ticketRegistry() {
-        final JmsTicketRegistryProperties jms = casProperties.getTicket().getRegistry().getJms();
-        final CipherExecutor cipher = CoreTicketUtils.newTicketRegistryCipherExecutor(jms.getCrypto(), "jms");
+        val jms = casProperties.getTicket().getRegistry().getJms();
+        val cipher = CoreTicketUtils.newTicketRegistryCipherExecutor(jms.getCrypto(), "jms");
         return new JmsTicketRegistry(this.jmsTemplate.getIfAvailable(), messageQueueTicketRegistryIdentifier(), cipher);
     }
 
@@ -60,7 +58,7 @@ public class JmsTicketRegistryConfiguration {
     @Bean
     public JmsListenerContainerFactory<?> messageQueueTicketRegistryFactory(final ConnectionFactory connectionFactory,
                                                                             final DefaultJmsListenerContainerFactoryConfigurer configurer) {
-        final DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
+        val factory = new DefaultJmsListenerContainerFactory();
         configurer.configure(factory, connectionFactory);
         return factory;
     }

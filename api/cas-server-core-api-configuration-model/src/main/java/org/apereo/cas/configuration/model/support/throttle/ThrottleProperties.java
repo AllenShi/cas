@@ -3,10 +3,12 @@ package org.apereo.cas.configuration.model.support.throttle;
 import org.apereo.cas.configuration.model.support.jpa.AbstractJpaProperties;
 import org.apereo.cas.configuration.model.support.quartz.SchedulingProperties;
 import org.apereo.cas.configuration.support.RequiresModule;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import java.io.Serializable;
+
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
+
+import java.io.Serializable;
 
 /**
  * Configuration properties class for cas.throttle.
@@ -15,7 +17,6 @@ import lombok.Setter;
  * @since 5.0.0
  */
 @RequiresModule(name = "cas-server-support-throttle", automated = true)
-
 @Getter
 @Setter
 public class ThrottleProperties implements Serializable {
@@ -43,6 +44,18 @@ public class ThrottleProperties implements Serializable {
     private Jdbc jdbc = new Jdbc();
 
     /**
+     * Settings related to throttling requests using bucket4j.
+     */
+    @NestedConfigurationProperty
+    private Bucket4jThrottleProperties bucket4j = new Bucket4jThrottleProperties();
+
+    /**
+     * Settings related to throttling requests using hazelcast.
+     */
+    @NestedConfigurationProperty
+    private HazelcastThrottleProperties hazelcast = new HazelcastThrottleProperties();
+
+    /**
      * Username parameter to use in order to extract the username from the request.
      */
     private String usernameParameter;
@@ -50,7 +63,7 @@ public class ThrottleProperties implements Serializable {
     /**
      * Application code used to identify this application in the audit logs.
      */
-    private String appcode = DEFAULT_APPLICATION_CODE;
+    private String appCode = DEFAULT_APPLICATION_CODE;
 
     /**
      * Scheduler settings to clean up throttled attempts.

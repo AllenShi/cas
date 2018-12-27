@@ -1,8 +1,9 @@
 package org.apereo.cas.token;
 
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.JWTParser;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
+
+import com.nimbusds.jwt.JWTParser;
+import lombok.val;
 import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
 
@@ -22,9 +23,9 @@ public class JWTTokenTicketBuilderWithoutCryptoTests extends BaseJWTTokenTicketB
 
     @Test
     public void verifyJwtForServiceTicketEncoding() throws Exception {
-        final String jwt = tokenTicketBuilder.build("ST-123456", CoreAuthenticationTestUtils.getService());
+        val jwt = tokenTicketBuilder.build("ST-123456", CoreAuthenticationTestUtils.getService());
         assertNotNull(jwt);
-        final JWTClaimsSet claims = JWTParser.parse(jwt).getJWTClaimsSet();
+        val claims = JWTParser.parse(jwt).getJWTClaimsSet();
         assertEquals("casuser", claims.getSubject());
     }
 }

@@ -1,14 +1,14 @@
 package org.apereo.cas.support.geo.config;
 
-import com.google.maps.GaeRequestHandler;
-import com.google.maps.GeoApiContext;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.authentication.adaptive.geo.GeoLocationService;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.support.geo.googlemaps.GoogleMapsProperties;
 import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.support.geo.google.GoogleMapsGeoLocationService;
+
+import com.google.maps.GaeRequestHandler;
+import com.google.maps.GeoApiContext;
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Configuration("casGeoLocationConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@Slf4j
 public class GoogleMapsGeoCodingConfiguration {
 
     @Autowired
@@ -36,8 +35,8 @@ public class GoogleMapsGeoCodingConfiguration {
     @Bean
     @RefreshScope
     public GeoLocationService geoLocationService() {
-        final GeoApiContext.Builder builder = new GeoApiContext.Builder();
-        final GoogleMapsProperties properties = casProperties.getGoogleMaps();
+        val builder = new GeoApiContext.Builder();
+        val properties = casProperties.getGoogleMaps();
         if (properties.isGoogleAppsEngine()) {
             builder.requestHandlerBuilder(new GaeRequestHandler.Builder());
         }
@@ -48,7 +47,7 @@ public class GoogleMapsGeoCodingConfiguration {
         builder.apiKey(properties.getApiKey())
             .connectTimeout(Beans.newDuration(properties.getConnectTimeout()).toMillis(), TimeUnit.MILLISECONDS);
 
-        final GoogleMapsGeoLocationService svc = new GoogleMapsGeoLocationService(builder.build());
+        val svc = new GoogleMapsGeoLocationService(builder.build());
         svc.setIpStackAccessKey(properties.getIpStackApiAccessKey());
         return svc;
     }

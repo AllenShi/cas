@@ -2,14 +2,14 @@ package org.apereo.cas.services;
 
 import org.apereo.cas.support.events.service.CasRegisteredServiceLoadedEvent;
 
+import lombok.ToString;
+import lombok.val;
+import org.springframework.context.ApplicationEventPublisher;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Default In Memory Service Registry Dao for test/demonstration purposes.
@@ -17,15 +17,21 @@ import lombok.extern.slf4j.Slf4j;
  * @author Scott Battaglia
  * @since 3.1
  */
-@Slf4j
 @ToString
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class InMemoryServiceRegistry extends AbstractServiceRegistry {
 
-    private List<RegisteredService> registeredServices = new ArrayList<>();
-    
+    private final List<RegisteredService> registeredServices;
+
+    public InMemoryServiceRegistry(final ApplicationEventPublisher eventPublisher) {
+        this(eventPublisher, new ArrayList<>());
+    }
+
+    public InMemoryServiceRegistry(final ApplicationEventPublisher eventPublisher,
+                                   final List<RegisteredService> registeredServices) {
+        super(eventPublisher);
+        this.registeredServices = registeredServices;
+    }
+
     @Override
     public boolean delete(final RegisteredService registeredService) {
         return this.registeredServices.remove(registeredService);
@@ -42,8 +48,8 @@ public class InMemoryServiceRegistry extends AbstractServiceRegistry {
     }
 
     @Override
-    public List<RegisteredService> load() {
-        final List<RegisteredService> services = new ArrayList<>();
+    public Collection<RegisteredService> load() {
+        val services = new ArrayList<RegisteredService>();
         this.registeredServices.forEach(s -> {
             publishEvent(new CasRegisteredServiceLoadedEvent(this, s));
             services.add(s);
@@ -56,7 +62,7 @@ public class InMemoryServiceRegistry extends AbstractServiceRegistry {
         if (registeredService.getId() == RegisteredService.INITIAL_IDENTIFIER_VALUE) {
             registeredService.setId(findHighestId() + 1);
         }
-        final RegisteredService svc = findServiceById(registeredService.getId());
+        val svc = findServiceById(registeredService.getId());
         if (svc != null) {
             this.registeredServices.remove(svc);
         }

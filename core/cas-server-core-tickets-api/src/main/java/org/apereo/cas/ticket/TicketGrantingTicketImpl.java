@@ -1,5 +1,8 @@
 package org.apereo.cas.ticket;
 
+import org.apereo.cas.authentication.Authentication;
+import org.apereo.cas.authentication.principal.Service;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -8,10 +11,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.authentication.Authentication;
-import org.apereo.cas.authentication.principal.Service;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -21,7 +22,6 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +42,6 @@ import java.util.List;
 @DiscriminatorValue(TicketGrantingTicket.PREFIX)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
-@Slf4j
 @Getter
 @NoArgsConstructor
 public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGrantingTicket {
@@ -58,7 +57,7 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
     @Lob
     @Column(name = "AUTHENTICATION", nullable = false, length = Integer.MAX_VALUE)
     private Authentication authentication;
-    
+
     /**
      * Service that produced a proxy-granting ticket.
      */
@@ -106,10 +105,10 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
     @JsonCreator
     public TicketGrantingTicketImpl(@JsonProperty("id") final String id, @JsonProperty("proxiedBy") final Service proxiedBy,
                                     @JsonProperty("ticketGrantingTicket") final TicketGrantingTicket parentTicketGrantingTicket,
-                                    @NonNull @JsonProperty("authentication") final Authentication authentication, @JsonProperty("expirationPolicy") final ExpirationPolicy policy) {
+                                    @JsonProperty("authentication") final @NonNull Authentication authentication, @JsonProperty("expirationPolicy") final ExpirationPolicy policy) {
         super(id, policy);
         if (parentTicketGrantingTicket != null && proxiedBy == null) {
-            throw new IllegalArgumentException("Must specify proxiedBy when providing parent TGT");
+            throw new IllegalArgumentException("Must specify proxiedBy when providing parent ticket-granting ticket");
         }
         this.ticketGrantingTicket = parentTicketGrantingTicket;
         this.authentication = authentication;
@@ -129,6 +128,20 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
     }
 
     /**
+     * Normalize the path of a service by removing the query string and everything after a semi-colon.
+     *
+     * @param service the service to normalize
+     * @return the normalized path
+     */
+    private static String normalizePath(final Service service) {
+        var path = service.getId();
+        path = StringUtils.substringBefore(path, "?");
+        path = StringUtils.substringBefore(path, ";");
+        path = StringUtils.substringBefore(path, "#");
+        return path;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>The state of the ticket is affected by this operation and the
      * ticket will be considered used. The state update subsequently may
@@ -138,7 +151,7 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
     @Override
     public synchronized ServiceTicket grantServiceTicket(final String id, final Service service, final ExpirationPolicy expirationPolicy,
                                                          final boolean credentialProvided, final boolean onlyTrackMostRecentSession) {
-        final ServiceTicket serviceTicket = new ServiceTicketImpl(id, this, service, credentialProvided, expirationPolicy);
+        val serviceTicket = new ServiceTicketImpl(id, this, service, credentialProvided, expirationPolicy);
         trackServiceSession(serviceTicket.getId(), service, onlyTrackMostRecentSession);
         return serviceTicket;
     }
@@ -154,26 +167,11 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
         update();
         service.setPrincipal(getRoot().getAuthentication().getPrincipal().getId());
         if (onlyTrackMostRecentSession) {
-            final String path = normalizePath(service);
-            final Collection<Service> existingServices = this.services.values();
-            // loop on existing services
+            val path = normalizePath(service);
+            val existingServices = this.services.values();
             existingServices.stream().filter(existingService -> path.equals(normalizePath(existingService))).findFirst().ifPresent(existingServices::remove);
         }
         this.services.put(id, service);
-    }
-
-    /**
-     * Normalize the path of a service by removing the query string and everything after a semi-colon.
-     *
-     * @param service the service to normalize
-     * @return the normalized path
-     */
-    private static String normalizePath(final Service service) {
-        String path = service.getId();
-        path = StringUtils.substringBefore(path, "?");
-        path = StringUtils.substringBefore(path, ";");
-        path = StringUtils.substringBefore(path, "#");
-        return path;
     }
 
     /**
@@ -197,7 +195,7 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
     @JsonIgnore
     @Override
     public TicketGrantingTicket getRoot() {
-        final TicketGrantingTicket parent = this.getTicketGrantingTicket();
+        val parent = this.getTicketGrantingTicket();
         if (parent == null) {
             return this;
         }
@@ -207,7 +205,7 @@ public class TicketGrantingTicketImpl extends AbstractTicket implements TicketGr
     @JsonIgnore
     @Override
     public List<Authentication> getChainedAuthentications() {
-        final List<Authentication> list = new ArrayList<>();
+        val list = new ArrayList<Authentication>();
         list.add(getAuthentication());
         if (this.getTicketGrantingTicket() == null) {
             return new ArrayList<>(list);

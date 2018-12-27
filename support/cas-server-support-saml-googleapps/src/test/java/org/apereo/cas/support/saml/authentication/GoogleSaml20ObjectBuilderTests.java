@@ -4,12 +4,10 @@ import org.apereo.cas.support.saml.AbstractOpenSamlTests;
 import org.apereo.cas.support.saml.config.SamlGoogleAppsConfiguration;
 import org.apereo.cas.support.saml.util.GoogleSaml20ObjectBuilder;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.*;
 
@@ -17,11 +15,9 @@ import static org.junit.Assert.*;
  * This is {@link GoogleSaml20ObjectBuilderTests}.
  *
  * @author Misagh Moayyed
- * @since 5.3.7
+ * @since 6.0.0
  */
-@RunWith(SpringRunner.class)
 @Import(SamlGoogleAppsConfiguration.class)
-@Slf4j
 @TestPropertySource(locations = "classpath:/gapps.properties")
 public class GoogleSaml20ObjectBuilderTests extends AbstractOpenSamlTests {
 
@@ -39,8 +35,8 @@ public class GoogleSaml20ObjectBuilderTests extends AbstractOpenSamlTests {
 
     @Test
     public void decodeNonInflatedSamlAuthnRequest() {
-        final GoogleSaml20ObjectBuilder builder = new GoogleSaml20ObjectBuilder(this.configBean);
-        final String decoded = builder.decodeSamlAuthnRequest(BASE64_SAML_AUTHN_REQUEST);
+        val builder = new GoogleSaml20ObjectBuilder(this.configBean);
+        val decoded = builder.decodeSamlAuthnRequest(BASE64_SAML_AUTHN_REQUEST);
         assertEquals(SAML_AUTHN_REQUEST, decoded);
     }
 }

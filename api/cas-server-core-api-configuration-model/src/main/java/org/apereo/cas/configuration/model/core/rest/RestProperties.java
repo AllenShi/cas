@@ -1,9 +1,11 @@
 package org.apereo.cas.configuration.model.core.rest;
 
 import org.apereo.cas.configuration.support.RequiresModule;
-import java.io.Serializable;
+
 import lombok.Getter;
 import lombok.Setter;
+
+import java.io.Serializable;
 
 /**
  * This is {@link RestProperties}.
@@ -39,5 +41,5 @@ public class RestProperties implements Serializable {
     /**
      * Flag that enables X509Certificate extraction from the request body for authentication.
      */
-    private boolean bodyAuth = true;
+    private boolean bodyAuth;
 }

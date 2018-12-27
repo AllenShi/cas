@@ -1,6 +1,24 @@
 #!/bin/bash
+source ./ci/functions.sh
 
-branchVersion="5.3.x"
+runBuild=false
+echo "Reviewing changes that might affect the Gradle build..."
+currentChangeSetAffectsDocumentation
+retval=$?
+if [ "$retval" == 0 ]
+then
+    echo "Found changes that affect project documentation."
+    runBuild=true
+else
+    echo "Changes do NOT affect project documentation."
+    runBuild=false
+fi
+
+if [ "$runBuild" = false ]; then
+    exit 0
+fi
+
+branchVersion="development"
 
 echo -e "Copying project documentation over to $HOME/docs-latest...\n"
 cp -R docs/cas-server-documentation $HOME/docs-latest
@@ -40,3 +58,4 @@ echo -e "Pushing upstream to origin/gh-pages...\n"
 git push -fq origin --all > /dev/null
 
 echo -e "Successfully published documentation.\n"
+exit 0

@@ -1,9 +1,6 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.CasViewConstants;
-import org.apereo.cas.authentication.AuthenticationAttributeReleasePolicy;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlan;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationManager;
@@ -14,8 +11,11 @@ import org.apereo.cas.authentication.DefaultAuthenticationTransactionManager;
 import org.apereo.cas.authentication.PolicyBasedAuthenticationManager;
 import org.apereo.cas.authentication.RememberMeCredential;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.core.authentication.AuthenticationAttributeReleaseProperties;
 import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.validation.AuthenticationAttributeReleasePolicy;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -24,9 +24,10 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * This is {@link CasCoreAuthenticationConfiguration}.
@@ -47,16 +48,14 @@ public class CasCoreAuthenticationConfiguration {
     private CasConfigurationProperties casProperties;
 
     @Bean
-    public AuthenticationTransactionManager authenticationTransactionManager(@Qualifier("casAuthenticationManager")
-                                                                             final AuthenticationManager authenticationManager) {
+    public AuthenticationTransactionManager authenticationTransactionManager(@Qualifier("casAuthenticationManager") final AuthenticationManager authenticationManager) {
         return new DefaultAuthenticationTransactionManager(applicationEventPublisher, authenticationManager);
     }
 
     @ConditionalOnMissingBean(name = "casAuthenticationManager")
     @Autowired
     @Bean
-    public AuthenticationManager casAuthenticationManager(@Qualifier("authenticationEventExecutionPlan")
-                                                          final AuthenticationEventExecutionPlan authenticationEventExecutionPlan) {
+    public AuthenticationManager casAuthenticationManager(@Qualifier("authenticationEventExecutionPlan") final AuthenticationEventExecutionPlan authenticationEventExecutionPlan) {
         return new PolicyBasedAuthenticationManager(
             authenticationEventExecutionPlan,
             casProperties.getPersonDirectory().isPrincipalResolutionFailureFatal(),
@@ -68,10 +67,12 @@ public class CasCoreAuthenticationConfiguration {
     @Autowired
     @Bean
     public AuthenticationEventExecutionPlan authenticationEventExecutionPlan(final List<AuthenticationEventExecutionPlanConfigurer> configurers) {
-        final DefaultAuthenticationEventExecutionPlan plan = new DefaultAuthenticationEventExecutionPlan();
-        configurers.forEach(c -> {
-            final String name = StringUtils.removePattern(c.getClass().getSimpleName(), "\\$.+");
-            LOGGER.debug("Configuring authentication execution plan [{}]", name);
+        val plan = new DefaultAuthenticationEventExecutionPlan();
+        val sortedConfigurers = new ArrayList<AuthenticationEventExecutionPlanConfigurer>(configurers);
+        AnnotationAwareOrderComparator.sortIfNecessary(sortedConfigurers);
+
+        sortedConfigurers.forEach(c -> {
+            LOGGER.trace("Configuring authentication execution plan [{}]", c.getName());
             c.configureAuthenticationExecutionPlan(plan);
         });
         return plan;
@@ -81,14 +82,19 @@ public class CasCoreAuthenticationConfiguration {
     @RefreshScope
     @Bean
     public AuthenticationAttributeReleasePolicy authenticationAttributeReleasePolicy() {
-        final AuthenticationAttributeReleaseProperties authenticationAttributeRelease =
-            casProperties.getAuthn().getAuthenticationAttributeRelease();
-        final DefaultAuthenticationAttributeReleasePolicy policy = new DefaultAuthenticationAttributeReleasePolicy();
-        policy.setAttributesToRelease(authenticationAttributeRelease.getOnlyRelease());
-        final Set<String> attributesToNeverRelease = CollectionUtils.wrapSet(CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL,
+        val release = casProperties.getAuthn().getAuthenticationAttributeRelease();
+        if (!release.isEnabled()) {
+            LOGGER.debug("CAS is configured to not release protocol-level authentication attributes.");
+            return AuthenticationAttributeReleasePolicy.noOp();
+        }
+
+        val attributesToNeverRelease = CollectionUtils.wrapSet(
+            CasViewConstants.MODEL_ATTRIBUTE_NAME_PRINCIPAL_CREDENTIAL,
+            CasViewConstants.MODEL_ATTRIBUTE_NAME_PROXY_GRANTING_TICKET,
             RememberMeCredential.AUTHENTICATION_ATTRIBUTE_REMEMBER_ME);
-        attributesToNeverRelease.addAll(authenticationAttributeRelease.getNeverRelease());
-        policy.setAttributesToNeverRelease(attributesToNeverRelease);
-        return policy;
+        attributesToNeverRelease.addAll(release.getNeverRelease());
+
+        return new DefaultAuthenticationAttributeReleasePolicy(release.getOnlyRelease(), attributesToNeverRelease,
+            casProperties.getAuthn().getMfa().getAuthenticationContextAttribute());
     }
 }

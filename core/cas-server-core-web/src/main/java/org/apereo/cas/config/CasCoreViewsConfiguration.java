@@ -1,13 +1,14 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.core.web.view.ViewProperties;
 import org.apereo.cas.web.view.ChainingTemplateViewResolver;
 import org.apereo.cas.web.view.RestfulUrlTemplateResolver;
 import org.apereo.cas.web.view.ThemeFileTemplateResolver;
+
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.lambda.Unchecked;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -18,8 +19,6 @@ import org.thymeleaf.templateresolver.AbstractConfigurableTemplateResolver;
 import org.thymeleaf.templateresolver.AbstractTemplateResolver;
 import org.thymeleaf.templateresolver.FileTemplateResolver;
 
-import java.util.List;
-
 /**
  * This is {@link CasCoreViewsConfiguration}.
  *
@@ -28,38 +27,37 @@ import java.util.List;
  */
 @Configuration("casCoreWebViewsConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@Slf4j
 public class CasCoreViewsConfiguration {
 
     @Autowired
     private CasConfigurationProperties casProperties;
 
     @Autowired
-    private ThymeleafProperties thymeleafProperties;
+    private ObjectProvider<ThymeleafProperties> thymeleafProperties;
 
     @Bean
     public AbstractTemplateResolver chainingTemplateViewResolver() {
-        final ChainingTemplateViewResolver chain = new ChainingTemplateViewResolver();
+        val chain = new ChainingTemplateViewResolver();
 
-        final List<String> templatePrefixes = casProperties.getView().getTemplatePrefixes();
+        val templatePrefixes = casProperties.getView().getTemplatePrefixes();
         templatePrefixes.forEach(Unchecked.consumer(prefix -> {
-            final String prefixPath = ResourceUtils.getFile(prefix).getCanonicalPath();
-            final String viewPath = StringUtils.appendIfMissing(prefixPath, "/");
+            val prefixPath = ResourceUtils.getFile(prefix).getCanonicalPath();
+            val viewPath = StringUtils.appendIfMissing(prefixPath, "/");
 
-            final ViewProperties.Rest rest = casProperties.getView().getRest();
+            val rest = casProperties.getView().getRest();
             if (StringUtils.isNotBlank(rest.getUrl())) {
-                final RestfulUrlTemplateResolver url = new RestfulUrlTemplateResolver(casProperties);
+                val url = new RestfulUrlTemplateResolver(casProperties);
                 configureTemplateViewResolver(url);
                 chain.addResolver(url);
             }
 
-            final ThemeFileTemplateResolver theme = new ThemeFileTemplateResolver(casProperties);
+            val theme = new ThemeFileTemplateResolver(casProperties);
             configureTemplateViewResolver(theme);
             theme.setPrefix(viewPath + "themes/%s/");
             chain.addResolver(theme);
 
 
-            final FileTemplateResolver file = new FileTemplateResolver();
+            val file = new FileTemplateResolver();
             configureTemplateViewResolver(file);
             file.setPrefix(viewPath);
             chain.addResolver(file);
@@ -70,12 +68,13 @@ public class CasCoreViewsConfiguration {
     }
 
     private void configureTemplateViewResolver(final AbstractConfigurableTemplateResolver resolver) {
-        resolver.setCacheable(thymeleafProperties.isCache());
-        resolver.setCharacterEncoding(thymeleafProperties.getEncoding().name());
-        resolver.setCheckExistence(thymeleafProperties.isCheckTemplateLocation());
+        val props = thymeleafProperties.getIfAvailable();
+        resolver.setCacheable(props.isCache());
+        resolver.setCharacterEncoding(props.getEncoding().name());
+        resolver.setCheckExistence(props.isCheckTemplateLocation());
         resolver.setForceTemplateMode(true);
         resolver.setOrder(0);
         resolver.setSuffix(".html");
-        resolver.setTemplateMode(thymeleafProperties.getMode());
+        resolver.setTemplateMode(props.getMode());
     }
 }

@@ -1,12 +1,13 @@
 package org.apereo.cas.audit;
 
-import lombok.Builder;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.AuthenticationResult;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.ticket.ServiceTicket;
 import org.apereo.cas.ticket.TicketGrantingTicket;
+
+import lombok.Builder;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -51,6 +52,16 @@ public class AuditableContext {
      * TicketGrantingTicket.
      */
     private TicketGrantingTicket ticketGrantingTicket;
+
+    /**
+     * Http request.
+     */
+    private Object httpRequest;
+
+    /**
+     * Http response.
+     */
+    private Object httpResponse;
 
     /**
      * retrievePrincipalAttributesFromReleasePolicy.
@@ -98,6 +109,14 @@ public class AuditableContext {
      */
     public Optional<ServiceTicket> getServiceTicket() {
         return Optional.ofNullable(serviceTicket);
+    }
+
+    public Optional<Object> getRequest() {
+        return Optional.ofNullable(httpRequest);
+    }
+
+    public Optional<Object> getResponse() {
+        return Optional.ofNullable(httpResponse);
     }
 
     /**

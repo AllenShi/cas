@@ -1,12 +1,15 @@
 package org.apereo.cas.consent;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.services.RegisteredService;
-import org.apereo.cas.services.RegisteredServiceAttributeReleasePolicy;
+import org.apereo.cas.util.function.FunctionUtils;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apereo.inspektr.audit.annotation.Audit;
 
 import java.time.LocalDateTime;
@@ -22,6 +25,7 @@ import java.util.Map;
  */
 @Slf4j
 @RequiredArgsConstructor
+@Getter
 public class DefaultConsentEngine implements ConsentEngine {
     private static final long serialVersionUID = -617809298856160625L;
 
@@ -32,7 +36,7 @@ public class DefaultConsentEngine implements ConsentEngine {
     public Pair<Boolean, ConsentDecision> isConsentRequiredFor(final Service service,
                                                                final RegisteredService registeredService,
                                                                final Authentication authentication) {
-        final Map<String, Object> attributes = resolveConsentableAttributesFrom(authentication, service, registeredService);
+        val attributes = resolveConsentableAttributesFrom(authentication, service, registeredService);
 
         if (attributes == null || attributes.isEmpty()) {
             LOGGER.debug("Consent is conditionally ignored for service [{}] given no consentable attributes are found", registeredService.getName());
@@ -40,7 +44,7 @@ public class DefaultConsentEngine implements ConsentEngine {
         }
 
         LOGGER.debug("Locating consent decision for service [{}]", service);
-        final ConsentDecision decision = findConsentDecision(service, registeredService, authentication);
+        val decision = findConsentDecision(service, registeredService, authentication);
         if (decision == null) {
             LOGGER.debug("No consent decision found; thus attribute consent is required");
             return Pair.of(Boolean.TRUE, null);
@@ -54,9 +58,9 @@ public class DefaultConsentEngine implements ConsentEngine {
         }
 
         LOGGER.debug("Consent is not required yet for [{}]; checking for reminder options", service);
-        final ChronoUnit unit = decision.getReminderTimeUnit();
-        final LocalDateTime dt = decision.getCreatedDate().plus(decision.getReminder(), unit);
-        final LocalDateTime now = LocalDateTime.now();
+        val unit = decision.getReminderTimeUnit();
+        val dt = decision.getCreatedDate().plus(decision.getReminder(), unit);
+        val now = LocalDateTime.now();
 
         LOGGER.debug("Reminder threshold date/time is calculated as [{}]", dt);
         if (now.isAfter(dt)) {
@@ -78,15 +82,16 @@ public class DefaultConsentEngine implements ConsentEngine {
                                                 final long reminder,
                                                 final ChronoUnit reminderTimeUnit,
                                                 final ConsentReminderOptions options) {
-        final Map<String, Object> attributes = resolveConsentableAttributesFrom(authentication, service, registeredService);
-        final String principalId = authentication.getPrincipal().getId();
+        val attributes = resolveConsentableAttributesFrom(authentication, service, registeredService);
+        val principalId = authentication.getPrincipal().getId();
 
-        ConsentDecision decision = findConsentDecision(service, registeredService, authentication);
-        if (decision == null) {
-            decision = consentDecisionBuilder.build(service, registeredService, principalId, attributes);
-        } else {
-            decision = consentDecisionBuilder.update(decision, attributes);
-        }
+        val decisionFound = findConsentDecision(service, registeredService, authentication);
+
+        val supplier = FunctionUtils.doIfNull(decisionFound,
+            () -> consentDecisionBuilder.build(service, registeredService, principalId, attributes),
+            () -> consentDecisionBuilder.update(decisionFound, attributes));
+
+        val decision = supplier.get();
         decision.setOptions(options);
         decision.setReminder(reminder);
         decision.setReminderTimeUnit(reminderTimeUnit);
@@ -116,7 +121,7 @@ public class DefaultConsentEngine implements ConsentEngine {
                                                                 final Service service,
                                                                 final RegisteredService registeredService) {
         LOGGER.debug("Retrieving consentable attributes for [{}]", registeredService);
-        final RegisteredServiceAttributeReleasePolicy policy = registeredService.getAttributeReleasePolicy();
+        val policy = registeredService.getAttributeReleasePolicy();
         if (policy != null) {
             return policy.getConsentableAttributes(authentication.getPrincipal(), service, registeredService);
         }

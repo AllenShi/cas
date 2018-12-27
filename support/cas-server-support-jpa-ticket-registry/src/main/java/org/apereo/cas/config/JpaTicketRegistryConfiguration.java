@@ -1,12 +1,8 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.core.ticket.registry.TicketRegistryProperties;
 import org.apereo.cas.configuration.model.support.jpa.JpaConfigDataHolder;
-import org.apereo.cas.configuration.model.support.jpa.ticketregistry.JpaTicketRegistryProperties;
 import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.configuration.support.JpaBeans;
 import org.apereo.cas.ticket.AbstractTicket;
@@ -17,12 +13,16 @@ import org.apereo.cas.ticket.registry.support.JpaLockingStrategy;
 import org.apereo.cas.ticket.registry.support.LockingStrategy;
 import org.apereo.cas.util.CoreTicketUtils;
 import org.apereo.cas.util.InetAddressUtils;
+
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -37,7 +37,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -49,7 +48,7 @@ import java.util.stream.Collectors;
 @Configuration("jpaTicketRegistryConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @EnableTransactionManagement(proxyTargetClass = true)
-@Slf4j
+@AutoConfigureBefore(CasCoreTicketsConfiguration.class)
 public class JpaTicketRegistryConfiguration {
 
     @Autowired
@@ -57,16 +56,15 @@ public class JpaTicketRegistryConfiguration {
 
     @Bean
     public List<String> ticketPackagesToScan() {
-        final Reflections reflections =
+        val reflections =
             new Reflections(new ConfigurationBuilder()
                 .setUrls(ClasspathHelper.forPackage(CentralAuthenticationService.NAMESPACE))
                 .setScanners(new SubTypesScanner(false)));
-        final Set<Class<?>> subTypes = (Set) reflections.getSubTypesOf(AbstractTicket.class);
-        final List<String> packages = subTypes
+        val subTypes = reflections.getSubTypesOf(AbstractTicket.class);
+        return subTypes
             .stream()
             .map(t -> t.getPackage().getName())
-            .collect(Collectors.toList());
-        return packages;
+            .collect(Collectors.<String>toList());
     }
 
     @Lazy
@@ -83,7 +81,7 @@ public class JpaTicketRegistryConfiguration {
 
     @Bean
     public PlatformTransactionManager ticketTransactionManager(@Qualifier("ticketEntityManagerFactory") final EntityManagerFactory emf) {
-        final JpaTransactionManager mgmr = new JpaTransactionManager();
+        val mgmr = new JpaTransactionManager();
         mgmr.setEntityManagerFactory(emf);
         return mgmr;
     }
@@ -98,16 +96,16 @@ public class JpaTicketRegistryConfiguration {
     @Bean
     @RefreshScope
     public TicketRegistry ticketRegistry(@Qualifier("ticketCatalog") final TicketCatalog ticketCatalog) {
-        final JpaTicketRegistryProperties jpa = casProperties.getTicket().getRegistry().getJpa();
-        final JpaTicketRegistry bean = new JpaTicketRegistry(jpa.getTicketLockType(), ticketCatalog);
+        val jpa = casProperties.getTicket().getRegistry().getJpa();
+        val bean = new JpaTicketRegistry(jpa.getTicketLockType(), ticketCatalog);
         bean.setCipherExecutor(CoreTicketUtils.newTicketRegistryCipherExecutor(jpa.getCrypto(), "jpa"));
         return bean;
     }
 
     @Bean
     public LockingStrategy lockingStrategy() {
-        final TicketRegistryProperties registry = casProperties.getTicket().getRegistry();
-        final String uniqueId = StringUtils.defaultIfEmpty(casProperties.getHost().getName(), InetAddressUtils.getCasServerHostName());
+        val registry = casProperties.getTicket().getRegistry();
+        val uniqueId = StringUtils.defaultIfEmpty(casProperties.getHost().getName(), InetAddressUtils.getCasServerHostName());
         return new JpaLockingStrategy("cas-ticket-registry-cleaner", uniqueId,
             Beans.newDuration(registry.getJpa().getJpaLockingTimeout()).getSeconds());
     }

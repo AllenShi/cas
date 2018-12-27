@@ -8,9 +8,9 @@ import org.apereo.cas.util.crypto.CertUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.InputStreamSource;
 import org.springframework.util.MultiValueMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,15 +42,15 @@ public class X509RestMultipartBodyCredentialFactory implements RestHttpRequestCr
             LOGGER.debug("Skipping {} because the requestBody is null or empty", getClass().getSimpleName());
             return new ArrayList<>(0);
         }
-        final String cert = requestBody.getFirst(CERTIFICATE);
+        val cert = requestBody.getFirst(CERTIFICATE);
         LOGGER.debug("Certificate in the request body: [{}]", cert);
         if (StringUtils.isBlank(cert)) {
             return new ArrayList<>(0);
         }
         try (InputStream is = new ByteArrayInputStream(cert.getBytes(StandardCharsets.UTF_8))) {
-            final InputStreamSource iso = new InputStreamResource(is);
-            final X509Certificate certificate = CertUtils.readCertificate(iso);
-            final X509CertificateCredential credential = new X509CertificateCredential(new X509Certificate[]{certificate});
+            val iso = new InputStreamResource(is);
+            val certificate = CertUtils.readCertificate(iso);
+            val credential = new X509CertificateCredential(new X509Certificate[]{certificate});
             credential.setCertificate(certificate);
             return CollectionUtils.wrap(credential);
         } catch (final Exception e) {

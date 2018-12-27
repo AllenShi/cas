@@ -1,14 +1,15 @@
 package org.apereo.cas.web.support;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.audit.AuditTrailExecutionPlan;
+import org.apereo.cas.throttle.ThrottledRequestExecutor;
+import org.apereo.cas.throttle.ThrottledRequestResponseHandler;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -32,43 +33,13 @@ public abstract class AbstractInMemoryThrottledSubmissionHandlerInterceptorAdapt
                                                                         final String authenticationFailureCode,
                                                                         final AuditTrailExecutionPlan auditTrailExecutionPlan,
                                                                         final String applicationCode,
-                                                                        final ConcurrentMap map) {
+                                                                        final ThrottledRequestResponseHandler throttledRequestResponseHandler,
+                                                                        final ConcurrentMap map,
+                                                                        final ThrottledRequestExecutor throttledRequestExecutor) {
         super(failureThreshold, failureRangeInSeconds, usernameParameter,
-            authenticationFailureCode, auditTrailExecutionPlan, applicationCode);
+            authenticationFailureCode, auditTrailExecutionPlan, applicationCode,
+            throttledRequestResponseHandler, throttledRequestExecutor);
         this.ipMap = map;
-    }
-
-    @Override
-    public boolean exceedsThreshold(final HttpServletRequest request) {
-        final ZonedDateTime last = this.ipMap.get(constructKey(request));
-        return last != null && submissionRate(ZonedDateTime.now(ZoneOffset.UTC), last) > getThresholdRate();
-    }
-
-    @Override
-    public void recordSubmissionFailure(final HttpServletRequest request) {
-        this.ipMap.put(constructKey(request), ZonedDateTime.now(ZoneOffset.UTC));
-    }
-
-    /**
-     * This class relies on an external configuration to clean it up.
-     * It ignores the threshold data in the parent class.
-     */
-    @Override
-    public void decrement() {
-        LOGGER.info("Beginning audit cleanup...");
-
-        final Set<Entry<String, ZonedDateTime>> keys = this.ipMap.entrySet();
-        LOGGER.debug("Decrementing counts for throttler.  Starting key count: [{}]", keys.size());
-
-        final ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
-        for (final Iterator<Entry<String, ZonedDateTime>> iter = keys.iterator(); iter.hasNext();) {
-            final Entry<String, ZonedDateTime> entry = iter.next();
-            if (submissionRate(now, entry.getValue()) < getThresholdRate()) {
-                LOGGER.trace("Removing entry for key [{}]", entry.getKey());
-                iter.remove();
-            }
-        }
-        LOGGER.debug("Done decrementing count for throttler.");
     }
 
     /**
@@ -80,5 +51,30 @@ public abstract class AbstractInMemoryThrottledSubmissionHandlerInterceptorAdapt
      */
     private static double submissionRate(final ZonedDateTime a, final ZonedDateTime b) {
         return SUBMISSION_RATE_DIVIDEND / (a.toInstant().toEpochMilli() - b.toInstant().toEpochMilli());
+    }
+
+    @Override
+    public boolean exceedsThreshold(final HttpServletRequest request) {
+        val last = this.ipMap.get(constructKey(request));
+        return last != null && submissionRate(ZonedDateTime.now(ZoneOffset.UTC), last) > getThresholdRate();
+    }
+
+    @Override
+    public void recordSubmissionFailure(final HttpServletRequest request) {
+        val key = constructKey(request);
+        LOGGER.debug("Recording submission failure [{}]", key);
+        this.ipMap.put(key, ZonedDateTime.now(ZoneOffset.UTC));
+    }
+
+    /**
+     * This class relies on an external configuration to clean it up.
+     * It ignores the threshold data in the parent class.
+     */
+    @Override
+    public void decrement() {
+        LOGGER.info("Beginning audit cleanup...");
+        val now = ZonedDateTime.now(ZoneOffset.UTC);
+        this.ipMap.entrySet().removeIf(entry -> submissionRate(now, entry.getValue()) < getThresholdRate());
+        LOGGER.debug("Done decrementing count for throttler.");
     }
 }

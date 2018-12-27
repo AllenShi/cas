@@ -3,14 +3,16 @@ package org.apereo.cas.adaptors.radius.web.flow;
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
-import org.apereo.cas.services.MultifactorAuthenticationProviderSelector;
+import org.apereo.cas.authentication.MultifactorAuthenticationProviderSelector;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.web.flow.CasWebflowConstants;
 import org.apereo.cas.web.flow.authentication.BaseMultifactorAuthenticationProviderEventResolver;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apereo.inspektr.audit.annotation.Audit;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.util.CookieGenerator;
 import org.springframework.webflow.action.EventFactorySupport;
 import org.springframework.webflow.execution.Event;
@@ -25,8 +27,8 @@ import java.util.Set;
  * @since 5.0.0
  */
 
-@Slf4j
 public class RadiusAuthenticationWebflowEventResolver extends BaseMultifactorAuthenticationProviderEventResolver {
+    private static final String FLOW_SCOPE_ATTR_TOTAL_AUTHENTICATION_ATTEMPTS = "totalAuthenticationAttempts";
     private final long allowedAuthenticationAttempts;
 
     public RadiusAuthenticationWebflowEventResolver(final AuthenticationSystemSupport authenticationSystemSupport,
@@ -36,10 +38,12 @@ public class RadiusAuthenticationWebflowEventResolver extends BaseMultifactorAut
                                                     final CookieGenerator warnCookieGenerator,
                                                     final AuthenticationServiceSelectionPlan authenticationSelectionStrategies,
                                                     final MultifactorAuthenticationProviderSelector selector,
-                                                    final long allowedAuthenticationAttempts) {
+                                                    final long allowedAuthenticationAttempts,
+                                                    final ApplicationEventPublisher eventPublisher,
+                                                    final ConfigurableApplicationContext applicationContext) {
         super(authenticationSystemSupport, centralAuthenticationService,
             servicesManager, ticketRegistrySupport, warnCookieGenerator,
-            authenticationSelectionStrategies, selector);
+            authenticationSelectionStrategies, selector, eventPublisher, applicationContext);
         this.allowedAuthenticationAttempts = allowedAuthenticationAttempts;
     }
 
@@ -61,12 +65,13 @@ public class RadiusAuthenticationWebflowEventResolver extends BaseMultifactorAut
         if (allowedAuthenticationAttempts <= 0) {
             return super.getAuthenticationFailureErrorEvent(context);
         }
-        final long attempts = context.getFlowScope().getLong("totalAuthenticationAttempts", 0L) + 1;
+        val attempts = context.getFlowScope().getLong(FLOW_SCOPE_ATTR_TOTAL_AUTHENTICATION_ATTEMPTS, 0L) + 1;
         if (attempts >= allowedAuthenticationAttempts) {
-            context.getFlowScope().remove("totalAuthenticationAttempts");
+            context.getFlowScope().remove(FLOW_SCOPE_ATTR_TOTAL_AUTHENTICATION_ATTEMPTS);
             return new EventFactorySupport().event(this, CasWebflowConstants.TRANSITION_ID_CANCEL);
         }
-        context.getFlowScope().put("totalAuthenticationAttempts", attempts);
+        context.getFlowScope().put(FLOW_SCOPE_ATTR_TOTAL_AUTHENTICATION_ATTEMPTS, attempts + 1);
         return super.getAuthenticationFailureErrorEvent(context);
     }
+
 }

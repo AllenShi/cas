@@ -1,12 +1,10 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.ServiceFactory;
 import org.apereo.cas.authentication.principal.WebApplicationService;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.support.saml.idp.SamlIdPAlgorithmsProperties;
 import org.apereo.cas.services.RegexRegisteredService;
 import org.apereo.cas.services.ServiceRegistryExecutionPlan;
 import org.apereo.cas.services.ServiceRegistryExecutionPlanConfigurer;
@@ -18,9 +16,9 @@ import org.apereo.cas.support.saml.services.idp.metadata.cache.SamlRegisteredSer
 import org.apereo.cas.support.saml.web.idp.profile.IdPInitiatedProfileHandlerController;
 import org.apereo.cas.support.saml.web.idp.profile.artifact.Saml1ArtifactResolutionProfileHandlerController;
 import org.apereo.cas.support.saml.web.idp.profile.builders.SamlProfileObjectBuilder;
-import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlIdPObjectSignatureValidator;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlIdPObjectSigner;
-import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlObjectSignatureValidator;
+import org.apereo.cas.support.saml.web.idp.profile.builders.enc.validate.SamlIdPObjectSignatureValidator;
+import org.apereo.cas.support.saml.web.idp.profile.builders.enc.validate.SamlObjectSignatureValidator;
 import org.apereo.cas.support.saml.web.idp.profile.ecp.ECPProfileHandlerController;
 import org.apereo.cas.support.saml.web.idp.profile.query.Saml2AttributeQueryProfileHandlerController;
 import org.apereo.cas.support.saml.web.idp.profile.slo.SLOSamlPostProfileHandlerController;
@@ -35,6 +33,9 @@ import org.apereo.cas.ticket.query.SamlAttributeQueryTicketFactory;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.util.RandomUtils;
 import org.apereo.cas.web.support.CookieRetrievingCookieGenerator;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.jasig.cas.client.validation.AbstractUrlBasedTicketValidator;
 import org.opensaml.saml.metadata.resolver.MetadataResolver;
 import org.opensaml.saml.saml2.core.Response;
@@ -45,6 +46,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -57,41 +59,44 @@ import org.springframework.context.annotation.Configuration;
 @Configuration("samlIdPEndpointsConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @Slf4j
-public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPlanConfigurer {
+public class SamlIdPEndpointsConfiguration {
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+    
     @Autowired
     @Qualifier("casClientTicketValidator")
-    private AbstractUrlBasedTicketValidator casClientTicketValidator;
+    private ObjectProvider<AbstractUrlBasedTicketValidator> casClientTicketValidator;
 
     @Autowired
     private CasConfigurationProperties casProperties;
 
     @Autowired
     @Qualifier("servicesManager")
-    private ServicesManager servicesManager;
+    private ObjectProvider<ServicesManager> servicesManager;
 
     @Autowired
     @Qualifier("shibboleth.OpenSAMLConfig")
-    private OpenSamlConfigBean openSamlConfigBean;
+    private ObjectProvider<OpenSamlConfigBean> openSamlConfigBean;
 
     @Autowired
     @Qualifier("samlProfileSamlResponseBuilder")
-    private SamlProfileObjectBuilder<Response> samlProfileSamlResponseBuilder;
+    private ObjectProvider<SamlProfileObjectBuilder<Response>> samlProfileSamlResponseBuilder;
 
     @Autowired
     @Qualifier("defaultSamlRegisteredServiceCachingMetadataResolver")
-    private SamlRegisteredServiceCachingMetadataResolver defaultSamlRegisteredServiceCachingMetadataResolver;
+    private ObjectProvider<SamlRegisteredServiceCachingMetadataResolver> defaultSamlRegisteredServiceCachingMetadataResolver;
 
     @Autowired
     @Qualifier("webApplicationServiceFactory")
-    private ServiceFactory<WebApplicationService> webApplicationServiceFactory;
+    private ObjectProvider<ServiceFactory<WebApplicationService>> webApplicationServiceFactory;
 
     @Autowired
     @Qualifier("defaultAuthenticationSystemSupport")
-    private AuthenticationSystemSupport authenticationSystemSupport;
+    private ObjectProvider<AuthenticationSystemSupport> authenticationSystemSupport;
 
     @Autowired
     @Qualifier("samlObjectSigner")
-    private SamlIdPObjectSigner samlObjectSigner;
+    private ObjectProvider<SamlIdPObjectSigner> samlObjectSigner;
 
     @Autowired
     @Qualifier("ticketGrantingTicketCookieGenerator")
@@ -99,7 +104,7 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
 
     @Autowired
     @Qualifier("casSamlIdPMetadataResolver")
-    private MetadataResolver casSamlIdPMetadataResolver;
+    private ObjectProvider<MetadataResolver> casSamlIdPMetadataResolver;
 
     @Autowired
     @Qualifier("samlProfileSamlSoap11ResponseBuilder")
@@ -127,11 +132,11 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
 
     @Autowired
     @Qualifier("samlAttributeQueryTicketFactory")
-    private SamlAttributeQueryTicketFactory samlAttributeQueryTicketFactory;
+    private ObjectProvider<SamlAttributeQueryTicketFactory> samlAttributeQueryTicketFactory;
 
     @Autowired
     @Qualifier("ticketRegistry")
-    private TicketRegistry ticketRegistry;
+    private ObjectProvider<TicketRegistry> ticketRegistry;
 
     @Autowired
     @Qualifier("samlArtifactTicketFactory")
@@ -140,13 +145,13 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @ConditionalOnMissingBean(name = "samlIdPObjectSignatureValidator")
     @Bean
     public SamlObjectSignatureValidator samlIdPObjectSignatureValidator() {
-        final SamlIdPAlgorithmsProperties algs = casProperties.getAuthn().getSamlIdp().getAlgs();
+        val algs = casProperties.getAuthn().getSamlIdp().getAlgs();
         return new SamlIdPObjectSignatureValidator(
             algs.getOverrideSignatureReferenceDigestMethods(),
             algs.getOverrideSignatureAlgorithms(),
             algs.getOverrideBlackListedSignatureSigningAlgorithms(),
             algs.getOverrideWhiteListedSignatureSigningAlgorithms(),
-            casSamlIdPMetadataResolver,
+            casSamlIdPMetadataResolver.getIfAvailable(),
             casProperties
         );
     }
@@ -154,7 +159,7 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @ConditionalOnMissingBean(name = "samlObjectSignatureValidator")
     @Bean
     public SamlObjectSignatureValidator samlObjectSignatureValidator() {
-        final SamlIdPAlgorithmsProperties algs = casProperties.getAuthn().getSamlIdp().getAlgs();
+        val algs = casProperties.getAuthn().getSamlIdp().getAlgs();
         return new SamlObjectSignatureValidator(
             algs.getOverrideSignatureReferenceDigestMethods(),
             algs.getOverrideSignatureAlgorithms(),
@@ -167,21 +172,20 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @ConditionalOnMissingBean(name = "ssoSamlHttpRequestExtractor")
     @Bean
     public SSOSamlHttpRequestExtractor ssoSamlHttpRequestExtractor() {
-        return new DefaultSSOSamlHttpRequestExtractor(openSamlConfigBean.getParserPool());
+        return new DefaultSSOSamlHttpRequestExtractor(openSamlConfigBean.getObject().getParserPool());
     }
 
     @Bean
     @RefreshScope
     public SSOSamlPostProfileHandlerController ssoPostProfileHandlerController() {
         return new SSOSamlPostProfileHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
-            samlProfileSamlResponseBuilder,
+            samlObjectSigner.getObject(),
+            authenticationSystemSupport.getObject(),
+            servicesManager.getObject(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getObject(),
+            openSamlConfigBean.getObject(),
+            samlProfileSamlResponseBuilder.getObject(),
             casProperties,
             samlObjectSignatureValidator(),
             ssoSamlHttpRequestExtractor(),
@@ -192,14 +196,13 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @RefreshScope
     public SSOSamlPostSimpleSignProfileHandlerController ssoPostSimpleSignProfileHandlerController() {
         return new SSOSamlPostSimpleSignProfileHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
-            samlProfileSamlResponseBuilder,
+            samlObjectSigner.getObject(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
+            samlProfileSamlResponseBuilder.getObject(),
             casProperties,
             samlObjectSignatureValidator(),
             ssoSamlHttpRequestExtractor(),
@@ -211,14 +214,13 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @RefreshScope
     public SLOSamlRedirectProfileHandlerController sloRedirectProfileHandlerController() {
         return new SLOSamlRedirectProfileHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
-            samlProfileSamlResponseBuilder,
+            samlObjectSigner.getIfAvailable(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
+            samlProfileSamlResponseBuilder.getObject(),
             casProperties,
             samlObjectSignatureValidator(),
             ssoSamlHttpRequestExtractor(),
@@ -229,14 +231,13 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @RefreshScope
     public SLOSamlPostProfileHandlerController sloPostProfileHandlerController() {
         return new SLOSamlPostProfileHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
-            samlProfileSamlResponseBuilder,
+            samlObjectSigner.getIfAvailable(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
+            samlProfileSamlResponseBuilder.getObject(),
             casProperties,
             samlObjectSignatureValidator(),
             ssoSamlHttpRequestExtractor(),
@@ -247,14 +248,13 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @RefreshScope
     public IdPInitiatedProfileHandlerController idPInitiatedSamlProfileHandlerController() {
         return new IdPInitiatedProfileHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
-            samlProfileSamlResponseBuilder,
+            samlObjectSigner.getIfAvailable(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
+            samlProfileSamlResponseBuilder.getObject(),
             casProperties,
             samlIdPObjectSignatureValidator(),
             samlIdPCallbackService());
@@ -264,30 +264,28 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @RefreshScope
     public SSOSamlProfileCallbackHandlerController ssoPostProfileCallbackHandlerController() {
         return new SSOSamlProfileCallbackHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
-            samlProfileSamlResponseBuilder,
+            samlObjectSigner.getIfAvailable(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
+            samlProfileSamlResponseBuilder.getObject(),
             casProperties,
             samlObjectSignatureValidator(),
-            this.casClientTicketValidator,
+            casClientTicketValidator.getIfAvailable(),
             samlIdPCallbackService());
     }
 
     @Bean
     @RefreshScope
     public ECPProfileHandlerController ecpProfileHandlerController() {
-        return new ECPProfileHandlerController(samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
+        return new ECPProfileHandlerController(samlObjectSigner.getIfAvailable(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
             samlProfileSamlSoap11ResponseBuilder,
             samlProfileSamlSoap11FaultResponseBuilder,
             casProperties,
@@ -299,17 +297,16 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @RefreshScope
     public Saml1ArtifactResolutionProfileHandlerController saml1ArtifactResolutionController() {
         return new Saml1ArtifactResolutionProfileHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
+            samlObjectSigner.getIfAvailable(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
             samlProfileSamlArtifactResponseBuilder,
             casProperties,
             samlObjectSignatureValidator(),
-            ticketRegistry,
+            ticketRegistry.getIfAvailable(),
             samlArtifactTicketFactory.getIfAvailable(),
             samlProfileSamlArtifactFaultResponseBuilder,
             samlIdPCallbackService());
@@ -320,39 +317,44 @@ public class SamlIdPEndpointsConfiguration implements ServiceRegistryExecutionPl
     @RefreshScope
     public Saml2AttributeQueryProfileHandlerController saml2AttributeQueryProfileHandlerController() {
         return new Saml2AttributeQueryProfileHandlerController(
-            samlObjectSigner,
-            openSamlConfigBean.getParserPool(),
-            authenticationSystemSupport,
-            servicesManager,
-            webApplicationServiceFactory,
-            defaultSamlRegisteredServiceCachingMetadataResolver,
-            openSamlConfigBean,
+            samlObjectSigner.getIfAvailable(),
+            authenticationSystemSupport.getIfAvailable(),
+            servicesManager.getIfAvailable(),
+            webApplicationServiceFactory.getIfAvailable(),
+            defaultSamlRegisteredServiceCachingMetadataResolver.getIfAvailable(),
+            openSamlConfigBean.getIfAvailable(),
             samlProfileSamlAttributeQueryResponseBuilder,
             casProperties,
             samlObjectSignatureValidator(),
-            ticketRegistry,
+            ticketRegistry.getIfAvailable(),
             samlProfileSamlAttributeQueryFaultResponseBuilder,
             ticketGrantingTicketCookieGenerator.getIfAvailable(),
-            samlAttributeQueryTicketFactory,
+            samlAttributeQueryTicketFactory.getIfAvailable(),
             samlIdPCallbackService());
     }
 
     @Bean
     public Service samlIdPCallbackService() {
-        final String service = casProperties.getServer().getPrefix().concat(SamlIdPConstants.ENDPOINT_SAML2_SSO_PROFILE_POST_CALLBACK);
-        return this.webApplicationServiceFactory.createService(service);
+        val service = casProperties.getServer().getPrefix().concat(SamlIdPConstants.ENDPOINT_SAML2_SSO_PROFILE_POST_CALLBACK);
+        return this.webApplicationServiceFactory.getIfAvailable().createService(service);
     }
 
-    @Override
-    public void configureServiceRegistry(final ServiceRegistryExecutionPlan plan) {
-        final String callbackService = samlIdPCallbackService().getId().concat(".*");
-        LOGGER.debug("Initializing callback service [{}]", callbackService);
-        final RegexRegisteredService service = new RegexRegisteredService();
-        service.setId(Math.abs(RandomUtils.getNativeInstance().nextLong()));
-        service.setEvaluationOrder(Integer.MAX_VALUE);
-        service.setName(service.getClass().getSimpleName());
-        service.setDescription("SAML Authentication Request");
-        service.setServiceId(callbackService);
-        plan.registerServiceRegistry(new SamlIdPServiceRegistry(service));
+    @Bean
+    @ConditionalOnMissingBean(name = "samlIdPServiceRegistryExecutionPlanConfigurer")
+    public ServiceRegistryExecutionPlanConfigurer samlIdPServiceRegistryExecutionPlanConfigurer() {
+        return new ServiceRegistryExecutionPlanConfigurer() {
+            @Override
+            public void configureServiceRegistry(final ServiceRegistryExecutionPlan plan) {
+                val callbackService = samlIdPCallbackService().getId().concat(".*");
+                LOGGER.debug("Initializing SAML IdP callback service [{}]", callbackService);
+                val service = new RegexRegisteredService();
+                service.setId(RandomUtils.getNativeInstance().nextLong());
+                service.setEvaluationOrder(Integer.MAX_VALUE);
+                service.setName(service.getClass().getSimpleName());
+                service.setDescription("SAML Authentication Request Callback");
+                service.setServiceId(callbackService);
+                plan.registerServiceRegistry(new SamlIdPServiceRegistry(eventPublisher, service));
+            }
+        };
     }
 }

@@ -14,14 +14,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.ProfileManager;
 import org.pac4j.core.profile.UserProfile;
 import org.springframework.core.Ordered;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 
 /**
@@ -61,7 +60,7 @@ public abstract class BaseOAuth20TokenRequestValidator implements OAuth20TokenRe
      */
     private static boolean isGrantTypeSupported(final String type, final OAuth20GrantTypes... expectedTypes) {
         LOGGER.debug("Grant type received: [{}]", type);
-        for (final OAuth20GrantTypes expectedType : expectedTypes) {
+        for (val expectedType : expectedTypes) {
             if (OAuth20Utils.isGrantType(type, expectedType)) {
                 return true;
             }
@@ -94,28 +93,23 @@ public abstract class BaseOAuth20TokenRequestValidator implements OAuth20TokenRe
 
     @Override
     public boolean validate(final J2EContext context) {
-        final HttpServletRequest request = context.getRequest();
-        final HttpServletResponse response = context.getResponse();
+        val request = context.getRequest();
+        val response = context.getResponse();
 
-        final String grantType = request.getParameter(OAuth20Constants.GRANT_TYPE);
+        val grantType = request.getParameter(OAuth20Constants.GRANT_TYPE);
         if (!isGrantTypeSupported(grantType, OAuth20GrantTypes.values())) {
             LOGGER.warn("Grant type is not supported: [{}]", grantType);
             return false;
         }
 
-        final ProfileManager manager = Pac4jUtils.getPac4jProfileManager(request, response);
-        final Optional<CommonProfile> profile = (Optional<CommonProfile>) manager.get(true);
-        if (profile == null || !profile.isPresent()) {
+        val manager = Pac4jUtils.getPac4jProfileManager(request, response);
+        val profile = (Optional<CommonProfile>) manager.get(true);
+        if (profile.isEmpty()) {
             LOGGER.warn("Could not locate authenticated profile for this request. Request is not authenticated");
             return false;
         }
 
-        final CommonProfile uProfile = profile.get();
-        if (uProfile == null) {
-            LOGGER.warn("Could not locate authenticated profile for this request as null");
-            return false;
-        }
-
+        val uProfile = profile.get();
         return validateInternal(context, grantType, manager, uProfile);
     }
 
@@ -142,7 +136,7 @@ public abstract class BaseOAuth20TokenRequestValidator implements OAuth20TokenRe
 
     @Override
     public boolean supports(final J2EContext context) {
-        final String grantType = context.getRequestParameter(OAuth20Constants.GRANT_TYPE);
+        val grantType = context.getRequestParameter(OAuth20Constants.GRANT_TYPE);
         return OAuth20Utils.isGrantType(grantType, getGrantType());
     }
 }

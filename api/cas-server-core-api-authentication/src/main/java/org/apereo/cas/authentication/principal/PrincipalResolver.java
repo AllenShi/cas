@@ -2,6 +2,7 @@ package org.apereo.cas.authentication.principal;
 
 import org.apereo.cas.authentication.AuthenticationHandler;
 import org.apereo.cas.authentication.Credential;
+
 import org.apereo.services.persondir.IPersonAttributeDao;
 
 import java.util.Optional;
@@ -29,7 +30,7 @@ public interface PrincipalResolver {
      * @param credential Source credential.
      * @return the principal
      */
-    default Principal resolve(Credential credential) {
+    default Principal resolve(final Credential credential) {
         return resolve(credential, Optional.empty(), Optional.empty());
     }
 
@@ -41,10 +42,10 @@ public interface PrincipalResolver {
      * @param handler    the authentication handler linked to the resolver. May be null.
      * @return the principal
      */
-    default Principal resolve(Credential credential, Optional<AuthenticationHandler> handler) {
+    default Principal resolve(final Credential credential, final Optional<AuthenticationHandler> handler) {
         return resolve(credential, Optional.empty(), handler);
     }
-    
+
     /**
      * Resolves a principal from the given credential using an arbitrary strategy.
      *
@@ -71,4 +72,13 @@ public interface PrincipalResolver {
      * @since 5.1
      */
     IPersonAttributeDao getAttributeRepository();
+
+    /**
+     * Gets a unique name for this principal resolver.
+     *
+     * @return resolver name.
+     */
+    default String getName() {
+        return this.getClass().getSimpleName();
+    }
 }

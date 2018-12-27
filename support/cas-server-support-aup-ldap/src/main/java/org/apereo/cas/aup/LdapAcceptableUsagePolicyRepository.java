@@ -1,14 +1,15 @@
 package org.apereo.cas.aup;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.LdapUtils;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.ldaptive.ConnectionFactory;
 import org.ldaptive.LdapException;
 import org.ldaptive.Response;
-import org.ldaptive.SearchFilter;
 import org.ldaptive.SearchResult;
 import org.springframework.webflow.execution.RequestContext;
 
@@ -43,9 +44,9 @@ public class LdapAcceptableUsagePolicyRepository extends AbstractPrincipalAttrib
     @Override
     public boolean submit(final RequestContext requestContext, final Credential credential) {
         try {
-            final Response<SearchResult> response = searchForId(credential.getId());
+            val response = searchForId(credential.getId());
             if (LdapUtils.containsResultEntry(response)) {
-                final String currentDn = response.getResult().getEntry().getDn();
+                val currentDn = response.getResult().getEntry().getDn();
                 LOGGER.debug("Updating [{}]", currentDn);
                 return LdapUtils.executeModifyOperation(currentDn, this.connectionFactory,
                     CollectionUtils.wrap(this.aupAttributeName, CollectionUtils.wrapSet(Boolean.TRUE.toString())));
@@ -64,7 +65,7 @@ public class LdapAcceptableUsagePolicyRepository extends AbstractPrincipalAttrib
      * @throws LdapException the ldap exception
      */
     private Response<SearchResult> searchForId(final String id) throws LdapException {
-        final SearchFilter filter = LdapUtils.newLdaptiveSearchFilter(this.searchFilter,
+        val filter = LdapUtils.newLdaptiveSearchFilter(this.searchFilter,
             LdapUtils.LDAP_SEARCH_FILTER_DEFAULT_PARAM_NAME,
             CollectionUtils.wrap(id));
         return LdapUtils.executeSearchOperation(this.connectionFactory, this.baseDn, filter);

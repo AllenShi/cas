@@ -1,6 +1,5 @@
 package org.apereo.cas.ticket.registry.support;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.config.CasCoreAuthenticationHandlersConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationMetadataConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationPolicyConfiguration;
@@ -22,8 +21,13 @@ import org.apereo.cas.configuration.model.support.jpa.ticketregistry.JpaTicketRe
 import org.apereo.cas.configuration.support.Beans;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.util.SchedulingUtils;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
@@ -35,11 +39,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit4.rules.SpringClassRule;
+import org.springframework.test.context.junit4.rules.SpringMethodRule;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.lang.reflect.InvocationHandler;
@@ -48,8 +52,6 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -65,9 +67,12 @@ import static org.junit.Assert.*;
  * @author Marvin S. Addison
  * @since 3.0.0
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
+    JpaTicketRegistryTicketCatalogConfiguration.class,
+    JpaTicketRegistryConfiguration.class,
     JpaLockingStrategyTests.JpaTestConfiguration.class,
+    JpaTicketRegistryTicketCatalogConfiguration.class,
+    JpaTicketRegistryConfiguration.class,
     RefreshAutoConfiguration.class,
     AopAutoConfiguration.class,
     CasCoreTicketsConfiguration.class,
@@ -82,19 +87,23 @@ import static org.junit.Assert.*;
     CasCoreAuthenticationHandlersConfiguration.class,
     CasCoreAuthenticationPolicyConfiguration.class,
     CasCoreTicketCatalogConfiguration.class,
-    JpaTicketRegistryTicketCatalogConfiguration.class,
     CasPersonDirectoryConfiguration.class,
-    JpaTicketRegistryConfiguration.class,
     CasCoreWebConfiguration.class,
     CasWebApplicationServiceFactoryConfiguration.class})
 @ContextConfiguration(initializers = EnvironmentConversionServiceInitializer.class)
 @DirtiesContext
 @Slf4j
 public class JpaLockingStrategyTests {
+    @ClassRule
+    public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
+
     /**
      * Number of clients contending for lock in concurrent test.
      */
     private static final int CONCURRENT_SIZE = 13;
+
+    @Rule
+    public final SpringMethodRule springMethodRule = new SpringMethodRule();
 
     @Autowired
     @Qualifier("ticketTransactionManager")
@@ -108,15 +117,28 @@ public class JpaLockingStrategyTests {
     @Qualifier("dataSourceTicket")
     private DataSource dataSource;
 
-    @TestConfiguration
-    public static class JpaTestConfiguration {
-        @Autowired
-        protected ApplicationContext applicationContext;
+    private static void testConcurrency(final ExecutorService executor,
+                                        final Collection<LockingStrategy> locks) throws Exception {
+        val lockers = new ArrayList<Locker>(locks.size());
+        lockers.addAll(locks.stream().map(Locker::new).collect(Collectors.toList()));
 
-        @PostConstruct
-        public void init() {
-            SchedulingUtils.prepScheduledAnnotationBeanPostProcessor(applicationContext);
-        }
+        val lockCount = executor.invokeAll(lockers).stream().filter(result -> {
+            try {
+                return result.get();
+            } catch (final InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e.getMessage(), e);
+            }
+        }).count();
+        assertTrue("Lock count should be <= 1 but was " + lockCount, lockCount <= 1);
+        
+        val releaseCount = executor.invokeAll(lockers).stream().filter(result -> {
+            try {
+                return result.get();
+            } catch (final InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e.getMessage(), e);
+            }
+        }).count();
+        assertTrue("Release count should be <= 1 but was " + releaseCount, releaseCount <= 1);
     }
 
     /**
@@ -125,9 +147,9 @@ public class JpaLockingStrategyTests {
     @Test
     public void verifyAcquireAndRelease() {
         try {
-            final String appId = "basic";
-            final String uniqueId = appId + "-1";
-            final LockingStrategy lock = newLockTxProxy(appId, uniqueId, JpaTicketRegistryProperties.DEFAULT_LOCK_TIMEOUT);
+            val appId = "basic";
+            val uniqueId = appId + "-1";
+            val lock = newLockTxProxy(appId, uniqueId, JpaTicketRegistryProperties.DEFAULT_LOCK_TIMEOUT);
             assertTrue(lock.acquire());
             assertEquals(uniqueId, getOwner(appId));
             lock.release();
@@ -141,9 +163,9 @@ public class JpaLockingStrategyTests {
     @Test
     public void verifyLockExpiration() {
         try {
-            final String appId = "expquick";
-            final String uniqueId = appId + "-1";
-            final LockingStrategy lock = newLockTxProxy(appId, uniqueId, "1");
+            val appId = "expquick";
+            val uniqueId = appId + "-1";
+            val lock = newLockTxProxy(appId, uniqueId, "1");
             assertTrue(lock.acquire());
             assertEquals(uniqueId, getOwner(appId));
             lock.release();
@@ -162,9 +184,9 @@ public class JpaLockingStrategyTests {
     @Test
     public void verifyNonReentrantBehavior() {
         try {
-            final String appId = "reentrant";
-            final String uniqueId = appId + "-1";
-            final LockingStrategy lock = newLockTxProxy(appId, uniqueId, JpaTicketRegistryProperties.DEFAULT_LOCK_TIMEOUT);
+            val appId = "reentrant";
+            val uniqueId = appId + "-1";
+            val lock = newLockTxProxy(appId, uniqueId, JpaTicketRegistryProperties.DEFAULT_LOCK_TIMEOUT);
             assertTrue(lock.acquire());
             assertEquals(uniqueId, getOwner(appId));
             assertFalse(lock.acquire());
@@ -180,7 +202,7 @@ public class JpaLockingStrategyTests {
      */
     @Test
     public void verifyConcurrentAcquireAndRelease() {
-        final ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_SIZE);
+        val executor = Executors.newFixedThreadPool(CONCURRENT_SIZE);
         try {
             testConcurrency(executor, Arrays.asList(getConcurrentLocks("concurrent-new")));
         } catch (final Exception e) {
@@ -195,10 +217,10 @@ public class JpaLockingStrategyTests {
      */
     @Test
     public void verifyConcurrentAcquireAndReleaseOnExistingLock() {
-        final LockingStrategy[] locks = getConcurrentLocks("concurrent-exists");
+        val locks = getConcurrentLocks("concurrent-exists");
         locks[0].acquire();
         locks[0].release();
-        final ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_SIZE);
+        val executor = Executors.newFixedThreadPool(CONCURRENT_SIZE);
         try {
             testConcurrency(executor, Arrays.asList(locks));
         } catch (final Exception e) {
@@ -209,14 +231,14 @@ public class JpaLockingStrategyTests {
     }
 
     private LockingStrategy[] getConcurrentLocks(final String appId) {
-        final LockingStrategy[] locks = new LockingStrategy[CONCURRENT_SIZE];
+        val locks = new LockingStrategy[CONCURRENT_SIZE];
         IntStream.rangeClosed(1, locks.length)
             .forEach(i -> locks[i - 1] = newLockTxProxy(appId, appId + '-' + i, JpaTicketRegistryProperties.DEFAULT_LOCK_TIMEOUT));
         return locks;
     }
 
     private LockingStrategy newLockTxProxy(final String appId, final String uniqueId, final String ttl) {
-        final JpaLockingStrategy lock = new JpaLockingStrategy(appId, uniqueId, Beans.newDuration(ttl).getSeconds());
+        val lock = new JpaLockingStrategy(appId, uniqueId, Beans.newDuration(ttl).getSeconds());
         lock.entityManager = SharedEntityManagerCreator.createSharedEntityManager(factory);
         return (LockingStrategy) Proxy.newProxyInstance(
             JpaLockingStrategy.class.getClassLoader(),
@@ -225,8 +247,8 @@ public class JpaLockingStrategyTests {
     }
 
     private String getOwner(final String appId) {
-        final JdbcTemplate simpleJdbcTemplate = new JdbcTemplate(dataSource);
-        final List<Map<String, Object>> results = simpleJdbcTemplate.queryForList(
+        val simpleJdbcTemplate = new JdbcTemplate(dataSource);
+        val results = simpleJdbcTemplate.queryForList(
             "SELECT unique_id FROM locks WHERE application_id=?", appId);
         if (results.isEmpty()) {
             return null;
@@ -234,31 +256,15 @@ public class JpaLockingStrategyTests {
         return (String) results.get(0).get("unique_id");
     }
 
-    private static void testConcurrency(final ExecutorService executor,
-                                        final Collection<LockingStrategy> locks) throws Exception {
-        final List<Locker> lockers = new ArrayList<>(locks.size());
-        lockers.addAll(locks.stream().map(Locker::new).collect(Collectors.toList()));
+    @TestConfiguration
+    public static class JpaTestConfiguration implements InitializingBean {
+        @Autowired
+        protected ApplicationContext applicationContext;
 
-        final long lockCount = executor.invokeAll(lockers).stream().filter(result -> {
-            try {
-                return result.get();
-            } catch (final InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e.getMessage(), e);
-            }
-        }).count();
-        assertTrue("Lock count should be <= 1 but was " + lockCount, lockCount <= 1);
-
-        final List<Releaser> releasers = new ArrayList<>(locks.size());
-
-        releasers.addAll(locks.stream().map(Releaser::new).collect(Collectors.toList()));
-        final long releaseCount = executor.invokeAll(lockers).stream().filter(result -> {
-            try {
-                return result.get();
-            } catch (final InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e.getMessage(), e);
-            }
-        }).count();
-        assertTrue("Release count should be <= 1 but was " + releaseCount, releaseCount <= 1);
+        @Override
+        public void afterPropertiesSet() {
+            SchedulingUtils.prepScheduledAnnotationBeanPostProcessor(applicationContext);
+        }
     }
 
     private static class TransactionalLockInvocationHandler implements InvocationHandler {
@@ -281,7 +287,7 @@ public class JpaLockingStrategyTests {
         public Object invoke(final Object proxy, final Method method, final Object[] args) {
             return new TransactionTemplate(txManager).execute(status -> {
                 try {
-                    final Object result = method.invoke(jpaLock, args);
+                    val result = method.invoke(jpaLock, args);
                     jpaLock.entityManager.flush();
                     LOGGER.debug("Performed [{}] on [{}]", method.getName(), jpaLock);
                     return result;

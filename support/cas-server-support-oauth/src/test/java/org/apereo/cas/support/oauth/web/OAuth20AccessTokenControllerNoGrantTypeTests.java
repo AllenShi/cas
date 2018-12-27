@@ -3,9 +3,11 @@ package org.apereo.cas.support.oauth.web;
 import org.apereo.cas.support.oauth.OAuth20GrantTypes;
 import org.apereo.cas.support.oauth.services.OAuthRegisteredService;
 import org.apereo.cas.support.oauth.web.endpoints.OAuth20AccessTokenEndpointController;
+import lombok.val;
 
 import java.util.HashSet;
 import java.util.Set;
+
 
 /**
  * This class tests the {@link OAuth20AccessTokenEndpointController} class.
@@ -23,7 +25,7 @@ public class OAuth20AccessTokenControllerNoGrantTypeTests extends OAuth20AccessT
     @Override
     protected OAuthRegisteredService getRegisteredService(final String serviceId, final String secret,
                                                           final Set<OAuth20GrantTypes> grantTypes) {
-        final OAuthRegisteredService service = super.getRegisteredService(serviceId, secret, grantTypes);
+        val service = super.getRegisteredService(serviceId, secret, grantTypes);
         // no supportedGrantTypes == all grant types are supported
         service.setSupportedGrantTypes(new HashSet<>());
         return service;

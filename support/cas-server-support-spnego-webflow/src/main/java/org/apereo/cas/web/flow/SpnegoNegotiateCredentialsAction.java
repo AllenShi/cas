@@ -1,15 +1,16 @@
 package org.apereo.cas.web.flow;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.support.spnego.util.SpnegoConstants;
 import org.apereo.cas.util.HttpRequestUtils;
 import org.apereo.cas.web.support.WebUtils;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.util.StringUtils;
 import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
@@ -86,11 +87,11 @@ public class SpnegoNegotiateCredentialsAction extends AbstractAction {
 
     @Override
     protected Event doExecute(final RequestContext context) {
-        final HttpServletRequest request = WebUtils.getHttpServletRequestFromExternalWebflowContext(context);
-        final HttpServletResponse response = WebUtils.getHttpServletResponseFromExternalWebflowContext(context);
+        val request = WebUtils.getHttpServletRequestFromExternalWebflowContext(context);
+        val response = WebUtils.getHttpServletResponseFromExternalWebflowContext(context);
 
-        final String authorizationHeader = request.getHeader(SpnegoConstants.HEADER_AUTHORIZATION);
-        final String userAgent = HttpRequestUtils.getHttpServletRequestUserAgent(request);
+        val authorizationHeader = request.getHeader(SpnegoConstants.HEADER_AUTHORIZATION);
+        val userAgent = HttpRequestUtils.getHttpServletRequestUserAgent(request);
 
         LOGGER.debug("Authorization header [{}], User Agent header [{}]", authorizationHeader, userAgent);
         if (!StringUtils.hasText(userAgent) || this.supportedBrowser.isEmpty()) {
@@ -108,15 +109,17 @@ public class SpnegoNegotiateCredentialsAction extends AbstractAction {
             || !authorizationHeader.startsWith(this.messageBeginPrefix)
             || authorizationHeader.length() <= this.messageBeginPrefix.length()) {
 
-            final String wwwHeader = this.ntlm ? SpnegoConstants.NTLM : SpnegoConstants.NEGOTIATE;
+            val wwwHeader = this.ntlm ? SpnegoConstants.NTLM : SpnegoConstants.NEGOTIATE;
             LOGGER.debug("Authorization header not found or does not match the message prefix [{}]. Sending [{}] header [{}]",
                 this.messageBeginPrefix, SpnegoConstants.HEADER_AUTHENTICATE, wwwHeader);
             response.setHeader(SpnegoConstants.HEADER_AUTHENTICATE, wwwHeader);
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            // The responseComplete flag tells the pausing view-state not to render the response
-            // because another object has taken care of it. If mixed mode authentication is allowed
-            // then responseComplete should not be called so that webflow will display the login page.
+            /*
+             The responseComplete flag tells the pausing view-state not to render the response
+             because another object has taken care of it. If mixed mode authentication is allowed
+             then responseComplete should not be called so that webflow will display the login page.
+              */
             if (!this.mixedModeAuthentication) {
                 LOGGER.debug("Mixed-mode authentication is disabled. Executing completion of response");
                 context.getExternalContext().recordResponseComplete();

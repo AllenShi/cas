@@ -1,7 +1,9 @@
 package org.apereo.cas.web.support;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.audit.AuditTrailExecutionPlan;
+import org.apereo.cas.throttle.ThrottledRequestExecutor;
+import org.apereo.cas.throttle.ThrottledRequestResponseHandler;
+
 import org.apereo.inspektr.common.web.ClientInfoHolder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,7 +16,6 @@ import java.util.concurrent.ConcurrentMap;
  * @author Scott Battaglia
  * @since 3.3.5
  */
-@Slf4j
 public class InMemoryThrottledSubmissionByIpAddressHandlerInterceptorAdapter extends AbstractInMemoryThrottledSubmissionHandlerInterceptorAdapter {
 
     public InMemoryThrottledSubmissionByIpAddressHandlerInterceptorAdapter(final int failureThreshold,
@@ -23,9 +24,12 @@ public class InMemoryThrottledSubmissionByIpAddressHandlerInterceptorAdapter ext
                                                                            final String authenticationFailureCode,
                                                                            final AuditTrailExecutionPlan auditTrailExecutionPlan,
                                                                            final String applicationCode,
-                                                                           final ConcurrentMap map) {
+                                                                           final ThrottledRequestResponseHandler throttledRequestResponseHandler,
+                                                                           final ConcurrentMap map,
+                                                                           final ThrottledRequestExecutor throttledRequestExecutor) {
         super(failureThreshold, failureRangeInSeconds, usernameParameter,
-            authenticationFailureCode, auditTrailExecutionPlan, applicationCode, map);
+            authenticationFailureCode, auditTrailExecutionPlan, applicationCode,
+            throttledRequestResponseHandler, map, throttledRequestExecutor);
     }
 
     @Override

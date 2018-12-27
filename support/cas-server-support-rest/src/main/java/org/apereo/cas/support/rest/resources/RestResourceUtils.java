@@ -1,5 +1,8 @@
 package org.apereo.cas.support.rest.resources;
 
+import org.apereo.cas.authentication.AuthenticationException;
+import org.apereo.cas.configuration.model.core.web.MessageBundleProperties;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -8,14 +11,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.authentication.AuthenticationException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -28,7 +32,7 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class RestResourceUtils {
 
-    private static ObjectMapper MAPPER;
+    private static final ObjectMapper MAPPER;
 
     static {
         MAPPER = new ObjectMapper()
@@ -42,20 +46,23 @@ public class RestResourceUtils {
     /**
      * Create response entity for authn failure response.
      *
-     * @param e the e
+     * @param e                  the e
+     * @param request            the http request
+     * @param applicationContext the application context
      * @return the response entity
      */
-    public static ResponseEntity<String> createResponseEntityForAuthnFailure(final AuthenticationException e) {
+    public static ResponseEntity<String> createResponseEntityForAuthnFailure(final AuthenticationException e,
+                                                                             final HttpServletRequest request,
+                                                                             final ApplicationContext applicationContext) {
         try {
-            final List<String> authnExceptions = e.getHandlerErrors().values()
+            val authnExceptions = e.getHandlerErrors().values()
                 .stream()
-                .map(ex -> ex.getClass().getSimpleName()
-                    + ": "
-                    + StringUtils.defaultIfBlank(ex.getMessage(), "Authentication Failure: " + e.getMessage()))
+                .map(ex -> mapExceptionToMessage(e, request, applicationContext, ex))
                 .collect(Collectors.toList());
-            final Map<String, List<String>> errorsMap = new HashMap<>();
+            val errorsMap = new HashMap<String, List<String>>();
             errorsMap.put("authentication_exceptions", authnExceptions);
             LOGGER.warn("[{}] Caused by: [{}]", e.getMessage(), authnExceptions);
+
             return new ResponseEntity<>(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(errorsMap), HttpStatus.UNAUTHORIZED);
         } catch (final JsonProcessingException exception) {
             LOGGER.error(e.getMessage(), e);
@@ -63,4 +70,24 @@ public class RestResourceUtils {
         }
     }
 
+    private static String mapExceptionToMessage(final AuthenticationException authnhandlerErrors,
+                                                final HttpServletRequest request,
+                                                final ApplicationContext applicationContext,
+                                                final Throwable ex) {
+        val authnMsg = StringUtils.defaultIfBlank(ex.getMessage(), "Authentication Failure: " + authnhandlerErrors.getMessage());
+        val authnBundleMsg = getTranslatedMessageForExceptionClass(ex.getClass().getSimpleName(), request, applicationContext);
+        return String.format("%s:%s:%s", ex.getClass().getSimpleName(), authnMsg, authnBundleMsg);
+    }
+
+    private String getTranslatedMessageForExceptionClass(final String className,
+                                                         final HttpServletRequest request,
+                                                         final ApplicationContext applicationContext) {
+        try {
+            val msgKey = MessageBundleProperties.DEFAULT_BUNDLE_PREFIX_AUTHN_FAILURE + className;
+            return applicationContext.getMessage(msgKey, null, request.getLocale());
+        } catch (final Exception e) {
+            LOGGER.trace(e.getMessage(), e);
+            return StringUtils.EMPTY;
+        }
+    }
 }

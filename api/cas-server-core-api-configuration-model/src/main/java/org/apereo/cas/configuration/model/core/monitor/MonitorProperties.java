@@ -1,17 +1,26 @@
 package org.apereo.cas.configuration.model.core.monitor;
 
+import org.apereo.cas.configuration.model.core.authentication.PasswordEncoderProperties;
 import org.apereo.cas.configuration.model.support.ConnectionPoolingProperties;
 import org.apereo.cas.configuration.model.support.jpa.AbstractJpaProperties;
+import org.apereo.cas.configuration.model.support.ldap.AbstractLdapAuthenticationProperties;
 import org.apereo.cas.configuration.model.support.ldap.AbstractLdapProperties;
+import org.apereo.cas.configuration.model.support.ldap.LdapAuthorizationProperties;
 import org.apereo.cas.configuration.model.support.memcached.BaseMemcachedProperties;
 import org.apereo.cas.configuration.model.support.mongo.BaseMongoDbProperties;
 import org.apereo.cas.configuration.support.RequiresModule;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
-
-import java.io.Serializable;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.val;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.core.io.Resource;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Configuration properties class for cas.monitor.
@@ -23,7 +32,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MonitorProperties implements Serializable {
-
     private static final long serialVersionUID = -7047060071480971606L;
 
     /**
@@ -50,14 +58,6 @@ public class MonitorProperties implements Serializable {
     private MonitorWarningProperties warn = new MonitorWarningProperties();
 
     /**
-     * Options for monitoring sensitive CAS endpoints and resources.
-     * Acts as a parent class for all endpoints and settings
-     * and exposes shortcuts so security and capability of endpoints
-     * can be globally controlled from one spot and then overridden elsewhere.
-     */
-    private Endpoints endpoints = new Endpoints();
-
-    /**
      * Options for monitoring JDBC resources.
      */
     private Jdbc jdbc = new Jdbc();
@@ -76,6 +76,11 @@ public class MonitorProperties implements Serializable {
      * Options for monitoring MongoDb resources.
      */
     private MongoDb mongo = new MongoDb();
+
+    /**
+     * Properties relevant to endpoint security, etc.
+     */
+    private Endpoints endpoints = new Endpoints();
 
     @RequiresModule(name = "cas-server-core-monitor", automated = true)
     @Getter
@@ -119,10 +124,19 @@ public class MonitorProperties implements Serializable {
         private String maxWait = "PT5S";
 
         /**
-         * Options that define the LDAP connection pool to monitor.
+         * Options that define the thread pool that will ping on the ldap pool.
          */
         @NestedConfigurationProperty
         private ConnectionPoolingProperties pool = new ConnectionPoolingProperties();
+
+        /**
+         * Initialize minPoolSize for the monitor to zero.
+         * This prevents a bad ldap connection from causing server to fail startup.
+         * User can override this default via configuration.
+         */
+        public Ldap() {
+            setMinPoolSize(0);
+        }
     }
 
     @RequiresModule(name = "cas-server-support-memcached-monitor")
@@ -160,219 +174,116 @@ public class MonitorProperties implements Serializable {
         private String maxWait = "PT5S";
     }
 
-    /**
-     * All endpoints are modeled after
-     * Spring Boot’s own actuator endpoints and by default are considered sensitive.
-     * By default, no endpoint is enabled or allowed access.
-     * Endpoints may go through multiple levels and layers of security.
-     */
-    @Setter
-    @Getter
-    public abstract static class BaseEndpoint implements Serializable {
-
-        private static final long serialVersionUID = -6342643529009550539L;
-        /**
-         * Disable access to the endpoint completely.
-         */
-        private Boolean enabled;
-
-        /**
-         * Marking the endpoint as sensitive will force it to require authentication.
-         * The authentication scheme usually is done via the presence of spring security
-         * related modules who then handle the protocol and verifications of credentials.
-         * If you wish to choose alternative methods for endpoint security, such as letting
-         * CAS handle the sensitivity of the endpoint itself via CAS itself or via
-         * IP pattern checking, etc, set this flag to false. For more elaborate means of authenticating
-         * into an endpoint such as basic authn and verifications credentials with a master account, LDAP, JDBC, etc
-         * set this endpoint to true and configure spring security appropriate as is described by the docs.
-         * <p>
-         * By default all endpoints are considered disabled and sensitive.
-         * </p>
-         * <p>It's important to note that these endpoints and their settings only affect
-         * what CAS provides. Additional endpoints provided by Spring Boot are controlled
-         * elsewhere by Spring Boot itself.</p>
-         */
-        private Boolean sensitive;
-    }
-
     @RequiresModule(name = "cas-server-support-reports", automated = true)
     @Getter
     @Setter
-    public static class Endpoints extends BaseEndpoint {
-        private static final long serialVersionUID = -4725314424606890035L;
-        /**
-         * Dashboard related settings.
-         */
-        private Dashboard dashboard = new Dashboard();
+    public static class Endpoints implements Serializable {
+        private static final long serialVersionUID = -3375777593395683691L;
 
         /**
-         * Audit events related settings.
+         * Options for monitoring sensitive CAS endpoints and resources.
+         * Acts as a parent class for all endpoints and settings
+         * and exposes shortcuts so security and capability of endpoints
+         * can be globally controlled from one spot and then overridden elsewhere.
          */
-        private AuditEvents auditEvents = new AuditEvents();
+        private Map<String, ActuatorEndpointProperties> endpoint = new HashMap<>();
 
         /**
-         * Authentication events related settings.
+         * Enable Spring Security's JAAS authentication provider
+         * for admin status authorization and access control.
          */
-        private AuthenticationEvents authenticationEvents = new AuthenticationEvents();
+        private JaasSecurity jaas = new JaasSecurity();
 
         /**
-         * Configuration State related settings.
+         * Enable Spring Security's JDBC authentication provider
+         * for admin status authorization and access control.
          */
-        private ConfigurationState configurationState = new ConfigurationState();
+        private JdbcSecurity jdbc = new JdbcSecurity();
 
         /**
-         * Health check related settings.
+         * Enable Spring Security's LDAP authentication provider
+         * for admin status authorization and access control.
          */
-        private HealthCheck healthCheck = new HealthCheck();
+        private LdapSecurity ldap = new LdapSecurity();
 
-        /**
-         * Logging configuration related settings.
-         */
-        private LoggingConfig loggingConfig = new LoggingConfig();
+        @Getter
+        @Setter
+        public static class JaasSecurity implements Serializable {
 
-        /**
-         * Metrics related settings.
-         */
-        private Metrics metrics = new Metrics();
+            private static final long serialVersionUID = -3024678577827371641L;
 
-        /**
-         * Attribute resolution related settings.
-         */
-        private AttributeResolution attributeResolution = new AttributeResolution();
+            /**
+             * JAAS login resource file.
+             */
+            private transient Resource loginConfig;
 
-        /**
-         * Single Sign on sessions report related settings.
-         */
-        private SingleSignOnReport singleSignOnReport = new SingleSignOnReport();
+            /**
+             * If set, a call to {@code Configuration#refresh()}
+             * will be made by {@code #configureJaas(Resource)} method.
+             */
+            private boolean refreshConfigurationOnStartup = true;
 
-        /**
-         * Statistics related settings.
-         */
-        private Statistics statistics = new Statistics();
+            /**
+             * The login context name should coincide with a given index in the login config specified.
+             * This name is used as the index to the configuration specified in the login config property.
+             *
+             * <pre>
+             * JAASTest {
+             * org.springframework.security.authentication.jaas.TestLoginModule required;
+             * };
+             * </pre>
+             * In the above example, {@code JAASTest} should be set as the context name.
+             */
+            private String loginContextName;
+        }
 
-        /**
-         * Discovery related settings.
-         */
-        private Discovery discovery = new Discovery();
+        @Getter
+        @Setter
+        public static class LdapSecurity extends AbstractLdapAuthenticationProperties {
 
-        /**
-         * Trusted devices related settings.
-         */
-        private TrustedDevices trustedDevices = new TrustedDevices();
+            private static final long serialVersionUID = -7333244539096172557L;
 
-        /**
-         * Status related settings.
-         */
-        private Status status = new Status();
+            /**
+             * Control authorization settings via LDAP
+             * after ldap authentication.
+             */
+            @NestedConfigurationProperty
+            private LdapAuthorizationProperties ldapAuthz = new LdapAuthorizationProperties();
+        }
 
-        /**
-         * Single Sign On Status related settings.
-         */
-        private SingleSignOnStatus singleSignOnStatus = new SingleSignOnStatus();
+        @Getter
+        @Setter
+        public static class JdbcSecurity extends AbstractJpaProperties {
 
-        /**
-         * Spring webflow related settings.
-         */
-        private SpringWebflowReport springWebflowReport = new SpringWebflowReport();
+            private static final long serialVersionUID = 2625666117528467867L;
 
-        /**
-         * Registered services and service registry related settings.
-         */
-        private RegisteredServicesReport registeredServicesReport = new RegisteredServicesReport();
+            /**
+             * Prefix to add to the role.
+             */
+            private String rolePrefix;
 
-        /**
-         * Configuration metadata, documentation and fields, etc.
-         */
-        private ConfigurationMetadata configurationMetadata = new ConfigurationMetadata();
+            /**
+             * Query to execute in order to authenticate users via JDBC.
+             * Example:
+             * {@code SELECT username,password,enabled FROM users WHERE username=?}
+             */
+            private String query;
+
+            /**
+             * Password encoder properties.
+             */
+            @NestedConfigurationProperty
+            private PasswordEncoderProperties passwordEncoder = new PasswordEncoderProperties();
+        }
 
         public Endpoints() {
-            setSensitive(Boolean.TRUE);
-            setEnabled(Boolean.FALSE);
+            val defaultProps = new ActuatorEndpointProperties();
+            defaultProps.setAccess(Stream.of(ActuatorEndpointProperties.EndpointAccessLevel.DENY).collect(Collectors.toList()));
+            getEndpoint().put("defaults", defaultProps);
         }
 
-        @RequiresModule(name = "cas-server-support-reports", automated = true)
-        public static class Dashboard extends BaseEndpoint {
-            private static final long serialVersionUID = 6907100597153582851L;
-        }
-
-        @RequiresModule(name = "cas-server-support-reports", automated = true)
-        public static class AuditEvents extends BaseEndpoint {
-            private static final long serialVersionUID = 3343622053293351139L;
-        }
-
-        @RequiresModule(name = "cas-server-support-reports", automated = true)
-        public static class AuthenticationEvents extends BaseEndpoint {
-            private static final long serialVersionUID = -3437901726997576756L;
-        }
-
-        @RequiresModule(name = "cas-server-core-configuration", automated = true)
-        public static class ConfigurationState extends BaseEndpoint {
-            private static final long serialVersionUID = 5810340952202590071L;
-        }
-
-        @RequiresModule(name = "cas-server-core-monitor", automated = true)
-        public static class HealthCheck extends BaseEndpoint {
-            private static final long serialVersionUID = 1304521673247289954L;
-        }
-
-        @RequiresModule(name = "cas-server-core-logging", automated = true)
-        public static class LoggingConfig extends BaseEndpoint {
-            private static final long serialVersionUID = 3380609022897326907L;
-        }
-
-        @RequiresModule(name = "cas-server-support-metrics", automated = true)
-        public static class Metrics extends BaseEndpoint {
-            private static final long serialVersionUID = 8904907489485781427L;
-        }
-
-        @RequiresModule(name = "cas-server-support-person-directory", automated = true)
-        public static class AttributeResolution extends BaseEndpoint {
-            private static final long serialVersionUID = -8767474517054230527L;
-        }
-
-        @RequiresModule(name = "cas-server-core-web", automated = true)
-        public static class SingleSignOnReport extends BaseEndpoint {
-            private static final long serialVersionUID = -6733579261041320425L;
-        }
-
-        @RequiresModule(name = "cas-server-core-web", automated = true)
-        public static class Statistics extends BaseEndpoint {
-            private static final long serialVersionUID = 4244607771350272091L;
-        }
-
-        @RequiresModule(name = "cas-server-support-mfa-trusted", automated = true)
-        public static class TrustedDevices extends BaseEndpoint {
-            private static final long serialVersionUID = -9185848511703326325L;
-        }
-
-        @RequiresModule(name = "cas-server-core-web", automated = true)
-        public static class Status extends BaseEndpoint {
-            private static final long serialVersionUID = -750490138316116795L;
-        }
-
-        @RequiresModule(name = "cas-server-support-discovery", automated = true)
-        public static class Discovery extends BaseEndpoint {
-            private static final long serialVersionUID = 6642274054226792542L;
-        }
-
-        @RequiresModule(name = "cas-server-core", automated = true)
-        public static class SingleSignOnStatus extends BaseEndpoint {
-            private static final long serialVersionUID = 6835023873478746895L;
-        }
-
-        @RequiresModule(name = "cas-server-core-webflow", automated = true)
-        public static class SpringWebflowReport extends BaseEndpoint {
-            private static final long serialVersionUID = -6188494393130226404L;
-        }
-
-        @RequiresModule(name = "cas-server-core-services", automated = true)
-        public static class RegisteredServicesReport extends BaseEndpoint {
-            private static final long serialVersionUID = 821037221486732220L;
-        }
-
-        @RequiresModule(name = "cas-server-core-configuration", automated = true)
-        public static class ConfigurationMetadata extends BaseEndpoint {
-            private static final long serialVersionUID = 8568828537931315971L;
+        public ActuatorEndpointProperties getDefaultEndpointProperties() {
+            return getEndpoint().get("defaults");
         }
     }
 }

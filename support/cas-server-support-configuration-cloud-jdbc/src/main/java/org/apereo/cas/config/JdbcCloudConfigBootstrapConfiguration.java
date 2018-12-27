@@ -1,9 +1,11 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.model.support.jpa.AbstractJpaProperties;
 import org.apereo.cas.configuration.support.JpaBeans;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cloud.bootstrap.config.PropertySourceLocator;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -11,10 +13,8 @@ import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * This is {@link JdbcCloudConfigBootstrapConfiguration}.
@@ -26,19 +26,20 @@ import java.util.Properties;
 @Slf4j
 public class JdbcCloudConfigBootstrapConfiguration implements PropertySourceLocator {
 
+    private static final String CAS_CONFIGURATION_PREFIX = "cas.spring.cloud.jdbc";
 
     @Override
     public PropertySource<?> locate(final Environment environment) {
-        final Properties props = new Properties();
+        val props = new Properties();
 
         try {
-            final JdbcCloudConnection connection = new JdbcCloudConnection(environment);
-            final DataSource dataSource = JpaBeans.newDataSource(connection);
-            final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            final List<Map<String, Object>> rows = jdbcTemplate.queryForList(connection.getSql());
-            for (final Map row : rows) {
-                props.put(row.get("name"), row.get("value"));
-            }
+            val connection = new JdbcCloudConnection(environment);
+            val dataSource = JpaBeans.newDataSource(connection);
+            val jdbcTemplate = new JdbcTemplate(dataSource);
+            val rows = jdbcTemplate.queryForList(connection.getSql());
+            props.putAll(rows
+                .stream()
+                .collect(Collectors.toMap(row -> row.get("name"), row -> row.get("value"), (a, b) -> b, Properties::new)));
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -56,10 +57,10 @@ public class JdbcCloudConfigBootstrapConfiguration implements PropertySourceLoca
         }
 
         private static String getSetting(final Environment environment, final String key) {
-            return environment.getProperty("cas.spring.cloud.jdbc." + key);
+            return environment.getProperty(CAS_CONFIGURATION_PREFIX + '.' + key);
         }
 
-        public String getSql() {
+        String getSql() {
             return StringUtils.defaultIfBlank(getSetting(environment, "sql"), SQL);
         }
 

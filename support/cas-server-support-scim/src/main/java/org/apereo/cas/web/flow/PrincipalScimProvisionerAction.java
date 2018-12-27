@@ -1,12 +1,11 @@
 package org.apereo.cas.web.flow;
 
+import org.apereo.cas.api.PrincipalProvisioner;
+import org.apereo.cas.web.support.WebUtils;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apereo.cas.api.PrincipalProvisioner;
-import org.apereo.cas.authentication.Authentication;
-import org.apereo.cas.authentication.Credential;
-import org.apereo.cas.authentication.principal.Principal;
-import org.apereo.cas.web.support.WebUtils;
+import lombok.val;
 import org.springframework.webflow.action.AbstractAction;
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
@@ -24,19 +23,19 @@ public class PrincipalScimProvisionerAction extends AbstractAction {
 
     @Override
     protected Event doExecute(final RequestContext requestContext) {
-        final Credential c = WebUtils.getCredential(requestContext);
+        val c = WebUtils.getCredential(requestContext);
         if (c == null) {
             LOGGER.warn("No credential found in the request context to provision");
             return success();
         }
-        final Authentication authentication = WebUtils.getAuthentication(requestContext);
+        val authentication = WebUtils.getAuthentication(requestContext);
         if (authentication == null) {
             LOGGER.warn("No authentication found in the request context to provision");
             return success();
         }
-        final Principal p = authentication.getPrincipal();
+        val p = authentication.getPrincipal();
         LOGGER.debug("Starting to provision principal [{}]", p);
-        final boolean res = this.scimProvisioner.create(authentication, p, c);
+        val res = this.scimProvisioner.create(authentication, p, c);
         if (res) {
             LOGGER.debug("Provisioning of principal [{}] executed successfully", p);
         } else {

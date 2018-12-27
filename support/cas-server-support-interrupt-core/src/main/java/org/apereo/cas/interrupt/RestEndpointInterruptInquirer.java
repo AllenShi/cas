@@ -1,10 +1,5 @@
 package org.apereo.cas.interrupt;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpResponse;
 import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.Credential;
@@ -14,8 +9,18 @@ import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.util.HttpUtils;
 import org.apereo.cas.web.support.WebUtils;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpResponse;
+import org.springframework.webflow.execution.RequestContext;
+
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This is {@link RestEndpointInterruptInquirer}.
@@ -24,7 +29,7 @@ import java.util.Map;
  * @since 5.2.0
  */
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class RestEndpointInterruptInquirer extends BaseInterruptInquirer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
@@ -36,10 +41,11 @@ public class RestEndpointInterruptInquirer extends BaseInterruptInquirer {
 
     @Override
     public InterruptResponse inquireInternal(final Authentication authentication, final RegisteredService registeredService,
-                                             final Service service, final Credential credential) {
+                                             final Service service, final Credential credential,
+                                             final RequestContext requestContext) {
         HttpResponse response = null;
         try {
-            final Map<String, Object> parameters = new HashMap<>();
+            val parameters = new HashMap<String, Object>();
             parameters.put("username", authentication.getPrincipal().getId());
 
             if (service != null) {
@@ -48,16 +54,21 @@ public class RestEndpointInterruptInquirer extends BaseInterruptInquirer {
             if (registeredService != null) {
                 parameters.put("registeredService", registeredService.getServiceId());
             }
-            final String language = WebUtils.getHttpServletRequestAcceptLanguageFromRequestContext();
-            final Map<String, Object> headers = new HashMap<>();
-            if (language != null) {
-                headers.put("Accept-Language", language);
+
+            val headers = new HashMap<String, Object>();
+            val request = WebUtils.getHttpServletRequestFromExternalWebflowContext(requestContext);
+            val acceptedLanguage = request.getHeader("accept-language");
+            if (StringUtils.isNotBlank(acceptedLanguage)) {
+                headers.put("Accept-Language", acceptedLanguage);
             }
+
             response = HttpUtils.execute(restProperties.getUrl(), restProperties.getMethod(),
                 restProperties.getBasicAuthUsername(), restProperties.getBasicAuthPassword(),
                 parameters, headers);
             if (response != null && response.getEntity() != null) {
-                return MAPPER.readValue(response.getEntity().getContent(), InterruptResponse.class);
+                val content = response.getEntity().getContent();
+                val result = IOUtils.toString(content, StandardCharsets.UTF_8);
+                return MAPPER.readValue(result, InterruptResponse.class);
             }
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);

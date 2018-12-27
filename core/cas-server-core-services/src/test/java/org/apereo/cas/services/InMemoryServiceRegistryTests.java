@@ -1,11 +1,13 @@
 package org.apereo.cas.services;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+
+import static org.mockito.Mockito.*;
 
 /**
  * This is test cases for {@link InMemoryServiceRegistry}.
@@ -13,7 +15,6 @@ import java.util.Collection;
  * @author Misagh Moayyed
  * @since 4.1.0
  */
-@Slf4j
 @RunWith(Parameterized.class)
 public class InMemoryServiceRegistryTests extends AbstractServiceRegistryTests {
 
@@ -21,13 +22,13 @@ public class InMemoryServiceRegistryTests extends AbstractServiceRegistryTests {
         super(registeredServiceClass);
     }
 
-    @Override
-    public ServiceRegistry getNewServiceRegistry() {
-        return new InMemoryServiceRegistry();
-    }
-
     @Parameterized.Parameters
     public static Collection<Object> getTestParameters() {
-        return Arrays.asList(RegexRegisteredService.class);
+        return Collections.singletonList(RegexRegisteredService.class);
+    }
+
+    @Override
+    public ServiceRegistry getNewServiceRegistry() {
+        return new InMemoryServiceRegistry(mock(ApplicationEventPublisher.class));
     }
 }

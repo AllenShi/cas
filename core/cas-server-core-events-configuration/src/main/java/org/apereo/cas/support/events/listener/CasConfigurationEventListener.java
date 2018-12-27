@@ -1,10 +1,11 @@
 package org.apereo.cas.support.events.listener;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apereo.cas.configuration.CasConfigurationPropertiesEnvironmentManager;
 import org.apereo.cas.support.events.config.CasConfigurationModifiedEvent;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.cloud.context.refresh.ContextRefresher;
@@ -21,22 +22,16 @@ import java.util.Collection;
  * @since 5.1.0
  */
 @Slf4j
+@RequiredArgsConstructor
 public class CasConfigurationEventListener {
 
-    @Autowired
-    private ConfigurationPropertiesBindingPostProcessor binder;
-
-    @Autowired(required = false)
-    private ContextRefresher contextRefresher;
-
-    @Autowired
-    private ApplicationContext applicationContext;
-    
     private final CasConfigurationPropertiesEnvironmentManager configurationPropertiesEnvironmentManager;
-    
-    public CasConfigurationEventListener(final CasConfigurationPropertiesEnvironmentManager configurationPropertiesEnvironmentManager) {
-        this.configurationPropertiesEnvironmentManager = configurationPropertiesEnvironmentManager;
-    }
+
+    private final ConfigurationPropertiesBindingPostProcessor binder;
+
+    private final ContextRefresher contextRefresher;
+
+    private final ApplicationContext applicationContext;
 
     /**
      * Handle refresh event when issued to this CAS server locally.
@@ -45,7 +40,7 @@ public class CasConfigurationEventListener {
      */
     @EventListener
     public void handleRefreshEvent(final EnvironmentChangeEvent event) {
-        LOGGER.debug("Received event [{}]", event);
+        LOGGER.trace("Received event [{}]", event);
         rebind();
     }
 
@@ -65,14 +60,14 @@ public class CasConfigurationEventListener {
             LOGGER.info("Received event [{}]. Refreshing CAS configuration...", event);
             Collection<String> keys = null;
             try {
-                keys = this.contextRefresher.refresh();
+                keys = contextRefresher.refresh();
                 LOGGER.debug("Refreshed the following settings: [{}].", keys);
             } catch (final Exception e) {
                 LOGGER.trace(e.getMessage(), e);
             } finally {
                 rebind();
                 LOGGER.info("CAS finished rebinding configuration with new settings [{}]",
-                        ObjectUtils.defaultIfNull(keys, new ArrayList<>(0)));
+                    ObjectUtils.defaultIfNull(keys, new ArrayList<>(0)));
             }
         }
     }

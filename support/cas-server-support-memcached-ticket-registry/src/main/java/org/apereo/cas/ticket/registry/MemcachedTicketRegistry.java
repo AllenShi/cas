@@ -1,15 +1,18 @@
 package org.apereo.cas.ticket.registry;
 
-import lombok.AllArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import net.spy.memcached.MemcachedClientIF;
-import org.apache.commons.pool2.ObjectPool;
 import org.apereo.cas.ticket.Ticket;
 
-import javax.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import net.spy.memcached.MemcachedClientIF;
+import org.apache.commons.pool2.ObjectPool;
+import org.springframework.beans.factory.DisposableBean;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.function.Predicate;
 
 /**
  * Key-value ticket registry implementation that stores tickets in memcached keyed on the ticket ID.
@@ -20,19 +23,33 @@ import java.util.Collection;
  */
 @SuppressWarnings("FutureReturnValueIgnored")
 @Slf4j
-@AllArgsConstructor
-public class MemcachedTicketRegistry extends AbstractTicketRegistry {
+@RequiredArgsConstructor
+public class MemcachedTicketRegistry extends AbstractTicketRegistry implements DisposableBean {
 
     /**
      * Memcached client.
      */
     private final ObjectPool<MemcachedClientIF> connectionPool;
 
+    /**
+     * If not time out value is specified, expire the ticket immediately.
+     *
+     * @param ticket the ticket
+     * @return timeout in milliseconds.
+     */
+    private static int getTimeout(final Ticket ticket) {
+        val ttl = ticket.getExpirationPolicy().getTimeToLive().intValue();
+        if (ttl == 0) {
+            return 1;
+        }
+        return ttl;
+    }
+
     @Override
     public Ticket updateTicket(final Ticket ticketToUpdate) {
-        final Ticket ticket = encodeTicket(ticketToUpdate);
+        val ticket = encodeTicket(ticketToUpdate);
         LOGGER.debug("Updating ticket [{}]", ticket);
-        final MemcachedClientIF clientFromPool = getClientFromPool();
+        val clientFromPool = getClientFromPool();
         try {
             clientFromPool.replace(ticket.getId(), getTimeout(ticketToUpdate), ticket);
         } catch (final Exception e) {
@@ -45,9 +62,9 @@ public class MemcachedTicketRegistry extends AbstractTicketRegistry {
 
     @Override
     public void addTicket(final Ticket ticketToAdd) {
-        final MemcachedClientIF clientFromPool = getClientFromPool();
+        val clientFromPool = getClientFromPool();
         try {
-            final Ticket ticket = encodeTicket(ticketToAdd);
+            val ticket = encodeTicket(ticketToAdd);
             LOGGER.debug("Adding ticket [{}]", ticket);
             clientFromPool.set(ticket.getId(), getTimeout(ticketToAdd), ticket);
         } catch (final Exception e) {
@@ -65,8 +82,8 @@ public class MemcachedTicketRegistry extends AbstractTicketRegistry {
 
     @Override
     public boolean deleteSingleTicket(final String ticketIdToDelete) {
-        final MemcachedClientIF clientFromPool = getClientFromPool();
-        final String ticketId = encodeTicketId(ticketIdToDelete);
+        val clientFromPool = getClientFromPool();
+        val ticketId = encodeTicketId(ticketIdToDelete);
         try {
             clientFromPool.delete(ticketId);
         } catch (final Exception e) {
@@ -78,19 +95,17 @@ public class MemcachedTicketRegistry extends AbstractTicketRegistry {
     }
 
     @Override
-    public Ticket getTicket(final String ticketIdToGet) {
-        final MemcachedClientIF clientFromPool = getClientFromPool();
-        final String ticketId = encodeTicketId(ticketIdToGet);
+    public Ticket getTicket(final String ticketIdToGet, final Predicate<Ticket> predicate) {
+        val clientFromPool = getClientFromPool();
+        val ticketId = encodeTicketId(ticketIdToGet);
         try {
-            final Ticket ticketFromCache = (Ticket) clientFromPool.get(ticketId);
+            val ticketFromCache = (Ticket) clientFromPool.get(ticketId);
             if (ticketFromCache != null) {
-                final Ticket result = decodeTicket(ticketFromCache);
-                if (result != null && result.isExpired()) {
-                    LOGGER.debug("Ticket [{}] has expired and is now removed from the memcached", result.getId());
-                    deleteSingleTicket(ticketId);
-                    return null;
+                val result = decodeTicket(ticketFromCache);
+                if (predicate.test(result)) {
+                    return result;
                 }
-                return result;
+                return null;
             }
         } catch (final Exception e) {
             LOGGER.error("Failed fetching [{}] ", ticketId, e);
@@ -101,7 +116,7 @@ public class MemcachedTicketRegistry extends AbstractTicketRegistry {
     }
 
     @Override
-    public Collection<Ticket> getTickets() {
+    public Collection<? extends Ticket> getTickets() {
         LOGGER.debug("getTickets() isn't supported. Returning empty list");
         return new ArrayList<>(0);
     }
@@ -109,23 +124,9 @@ public class MemcachedTicketRegistry extends AbstractTicketRegistry {
     /**
      * Destroy the client and shut down.
      */
-    @PreDestroy
+    @Override
     public void destroy() {
         this.connectionPool.close();
-    }
-
-    /**
-     * If not time out value is specified, expire the ticket immediately.
-     *
-     * @param ticket the ticket
-     * @return timeout in milliseconds.
-     */
-    private static int getTimeout(final Ticket ticket) {
-        final int ttl = ticket.getExpirationPolicy().getTimeToLive().intValue();
-        if (ttl == 0) {
-            return 1;
-        }
-        return ttl;
     }
 
     @SneakyThrows

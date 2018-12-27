@@ -1,13 +1,15 @@
 package org.apereo.cas.configuration.model.support.mfa;
 
 import org.apereo.cas.configuration.support.RequiresModule;
+
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.core.io.Resource;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Configuration properties class for cas.mfa.
@@ -16,7 +18,6 @@ import lombok.Setter;
  * @since 5.0.0
  */
 @RequiresModule(name = "cas-server-core-authentication", automated = true)
-
 @Getter
 @Setter
 public class MultifactorAuthenticationProperties implements Serializable {
@@ -25,7 +26,7 @@ public class MultifactorAuthenticationProperties implements Serializable {
 
     /**
      * Attribute returned in the final CAS validation payload
-     * that indicates the authentication context class satisified
+     * that indicates the authentication context class satisfied
      * in the event of a multifactor authentication attempt.
      */
     private String authenticationContextAttribute = "authnContextClass";
@@ -167,12 +168,6 @@ public class MultifactorAuthenticationProperties implements Serializable {
     private U2FMultifactorProperties u2f = new U2FMultifactorProperties();
 
     /**
-     * Activate and configure a multifactor authentication provider via Microsoft Azure.
-     */
-    @NestedConfigurationProperty
-    private AzureMultifactorProperties azure = new AzureMultifactorProperties();
-
-    /**
      * Activate and configure a multifactor authentication with the capability to trust and remember devices.
      */
     @NestedConfigurationProperty
@@ -194,7 +189,13 @@ public class MultifactorAuthenticationProperties implements Serializable {
      * Activate and configure a multifactor authentication provider via Google Authenticator.
      */
     @NestedConfigurationProperty
-    private GAuthMultifactorProperties gauth = new GAuthMultifactorProperties();
+    private GoogleAuthenticatorMultifactorProperties gauth = new GoogleAuthenticatorMultifactorProperties();
+
+    /**
+     * Activate and configure a multifactor authentication provider via CAS itself.
+     */
+    @NestedConfigurationProperty
+    private CasSimpleMultifactorProperties simple = new CasSimpleMultifactorProperties();
 
     /**
      * Activate and configure a multifactor authentication provider via Duo Security.

@@ -1,11 +1,13 @@
 package org.apereo.cas.configuration.model.support.digest;
 
 import org.apereo.cas.configuration.support.RequiresModule;
+
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * This is {@link DigestProperties}.
@@ -14,7 +16,6 @@ import lombok.Setter;
  * @since 5.0.0
  */
 @RequiresModule(name = "cas-server-support-digest-authentication")
-
 @Getter
 @Setter
 public class DigestProperties implements Serializable {
@@ -41,4 +42,9 @@ public class DigestProperties implements Serializable {
      * Name of the authentication handler.
      */
     private String name;
+
+    /**
+     * Order of the authentication handler in the chain.
+     */
+    private Integer order;
 }

@@ -4,7 +4,7 @@ package org.apereo.cas.authentication.principal;
  * This is {@link ClientCustomPropertyConstants}.
  *
  * @author Misagh Moayyed
- * @since 5.3.4
+ * @since 6.0.0
  */
 public interface ClientCustomPropertyConstants {
     /**

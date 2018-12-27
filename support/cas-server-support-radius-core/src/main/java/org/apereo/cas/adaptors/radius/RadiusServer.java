@@ -32,22 +32,22 @@ public interface RadiusServer extends Serializable {
      *
      * @param username Non-null username to authenticate.
      * @param password Password to authenticate.
-     * @return {@link RadiusResponse} on success, null otherwise.
+     * @return {@link CasRadiusResponse} on success, null otherwise.
      * @throws Exception On indeterminate case where authentication was prevented by a system (e.g. IO) error.
      */
-    default RadiusResponse authenticate(final String username, final String password) throws Exception {
+    default CasRadiusResponse authenticate(final String username, final String password) throws Exception {
         return authenticate(username, password, Optional.empty());
     }
 
     /**
-     * Method to authenticate a set of credentials.
+     * Authenticate radius response.
      *
-     * @param username Non-null username to authenticate.
-     * @param password Password to authenticate.
+     * @param username the username
+     * @param password the password
      * @param state    the state
-     * @return {@link RadiusResponse} on success, null otherwise.
-     * @throws Exception On indeterminate case where authentication was prevented by a system (e.g. IO) error.
+     * @return the radius response
+     * @throws Exception the exception
      */
-    RadiusResponse authenticate(String username, String password, Optional state) throws Exception;
+    CasRadiusResponse authenticate(String username, String password, Optional state) throws Exception;
 
 }

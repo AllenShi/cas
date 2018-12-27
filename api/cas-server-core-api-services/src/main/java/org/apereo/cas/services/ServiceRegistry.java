@@ -1,6 +1,8 @@
 package org.apereo.cas.services;
 
-import java.util.List;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Collection;
 
 /**
  * Registry of all RegisteredServices.
@@ -32,7 +34,7 @@ public interface ServiceRegistry {
      *
      * @return the collection of services.
      */
-    List<RegisteredService> load();
+    Collection<RegisteredService> load();
 
     /**
      * Find service by the numeric id.
@@ -59,7 +61,7 @@ public interface ServiceRegistry {
     default RegisteredService findServiceByExactServiceId(final String id) {
         return load()
             .stream()
-            .filter(r -> r.getServiceId().equals(id))
+            .filter(r -> StringUtils.isNotBlank(r.getServiceId()) && r.getServiceId().equals(id))
             .findFirst()
             .orElse(null);
     }
@@ -79,7 +81,7 @@ public interface ServiceRegistry {
     }
 
     /**
-     * Return number of records held in this service registry. Provides Java 8 supported default implementation so that implementations
+     * Return number of records held in this service registry. Provides default implementation so that implementations
      * needed this new functionality could override it and other implementations not caring for it could be left alone.
      *
      * @return number of registered services held by any particular implementation

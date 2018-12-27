@@ -7,10 +7,10 @@ import org.apereo.cas.web.extractcert.X509CertificateExtractor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.util.MultiValueMap;
 
 import javax.servlet.http.HttpServletRequest;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,8 +34,8 @@ public class X509RestHttpRequestHeaderCredentialFactory implements RestHttpReque
 
     @Override
     public List<Credential> fromRequest(final HttpServletRequest request, final MultiValueMap<String, String> requestBody) {
-        final List<Credential> credentials = new ArrayList<Credential>();
-        final X509Certificate[] certFromHeader = certificateExtractor.extract(request);
+        val credentials = new ArrayList<Credential>();
+        val certFromHeader = certificateExtractor.extract(request);
         if (certFromHeader != null) {
             LOGGER.debug("Certificate found in HTTP request via {}", certificateExtractor.getClass().getName());
             credentials.add(new X509CertificateCredential(certFromHeader));

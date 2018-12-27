@@ -1,13 +1,16 @@
 package org.apereo.cas.mongo;
 
+import org.apereo.cas.util.DateTimeUtils;
+import org.apereo.cas.util.RegexUtils;
+
 import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.mongodb.DBObject;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
-import org.apereo.cas.util.DateTimeUtils;
 import org.apereo.services.persondir.IPersonAttributes;
 import org.bson.BsonReader;
 import org.bson.BsonTimestamp;
@@ -18,18 +21,18 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.ReadingConverter; 
-import org.springframework.data.convert.WritingConverter; 
+import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.WritingConverter;
 
 import java.lang.ref.ReferenceQueue;
 import java.security.cert.CertPath;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 /**
  * Collection of mongo converters that map objects to
@@ -38,7 +41,6 @@ import java.util.Date;
  * @author Misagh Moayyed
  * @since 4.1
  */
-@Slf4j
 @NoArgsConstructor
 public abstract class BaseConverters {
 
@@ -115,6 +117,14 @@ public abstract class BaseConverters {
     }
 
     /**
+     * The type Cache builder converter.
+     *
+     * @since 4.1
+     */
+    public static class CacheBuilderConverter extends NullConverter<CacheBuilder, DBObject> {
+    }
+
+    /**
      * The type Runnable converter.
      *
      * @since 4.1
@@ -160,33 +170,21 @@ public abstract class BaseConverters {
      * The type String to zoned date time converter.
      */
     @ReadingConverter
-    public static class StringToDateConverter implements Converter<String, Date> {
-        @Override
-        public Date convert(final String source) {
-            if (StringUtils.isBlank(source)) {
-                return null;
-            }
-            try {
-                final ZonedDateTime zdt = ZonedDateTime.parse(source);
-                return DateTimeUtils.dateOf(zdt);
-            } catch (final DateTimeParseException e) {
-                final LocalDateTime ldt = DateTimeUtils.localDateTimeOf(source);
-                return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
-            }
-        }
-    }
-
-    /**
-     * The type String to zoned date time converter.
-     */
-    @ReadingConverter
-    public static class StringToZonedDateTimeConverter implements Converter<String, ZonedDateTime> {
+    static class StringToZonedDateTimeConverter implements Converter<String, ZonedDateTime> {
         @Override
         public ZonedDateTime convert(final String source) {
             if (StringUtils.isBlank(source)) {
                 return null;
             }
-            return ZonedDateTime.parse(source);
+            return DateTimeUtils.zonedDateTimeOf(source);
+        }
+    }
+
+    @ReadingConverter
+    static class ObjectIdToLongConverter implements Converter<ObjectId, Long> {
+        @Override
+        public Long convert(final ObjectId source) {
+            return Long.valueOf(source.getMachineIdentifier());
         }
     }
 
@@ -212,12 +210,54 @@ public abstract class BaseConverters {
     }
 
     /**
+     * The type BsonTimestamp to date converter.
+     */
+    public static class BsonTimestampToDateConverter implements Converter<BsonTimestamp, Date> {
+        @Override
+        public Date convert(final BsonTimestamp source) {
+            return new Date(source.getTime());
+        }
+    }
+
+    @ReadingConverter
+    static class StringToPatternConverter implements Converter<String, Pattern> {
+        @Override
+        public Pattern convert(final String source) {
+            if (StringUtils.isBlank(source)) {
+                return null;
+            }
+            return RegexUtils.createPattern(source);
+        }
+    }
+
+    /**
+     * The type Pattern to string converter.
+     */
+    @WritingConverter
+    public static class PatternToStringConverter implements Converter<Pattern, String> {
+        @Override
+        public String convert(final Pattern source) {
+            return source.pattern();
+        }
+    }
+
+    /**
+     * The type BsonTimestamp to String converter.
+     */
+    public static class BsonTimestampToStringConverter implements Converter<BsonTimestamp, String> {
+        @Override
+        public String convert(final BsonTimestamp source) {
+            return String.valueOf(source.getTime());
+        }
+    }
+
+    /**
      * The type Zoned date time transformer.
      */
     public static class ZonedDateTimeTransformer implements Transformer {
         @Override
         public Object transform(final Object o) {
-            final ZonedDateTime value = (ZonedDateTime) o;
+            val value = (ZonedDateTime) o;
             return value.toString();
         }
     }
@@ -237,8 +277,8 @@ public abstract class BaseConverters {
         private static class ZonedDateTimeCodec implements Codec<ZonedDateTime> {
             @Override
             public ZonedDateTime decode(final BsonReader reader, final DecoderContext decoderContext) {
-                final BsonTimestamp stamp = reader.readTimestamp();
-                final Date dt = new Date(stamp.getTime());
+                val stamp = reader.readTimestamp();
+                val dt = new Date(stamp.getTime());
                 return DateTimeUtils.zonedDateTimeOf(dt);
             }
 

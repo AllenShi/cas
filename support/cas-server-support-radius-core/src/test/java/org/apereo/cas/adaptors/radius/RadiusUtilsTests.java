@@ -2,15 +2,14 @@ package org.apereo.cas.adaptors.radius;
 
 import org.apereo.cas.util.CollectionUtils;
 
+import lombok.val;
 import net.jradius.dictionary.Attr_ClientId;
-import net.jradius.packet.attribute.RadiusAttribute;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.security.auth.login.FailedLoginException;
-import java.util.Map;
+
 import java.util.Optional;
 
 import static org.junit.Assert.*;
@@ -28,31 +27,31 @@ public class RadiusUtilsTests {
 
     @Test
     public void verifyActionPasses() throws Exception {
-        final RadiusServer server = mock(RadiusServer.class);
-        final RadiusAttribute attribute = new Attr_ClientId("client_id");
-        final RadiusResponse response = new RadiusResponse(100, 100, CollectionUtils.wrapList(attribute));
-        when(server.authenticate(anyString(), anyString(), anyObject())).thenReturn(response);
-        final Pair<Boolean, Optional<Map<String, Object>>> result = RadiusUtils.authenticate("casuser", "Mellon",
-            Optional.empty(), CollectionUtils.wrapList(server), true, false);
+        val server = mock(RadiusServer.class);
+        val attribute = new Attr_ClientId("client_id");
+        val response = new CasRadiusResponse(100, 100, CollectionUtils.wrapList(attribute));
+        when(server.authenticate(anyString(), anyString(), any())).thenReturn(response);
+        val result = RadiusUtils.authenticate("casuser", "Mellon",
+            CollectionUtils.wrapList(server), true, false, Optional.empty());
         assertTrue(result.getKey());
         assertTrue(result.getRight().isPresent());
     }
 
     @Test
     public void verifyActionFails() throws Exception {
-        final RadiusServer server = mock(RadiusServer.class);
-        when(server.authenticate(anyString(), anyString(), anyObject())).thenReturn(null);
+        val server = mock(RadiusServer.class);
+        when(server.authenticate(anyString(), anyString())).thenReturn(null);
         thrown.expect(FailedLoginException.class);
         RadiusUtils.authenticate("casuser", "Mellon",
-            Optional.empty(), CollectionUtils.wrapList(server), false, false);
+            CollectionUtils.wrapList(server), false, false, Optional.empty());
     }
 
     @Test
     public void verifyActionFailsWithException() throws Exception {
-        final RadiusServer server = mock(RadiusServer.class);
-        when(server.authenticate(anyString(), anyString(), anyObject())).thenThrow(RuntimeException.class);
-        thrown.expect(RuntimeException.class);
-        RadiusUtils.authenticate("casuser", "Mellon", Optional.empty(),
-            CollectionUtils.wrapList(server), false, false);
+        val server = mock(RadiusServer.class);
+        when(server.authenticate(anyString(), anyString())).thenThrow(FailedLoginException.class);
+        thrown.expect(FailedLoginException.class);
+        RadiusUtils.authenticate("casuser", "Mellon",
+            CollectionUtils.wrapList(server), false, false, Optional.empty());
     }
 }

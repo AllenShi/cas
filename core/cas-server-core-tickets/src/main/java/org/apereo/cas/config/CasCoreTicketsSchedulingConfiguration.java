@@ -1,6 +1,5 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.logout.LogoutManager;
 import org.apereo.cas.ticket.registry.DefaultTicketRegistryCleaner;
@@ -8,6 +7,9 @@ import org.apereo.cas.ticket.registry.NoOpTicketRegistryCleaner;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.ticket.registry.TicketRegistryCleaner;
 import org.apereo.cas.ticket.registry.support.LockingStrategy;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -37,6 +39,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Slf4j
 public class CasCoreTicketsSchedulingConfiguration {
 
+
     @Autowired
     private CasConfigurationProperties casProperties;
 
@@ -46,24 +49,23 @@ public class CasCoreTicketsSchedulingConfiguration {
     public TicketRegistryCleaner ticketRegistryCleaner(@Qualifier("lockingStrategy") final LockingStrategy lockingStrategy,
                                                        @Qualifier("logoutManager") final LogoutManager logoutManager,
                                                        @Qualifier("ticketRegistry") final TicketRegistry ticketRegistry) {
-        final boolean isCleanerEnabled = casProperties.getTicket().getRegistry().getCleaner().getSchedule().isEnabled();
+        val isCleanerEnabled = casProperties.getTicket().getRegistry().getCleaner().getSchedule().isEnabled();
         if (isCleanerEnabled) {
             LOGGER.debug("Ticket registry cleaner is enabled.");
             return new DefaultTicketRegistryCleaner(lockingStrategy, logoutManager, ticketRegistry);
         }
         LOGGER.debug("Ticket registry cleaner is not enabled. "
-                + "Expired tickets are not forcefully collected and cleaned by CAS. It is up to the ticket registry itself to "
-                + "clean up tickets based on expiration and eviction policies.");
+            + "Expired tickets are not forcefully collected and cleaned by CAS. It is up to the ticket registry itself to "
+            + "clean up tickets based on expiration and eviction policies.");
         return NoOpTicketRegistryCleaner.getInstance();
     }
 
     @ConditionalOnMissingBean(name = "ticketRegistryCleanerScheduler")
-    @ConditionalOnProperty(prefix = "cas.ticket.registry.cleaner", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "cas.ticket.registry.cleaner.schedule", name = "enabled", havingValue = "true", matchIfMissing = true)
     @Bean
     @Autowired
     @RefreshScope
-    public TicketRegistryCleanerScheduler ticketRegistryCleanerScheduler(@Qualifier("ticketRegistryCleaner") 
-                                                                         final TicketRegistryCleaner ticketRegistryCleaner) {
+    public TicketRegistryCleanerScheduler ticketRegistryCleanerScheduler(@Qualifier("ticketRegistryCleaner") final TicketRegistryCleaner ticketRegistryCleaner) {
         return new TicketRegistryCleanerScheduler(ticketRegistryCleaner);
     }
 
@@ -83,7 +85,7 @@ public class CasCoreTicketsSchedulingConfiguration {
         }
 
         @Scheduled(initialDelayString = "${cas.ticket.registry.cleaner.schedule.startDelay:PT30S}",
-                fixedDelayString = "${cas.ticket.registry.cleaner.schedule.repeatInterval:PT120S}")
+            fixedDelayString = "${cas.ticket.registry.cleaner.schedule.repeatInterval:PT120S}")
         public void run() {
             try {
                 this.ticketRegistryCleaner.clean();

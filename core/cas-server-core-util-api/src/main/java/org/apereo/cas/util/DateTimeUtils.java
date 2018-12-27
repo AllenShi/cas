@@ -1,7 +1,7 @@
 package org.apereo.cas.util;
 
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.joda.time.DateTime;
 import org.joda.time.ReadableInstant;
 
@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
  * @author Timur Duehr timur.duehr@nccgroup.trust
  * @since 5.0.0
  */
-@Slf4j
 @UtilityClass
 public class DateTimeUtils {
 
@@ -36,7 +35,8 @@ public class DateTimeUtils {
      * @return the date/time instance
      */
     public static LocalDateTime localDateTimeOf(final String value) {
-        LocalDateTime result;
+        var result = (LocalDateTime) null;
+
         try {
             result = LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         } catch (final Exception e) {
@@ -85,7 +85,7 @@ public class DateTimeUtils {
 
         if (result == null) {
             try {
-                final LocalDate ld = LocalDate.parse(value, DateTimeFormatter.ofPattern("MM/dd/yyyy"));
+                val ld = LocalDate.parse(value, DateTimeFormatter.ofPattern("MM/dd/yyyy"));
                 result = LocalDateTime.of(ld, LocalTime.now());
             } catch (final Exception e) {
                 result = null;
@@ -94,13 +94,12 @@ public class DateTimeUtils {
 
         if (result == null) {
             try {
-                final LocalDate ld = LocalDate.parse(value);
+                val ld = LocalDate.parse(value);
                 result = LocalDateTime.of(ld, LocalTime.now());
             } catch (final Exception e) {
                 result = null;
             }
         }
-
         return result;
     }
 
@@ -172,7 +171,7 @@ public class DateTimeUtils {
     /**
      * Utility for creating a ZonedDateTime object from a millisecond timestamp.
      *
-     * @param time   Miliseconds since Epoch
+     * @param time   Milliseconds since Epoch
      * @param zoneId Time zone
      * @return ZonedDateTime representing time
      */

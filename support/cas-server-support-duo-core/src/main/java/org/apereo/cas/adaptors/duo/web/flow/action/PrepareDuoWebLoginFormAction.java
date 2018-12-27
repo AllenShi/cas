@@ -1,15 +1,15 @@
 package org.apereo.cas.adaptors.duo.web.flow.action;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.adaptors.duo.authn.DuoCredential;
 import org.apereo.cas.adaptors.duo.authn.DuoMultifactorAuthenticationProvider;
-import org.apereo.cas.adaptors.duo.authn.DuoSecurityAuthenticationService;
-import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.web.flow.CasWebflowConstants;
-import org.apereo.cas.web.flow.mfa.AbstractMultifactorAuthenticationAction;
+import org.apereo.cas.web.flow.actions.AbstractMultifactorAuthenticationAction;
 import org.apereo.cas.web.support.WebUtils;
-import org.springframework.webflow.core.collection.MutableAttributeMap;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+
 import org.springframework.webflow.execution.Event;
 import org.springframework.webflow.execution.RequestContext;
 
@@ -25,18 +25,18 @@ public class PrepareDuoWebLoginFormAction extends AbstractMultifactorAuthenticat
 
     @Override
     protected Event doExecute(final RequestContext requestContext) {
-        final Principal p = WebUtils.getAuthentication(requestContext).getPrincipal();
+        val principal = WebUtils.getAuthentication(requestContext).getPrincipal();
 
-        final DuoCredential c = requestContext.getFlowScope().get(CasWebflowConstants.VAR_ID_CREDENTIAL, DuoCredential.class);
-        c.setUsername(p.getId());
-        c.setProviderId(provider.createUniqueId());
+        val credential = requestContext.getFlowScope().get(CasWebflowConstants.VAR_ID_CREDENTIAL, DuoCredential.class);
+        credential.setUsername(principal.getId());
+        credential.setProviderId(provider.createUniqueId());
 
-        final DuoSecurityAuthenticationService duoAuthenticationService = provider.getDuoAuthenticationService();
-        final MutableAttributeMap<Object> viewScope = requestContext.getViewScope();
-        viewScope.put("sigRequest", duoAuthenticationService.signRequestToken(p.getId()));
+        val duoAuthenticationService = provider.getDuoAuthenticationService();
+        val viewScope = requestContext.getViewScope();
+        viewScope.put("sigRequest", duoAuthenticationService.signRequestToken(principal.getId()));
         viewScope.put("apiHost", duoAuthenticationService.getApiHost());
         viewScope.put("commandName", "credential");
-        viewScope.put("principal", p);
+        viewScope.put("principal", principal);
         return success();
     }
 }

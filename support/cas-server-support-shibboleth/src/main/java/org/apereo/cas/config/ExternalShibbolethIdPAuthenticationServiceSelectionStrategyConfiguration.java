@@ -1,7 +1,5 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.audit.AuditableExecution;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionStrategy;
@@ -11,6 +9,10 @@ import org.apereo.cas.authentication.principal.WebApplicationService;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.saml.ShibbolethIdPEntityIdAuthenticationServiceSelectionStrategy;
+
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -30,6 +32,13 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 public class ExternalShibbolethIdPAuthenticationServiceSelectionStrategyConfiguration implements AuthenticationServiceSelectionStrategyConfigurer {
 
+    @Autowired
+    @Qualifier("registeredServiceAccessStrategyEnforcer")
+    private ObjectProvider<AuditableExecution> registeredServiceAccessStrategyEnforcer;
+    
+    @Autowired
+    @Qualifier("servicesManager")
+    private ObjectProvider<ServicesManager> servicesManager;
 
     @Autowired
     private CasConfigurationProperties casProperties;
@@ -38,22 +47,14 @@ public class ExternalShibbolethIdPAuthenticationServiceSelectionStrategyConfigur
     @Qualifier("webApplicationServiceFactory")
     private ServiceFactory<WebApplicationService> webApplicationServiceFactory;
 
-    @Autowired
-    @Qualifier("registeredServiceAccessStrategyEnforcer")
-    private AuditableExecution registeredServiceAccessStrategyEnforcer;
-
-    @Autowired
-    @Qualifier("servicesManager")
-    private ServicesManager servicesManager;
-
     @ConditionalOnMissingBean(name = "shibbolethIdPEntityIdAuthenticationServiceSelectionStrategy")
     @Bean
     @RefreshScope
     public AuthenticationServiceSelectionStrategy shibbolethIdPEntityIdAuthenticationServiceSelectionStrategy() {
         return new ShibbolethIdPEntityIdAuthenticationServiceSelectionStrategy(webApplicationServiceFactory,
-                casProperties.getAuthn().getShibIdp().getServerUrl(),
-                servicesManager,
-                registeredServiceAccessStrategyEnforcer);
+            casProperties.getAuthn().getShibIdp().getServerUrl(),
+            servicesManager.getIfAvailable(),
+            registeredServiceAccessStrategyEnforcer.getIfAvailable());
     }
 
     @Override

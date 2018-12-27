@@ -1,16 +1,16 @@
 package org.apereo.cas.support.rest.resources;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationException;
-import org.apereo.cas.authentication.AuthenticationResult;
 import org.apereo.cas.authentication.AuthenticationSystemSupport;
-import org.apereo.cas.authentication.Credential;
-import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.ServiceFactory;
 import org.apereo.cas.rest.BadRestRequestException;
 import org.apereo.cas.rest.factory.RestHttpRequestCredentialFactory;
 import org.apereo.cas.rest.factory.UserAuthenticationResourceEntityResponseFactory;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
 
 /**
  * {@link RestController} implementation of CAS' REST API.
@@ -46,6 +45,7 @@ public class UserAuthenticationResource {
     private final RestHttpRequestCredentialFactory credentialFactory;
     private final ServiceFactory serviceFactory;
     private final UserAuthenticationResourceEntityResponseFactory userAuthenticationResourceEntityResponseFactory;
+    private final ApplicationContext applicationContext;
 
     /**
      * Create new ticket granting ticket.
@@ -58,19 +58,19 @@ public class UserAuthenticationResource {
     public ResponseEntity<String> createTicketGrantingTicket(@RequestBody final MultiValueMap<String, String> requestBody,
                                                              final HttpServletRequest request) {
         try {
-            final Collection<Credential> credential = this.credentialFactory.fromRequest(request, requestBody);
+            val credential = this.credentialFactory.fromRequest(request, requestBody);
             if (credential == null || credential.isEmpty()) {
                 throw new BadRestRequestException("No credentials are provided or extracted to authenticate the REST request");
             }
-            final Service service = this.serviceFactory.createService(request);
-            final AuthenticationResult authenticationResult =
+            val service = this.serviceFactory.createService(request);
+            val authenticationResult =
                 authenticationSystemSupport.handleAndFinalizeSingleAuthenticationTransaction(service, credential);
             if (authenticationResult == null) {
                 throw new FailedLoginException("Authentication failed");
             }
             return this.userAuthenticationResourceEntityResponseFactory.build(authenticationResult, request);
         } catch (final AuthenticationException e) {
-            return RestResourceUtils.createResponseEntityForAuthnFailure(e);
+            return RestResourceUtils.createResponseEntityForAuthnFailure(e, request, applicationContext);
         } catch (final BadRestRequestException e) {
             LOGGER.error(e.getMessage(), e);
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);

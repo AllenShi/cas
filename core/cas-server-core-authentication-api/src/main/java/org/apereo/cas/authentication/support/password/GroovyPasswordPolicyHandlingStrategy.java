@@ -1,13 +1,13 @@
 package org.apereo.cas.authentication.support.password;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationPasswordPolicyHandlingStrategy;
 import org.apereo.cas.authentication.MessageDescriptor;
 import org.apereo.cas.util.scripting.ScriptingUtils;
 import org.apereo.cas.util.spring.ApplicationContextProvider;
 
-import org.springframework.context.ApplicationContext;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.core.io.Resource;
 
 import java.util.List;
@@ -27,7 +27,8 @@ public class GroovyPasswordPolicyHandlingStrategy<AuthenticationResponse> implem
     @Override
     public List<MessageDescriptor> handle(final AuthenticationResponse response,
                                           final PasswordPolicyConfiguration configuration) {
-        final ApplicationContext applicationContext = ApplicationContextProvider.getApplicationContext();
-        return ScriptingUtils.executeGroovyScript(groovyResource, new Object[]{response, configuration, LOGGER, applicationContext}, List.class);
+        val applicationContext = ApplicationContextProvider.getApplicationContext();
+        return ScriptingUtils.executeGroovyScript(groovyResource,
+            new Object[]{response, configuration, LOGGER, applicationContext}, List.class, true);
     }
 }

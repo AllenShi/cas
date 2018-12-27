@@ -2,6 +2,7 @@ package org.apereo.cas.configuration.model.support.trusted;
 
 import org.apereo.cas.configuration.model.core.authentication.PersonDirectoryPrincipalResolverProperties;
 import org.apereo.cas.configuration.support.RequiresModule;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,7 +13,6 @@ import lombok.Setter;
  * @since 5.0.0
  */
 @RequiresModule(name = "cas-server-support-trusted-webflow")
-
 @Getter
 @Setter
 public class TrustedAuthenticationProperties extends PersonDirectoryPrincipalResolverProperties {
@@ -29,4 +29,9 @@ public class TrustedAuthenticationProperties extends PersonDirectoryPrincipalRes
      * Indicates the name of the authentication handler.
      */
     private String name;
+
+    /**
+     * Order of the authentication handler in the chain.
+     */
+    private Integer order;
 }

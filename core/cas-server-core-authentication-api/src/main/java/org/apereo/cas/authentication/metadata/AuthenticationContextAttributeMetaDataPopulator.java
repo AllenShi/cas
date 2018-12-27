@@ -1,13 +1,13 @@
 package org.apereo.cas.authentication.metadata;
 
-import lombok.AllArgsConstructor;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.AuthenticationBuilder;
 import org.apereo.cas.authentication.AuthenticationHandler;
 import org.apereo.cas.authentication.AuthenticationManager;
 import org.apereo.cas.authentication.AuthenticationTransaction;
 import org.apereo.cas.authentication.Credential;
+
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 /**
  * This is {@link AuthenticationContextAttributeMetaDataPopulator}.
@@ -15,15 +15,11 @@ import org.apereo.cas.authentication.Credential;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
-@Slf4j
 @ToString(callSuper = true)
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthenticationContextAttributeMetaDataPopulator extends BaseAuthenticationMetaDataPopulator {
-
     private final String authenticationContextAttribute;
-
     private final AuthenticationHandler authenticationHandler;
-
     private final String authenticationContextAttributeValue;
 
     @Override

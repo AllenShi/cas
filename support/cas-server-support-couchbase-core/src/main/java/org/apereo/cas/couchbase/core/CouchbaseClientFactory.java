@@ -3,19 +3,18 @@ package org.apereo.cas.couchbase.core;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.bucket.BucketManager;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.DesignDocumentDoesNotExistException;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.Select;
-import com.couchbase.client.java.query.SimpleN1qlQuery;
-import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.View;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -40,29 +39,27 @@ import java.util.stream.Collectors;
  * @since 4.2
  */
 @Slf4j
+@Getter
 public class CouchbaseClientFactory {
     private static final long DEFAULT_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(15);
-
-    private Cluster cluster;
-
-    private Bucket bucket;
-    private final Collection<View> views;
-    private final Set<String> nodes;
-
-    /* The name of the bucket, will use the default getBucket unless otherwise specified. */
-    private String bucketName = "default";
-
-    /* Password for the bucket if any. */
-    private String bucketPassword = StringUtils.EMPTY;
-
-    /* Design document and views to create in the bucket, if any. */
-    private final String designDocument;
-
-    private long timeout = DEFAULT_TIMEOUT_MILLIS;
 
     static {
         System.setProperty("com.couchbase.queryEnabled", "true");
     }
+
+    private final Collection<View> views;
+    private final Set<String> nodes;
+    /* Design document and views to create in the bucket, if any. */
+    private final String designDocument;
+    private Cluster cluster;
+    private Bucket bucket;
+
+    /* The name of the bucket, will use the default getBucket unless otherwise specified. */
+    private final String bucketName;
+
+    /* Password for the bucket if any. */
+    private final String bucketPassword;
+    private final long timeout;
 
     /**
      * Instantiates a new Couchbase client factory.
@@ -84,6 +81,11 @@ public class CouchbaseClientFactory {
         this.designDocument = documentName;
         this.views = views;
         initializeCluster();
+    }
+
+    public CouchbaseClientFactory(final Set<String> nodes, final String bucketName,
+                                  final String bucketPassword, final long timeout) {
+        this(nodes, bucketName, bucketPassword, timeout, null, null);
     }
 
     /**
@@ -139,17 +141,20 @@ public class CouchbaseClientFactory {
      * @throws GeneralSecurityException the general security exception
      */
     public N1qlQueryResult query(final String usernameAttribute, final String usernameValue) throws GeneralSecurityException {
-        final Bucket bucket = getBucket();
-        final Statement statement = Select.select("*")
-            .from(Expression.i(bucket.name()))
+        val theBucket = getBucket();
+        val statement = Select.select("*")
+            .from(Expression.i(theBucket.name()))
             .where(Expression.x(usernameAttribute).eq('\'' + usernameValue + '\''));
 
-        LOGGER.debug("Running query [{}] on bucket [{}]", statement.toString(), bucket.name());
+        LOGGER.debug("Running query [{}] on bucket [{}]", statement.toString(), theBucket.name());
 
-        final SimpleN1qlQuery query = N1qlQuery.simple(statement);
-        final N1qlQueryResult result = bucket.query(query, timeout, TimeUnit.MILLISECONDS);
+        val query = N1qlQuery.simple(statement);
+        val result = theBucket.query(query, timeout, TimeUnit.MILLISECONDS);
         if (!result.finalSuccess()) {
-            LOGGER.error("Couchbase query failed with [{}]", result.errors().stream().map(JsonObject::toString).collect(Collectors.joining(",")));
+            LOGGER.error("Couchbase query failed with [{}]", result.errors()
+                .stream()
+                .map(JsonObject::toString)
+                .collect(Collectors.joining(",")));
             throw new GeneralSecurityException("Could not locate account for user " + usernameValue);
         }
         return result;
@@ -163,7 +168,8 @@ public class CouchbaseClientFactory {
      * @return the map
      */
     public Map<String, Object> collectAttributesFromEntity(final JsonObject couchbaseEntity, final Predicate<String> filter) {
-        return couchbaseEntity.getNames().stream()
+        return couchbaseEntity.getNames()
+            .stream()
             .filter(filter)
             .map(name -> Pair.of(name, couchbaseEntity.get(name)))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
@@ -177,8 +183,8 @@ public class CouchbaseClientFactory {
     private void createDesignDocumentAndViewIfNeeded() {
         if (this.views != null && this.designDocument != null) {
             LOGGER.debug("Ensure that indexes exist in bucket [{}]", this.bucket.name());
-            final BucketManager bucketManager = this.bucket.bucketManager();
-            final DesignDocument newDocument = DesignDocument.create(this.designDocument, new ArrayList<>(views));
+            val bucketManager = this.bucket.bucketManager();
+            val newDocument = DesignDocument.create(this.designDocument, new ArrayList<>(views));
             try {
                 if (!newDocument.equals(bucketManager.getDesignDocument(this.designDocument))) {
                     LOGGER.warn("Missing indexes in bucket [{}] for document [{}]", this.bucket.name(), this.designDocument);
@@ -195,7 +201,7 @@ public class CouchbaseClientFactory {
 
     private void openBucket() {
         try {
-            LOGGER.debug("Trying to connect to couchbase bucket [{}]", this.bucketName);
+            LOGGER.trace("Trying to connect to couchbase bucket [{}]", this.bucketName);
             if (StringUtils.isBlank(this.bucketPassword)) {
                 this.bucket = this.cluster.openBucket(this.bucketName, this.timeout, TimeUnit.MILLISECONDS);
             } else {

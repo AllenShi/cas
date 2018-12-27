@@ -1,25 +1,26 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.response.soap;
 
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.velocity.app.VelocityEngine;
+import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.support.saml.SamlException;
 import org.apereo.cas.support.saml.SamlUtils;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
 import org.apereo.cas.support.saml.services.idp.metadata.SamlRegisteredServiceServiceProviderMetadataFacade;
 import org.apereo.cas.support.saml.web.idp.profile.builders.SamlProfileObjectBuilder;
+import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlIdPObjectEncrypter;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlIdPObjectSigner;
-import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlObjectEncrypter;
 import org.apereo.cas.support.saml.web.idp.profile.builders.response.BaseSamlProfileSamlResponseBuilder;
+
+import lombok.NonNull;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.velocity.app.VelocityEngine;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.saml.common.SAMLObject;
 import org.opensaml.saml.saml2.binding.encoding.impl.HTTPSOAP11Encoder;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.RequestAbstractType;
-import org.opensaml.saml.saml2.ecp.Response;
-import org.opensaml.saml.saml2.metadata.AssertionConsumerService;
 import org.opensaml.soap.messaging.context.SOAP11Context;
 import org.opensaml.soap.soap11.Body;
 import org.opensaml.soap.soap11.Envelope;
@@ -45,14 +46,16 @@ public class SamlProfileSamlSoap11ResponseBuilder extends BaseSamlProfileSamlRes
      */
     protected final SamlProfileObjectBuilder<? extends SAMLObject> saml2ResponseBuilder;
 
-    public SamlProfileSamlSoap11ResponseBuilder(
-        final OpenSamlConfigBean openSamlConfigBean,
-        final SamlIdPObjectSigner samlObjectSigner,
-        final VelocityEngine velocityEngineFactory,
-        final SamlProfileObjectBuilder<Assertion> samlProfileSamlAssertionBuilder,
-        final SamlProfileObjectBuilder<? extends SAMLObject> saml2ResponseBuilder,
-        final SamlObjectEncrypter samlObjectEncrypter) {
-        super(openSamlConfigBean, samlObjectSigner, velocityEngineFactory, samlProfileSamlAssertionBuilder, samlObjectEncrypter);
+    public SamlProfileSamlSoap11ResponseBuilder(final OpenSamlConfigBean openSamlConfigBean,
+                                                final SamlIdPObjectSigner samlObjectSigner,
+                                                final VelocityEngine velocityEngineFactory,
+                                                final SamlProfileObjectBuilder<Assertion> samlProfileSamlAssertionBuilder,
+                                                final SamlProfileObjectBuilder<? extends SAMLObject> saml2ResponseBuilder,
+                                                final SamlIdPObjectEncrypter samlObjectEncrypter,
+                                                final CasConfigurationProperties casProperties) {
+
+        super(openSamlConfigBean, samlObjectSigner, velocityEngineFactory,
+            samlProfileSamlAssertionBuilder, samlObjectEncrypter, casProperties);
         this.saml2ResponseBuilder = saml2ResponseBuilder;
     }
 
@@ -69,16 +72,16 @@ public class SamlProfileSamlSoap11ResponseBuilder extends BaseSamlProfileSamlRes
 
         LOGGER.debug("Locating the assertion consumer service url for binding [{}]", binding);
         @NonNull
-        final AssertionConsumerService acs = adaptor.getAssertionConsumerService(binding);
+        val acs = adaptor.getAssertionConsumerService(binding);
         LOGGER.debug("Located assertion consumer service url [{}]", acs);
-        final Response ecpResponse = newEcpResponse(acs.getLocation());
-        final Header header = newSoapObject(Header.class);
+        val ecpResponse = newEcpResponse(acs.getLocation());
+        val header = newSoapObject(Header.class);
         header.getUnknownXMLObjects().add(ecpResponse);
-        final Body body = newSoapObject(Body.class);
-        final org.opensaml.saml.saml2.core.Response saml2Response =
+        val body = newSoapObject(Body.class);
+        val saml2Response =
             buildSaml2Response(casAssertion, authnRequest, service, adaptor, request, binding, messageContext);
         body.getUnknownXMLObjects().add(saml2Response);
-        final Envelope envelope = newSoapObject(Envelope.class);
+        val envelope = newSoapObject(Envelope.class);
         envelope.setHeader(header);
         envelope.setBody(body);
         SamlUtils.logSamlObject(this.configBean, envelope);
@@ -119,10 +122,10 @@ public class SamlProfileSamlSoap11ResponseBuilder extends BaseSamlProfileSamlRes
                               final String binding,
                               final RequestAbstractType authnRequest,
                               final Object assertion) throws SamlException {
-        final MessageContext result = new MessageContext();
-        final SOAP11Context ctx = result.getSubcontext(SOAP11Context.class, true);
+        val result = new MessageContext();
+        val ctx = result.getSubcontext(SOAP11Context.class, true);
         ctx.setEnvelope(envelope);
-        final HTTPSOAP11Encoder encoder = new HTTPSOAP11Encoder();
+        val encoder = new HTTPSOAP11Encoder();
         encoder.setHttpServletResponse(httpResponse);
         encoder.setMessageContext(result);
         encoder.initialize();

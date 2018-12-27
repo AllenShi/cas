@@ -1,11 +1,11 @@
 package org.apereo.cas.impl.notify;
 
 import org.apereo.cas.api.AuthenticationRiskScore;
-import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
-import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.impl.calcs.BaseAuthenticationRequestRiskCalculatorTests;
 import org.apereo.cas.util.CollectionUtils;
+
+import lombok.val;
 import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
 
@@ -23,8 +23,8 @@ public class AuthenticationRiskSmsNotifierTests extends BaseAuthenticationReques
     public void verifyOperation() {
         try {
             authenticationRiskSmsNotifier.setRegisteredService(CoreAuthenticationTestUtils.getRegisteredService());
-            final Principal principal = CoreAuthenticationTestUtils.getPrincipal(CollectionUtils.wrap("phone", "3487244312"));
-            final Authentication authentication = CoreAuthenticationTestUtils.getAuthentication(principal);
+            val principal = CoreAuthenticationTestUtils.getPrincipal(CollectionUtils.wrap("phone", "3487244312"));
+            val authentication = CoreAuthenticationTestUtils.getAuthentication(principal);
             authenticationRiskSmsNotifier.setAuthentication(authentication);
             authenticationRiskSmsNotifier.setAuthenticationRiskScore(new AuthenticationRiskScore(BigDecimal.ONE));
             authenticationRiskSmsNotifier.publish();

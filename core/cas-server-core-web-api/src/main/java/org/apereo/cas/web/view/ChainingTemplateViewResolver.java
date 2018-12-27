@@ -1,7 +1,6 @@
 package org.apereo.cas.web.view;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.thymeleaf.IEngineConfiguration;
 import org.thymeleaf.templateresolver.AbstractConfigurableTemplateResolver;
@@ -19,10 +18,9 @@ import java.util.Map;
  * @author Misagh Moayyed
  * @since 5.3.0
  */
-@Slf4j
 @Getter
 public class ChainingTemplateViewResolver extends AbstractConfigurableTemplateResolver {
-    private List<AbstractTemplateResolver> resolvers = new ArrayList<>();
+    private final List<AbstractTemplateResolver> resolvers = new ArrayList<>();
 
     public ChainingTemplateViewResolver() {
         setOrder(0);
@@ -52,12 +50,12 @@ public class ChainingTemplateViewResolver extends AbstractConfigurableTemplateRe
                                                         final String resourceName,
                                                         final String characterEncoding,
                                                         final Map<String, Object> templateResolutionAttributes) {
-        for (final AbstractTemplateResolver r : this.resolvers) {
-            final TemplateResolution resource = r.resolveTemplate(configuration, ownerTemplate, template, templateResolutionAttributes);
-            if (resource != null && resource.isTemplateResourceExistenceVerified()) {
-                return resource.getTemplateResource();
-            }
-        }
-        return null;
+        return this.resolvers
+            .stream()
+            .map(r -> r.resolveTemplate(configuration, ownerTemplate, template, templateResolutionAttributes))
+            .filter(resource -> resource != null && resource.isTemplateResourceExistenceVerified())
+            .findFirst()
+            .map(TemplateResolution::getTemplateResource)
+            .orElse(null);
     }
 }

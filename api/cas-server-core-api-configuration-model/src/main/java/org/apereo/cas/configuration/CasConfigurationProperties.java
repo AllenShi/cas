@@ -1,7 +1,5 @@
 package org.apereo.cas.configuration;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.apereo.cas.configuration.model.core.CasJavaClientProperties;
 import org.apereo.cas.configuration.model.core.CasServerProperties;
 import org.apereo.cas.configuration.model.core.HostProperties;
@@ -9,18 +7,17 @@ import org.apereo.cas.configuration.model.core.audit.AuditProperties;
 import org.apereo.cas.configuration.model.core.authentication.AuthenticationProperties;
 import org.apereo.cas.configuration.model.core.authentication.HttpClientProperties;
 import org.apereo.cas.configuration.model.core.authentication.PersonDirectoryPrincipalResolverProperties;
+import org.apereo.cas.configuration.model.core.config.cloud.SpringCloudConfigurationProperties;
+import org.apereo.cas.configuration.model.core.config.standalone.StandaloneConfigurationProperties;
 import org.apereo.cas.configuration.model.core.events.EventsProperties;
 import org.apereo.cas.configuration.model.core.logout.LogoutProperties;
-import org.apereo.cas.configuration.model.core.metrics.MetricsProperties;
 import org.apereo.cas.configuration.model.core.monitor.MonitorProperties;
 import org.apereo.cas.configuration.model.core.rest.RestProperties;
 import org.apereo.cas.configuration.model.core.services.ServiceRegistryProperties;
 import org.apereo.cas.configuration.model.core.slo.SloProperties;
 import org.apereo.cas.configuration.model.core.sso.SsoProperties;
-import org.apereo.cas.configuration.model.core.standalone.StandaloneConfigurationProperties;
 import org.apereo.cas.configuration.model.core.util.TicketProperties;
 import org.apereo.cas.configuration.model.core.web.MessageBundleProperties;
-import org.apereo.cas.configuration.model.core.web.security.AdminPagesSecurityProperties;
 import org.apereo.cas.configuration.model.core.web.security.HttpRequestProperties;
 import org.apereo.cas.configuration.model.core.web.view.ViewProperties;
 import org.apereo.cas.configuration.model.support.analytics.GoogleAnalyticsProperties;
@@ -44,6 +41,9 @@ import org.apereo.cas.configuration.model.support.sms.SmsProvidersProperties;
 import org.apereo.cas.configuration.model.support.themes.ThemeProperties;
 import org.apereo.cas.configuration.model.webapp.LocaleProperties;
 import org.apereo.cas.configuration.model.webapp.WebflowProperties;
+
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -117,6 +117,12 @@ public class CasConfigurationProperties implements Serializable {
     private EventsProperties events = new EventsProperties();
 
     /**
+     * Monitoring functionality.
+     */
+    @NestedConfigurationProperty
+    private MonitorProperties monitor = new MonitorProperties();
+
+    /**
      * Settings that define this CAS host.
      */
     @NestedConfigurationProperty
@@ -127,18 +133,6 @@ public class CasConfigurationProperties implements Serializable {
      */
     @NestedConfigurationProperty
     private LogoutProperties logout = new LogoutProperties();
-
-    /**
-     * Metrics functionality.
-     */
-    @NestedConfigurationProperty
-    private MetricsProperties metrics = new MetricsProperties();
-
-    /**
-     * Monitoring functionality.
-     */
-    @NestedConfigurationProperty
-    private MonitorProperties monitor = new MonitorProperties();
 
     /**
      * REST API functionality.
@@ -187,12 +181,6 @@ public class CasConfigurationProperties implements Serializable {
      */
     @NestedConfigurationProperty
     private MessageBundleProperties messageBundle = new MessageBundleProperties();
-
-    /**
-     * Admin pages and their security, controling endpoints, etc.
-     */
-    @NestedConfigurationProperty
-    private AdminPagesSecurityProperties adminPagesSecurity = new AdminPagesSecurityProperties();
 
     /**
      * Settings that control filtering of the incoming http requests.
@@ -319,4 +307,10 @@ public class CasConfigurationProperties implements Serializable {
      */
     @NestedConfigurationProperty
     private StandaloneConfigurationProperties standalone = new StandaloneConfigurationProperties();
+
+    /**
+     * Spring cloud configuration settings.
+     */
+    @NestedConfigurationProperty
+    private SpringCloudConfigurationProperties spring = new SpringCloudConfigurationProperties();
 }

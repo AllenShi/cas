@@ -1,10 +1,12 @@
 package org.apereo.cas.web.extractcert;
 
+import org.apereo.cas.util.crypto.CertUtils;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.util.crypto.CertUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
@@ -58,7 +60,7 @@ public class RequestHeaderX509CertificateExtractor implements X509CertificateExt
      * @return Base64 encoded certificate
      */
     private String getCertFromHeader(final HttpServletRequest request) {
-        final String certHeaderValue = request.getHeader(sslClientCertHeader);
+        val certHeaderValue = request.getHeader(sslClientCertHeader);
         if (StringUtils.isBlank(certHeaderValue)) {
             return null;
         }
@@ -84,7 +86,7 @@ public class RequestHeaderX509CertificateExtractor implements X509CertificateExt
      */
     @Override
     public X509Certificate[] extract(final HttpServletRequest request) {
-        final String certHeaderValue = getCertFromHeader(request);
+        val certHeaderValue = getCertFromHeader(request);
         if (StringUtils.isBlank(certHeaderValue)) {
             LOGGER.debug("No header [{}] found in request (or value was null)", sslClientCertHeader);
             return null;
@@ -95,9 +97,9 @@ public class RequestHeaderX509CertificateExtractor implements X509CertificateExt
             return null;
         }
 
-        final String body = sanitizeCertificateBody(certHeaderValue);
+        val body = sanitizeCertificateBody(certHeaderValue);
         try (InputStream input = new ByteArrayInputStream(body.getBytes(StandardCharsets.ISO_8859_1))) {
-            final X509Certificate cert = CertUtils.readCertificate(input);
+            val cert = CertUtils.readCertificate(input);
             LOGGER.debug("Certificate extracted from header [{}] with subject: [{}]", sslClientCertHeader, cert.getSubjectDN());
             return new X509Certificate[]{cert};
         } catch (final Exception e) {
@@ -107,8 +109,8 @@ public class RequestHeaderX509CertificateExtractor implements X509CertificateExt
         return null;
     }
 
-    private String sanitizeCertificateBody(final String certHeaderValue) {
-        String body = certHeaderValue.substring(X509_HEADER.length(), certHeaderValue.length() - X509_FOOTER.length());
+    private static String sanitizeCertificateBody(final String certHeaderValue) {
+        var body = certHeaderValue.substring(X509_HEADER.length(), certHeaderValue.length() - X509_FOOTER.length());
         body = body.replace(' ', '\n');
         body = body.replace('\t', '\n');
         return X509_HEADER.concat("\n").concat(body).concat("\n").concat(X509_FOOTER).concat("\n");

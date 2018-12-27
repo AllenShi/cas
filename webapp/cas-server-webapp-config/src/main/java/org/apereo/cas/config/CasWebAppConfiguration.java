@@ -1,14 +1,14 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.web.Log4jServletContextListener;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * This is {@link CasWebAppConfiguration}.
@@ -41,21 +40,20 @@ import java.util.Map;
  */
 @Configuration("casWebAppConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@Slf4j
-public class CasWebAppConfiguration extends WebMvcConfigurerAdapter {
+public class CasWebAppConfiguration implements WebMvcConfigurer {
 
     @Autowired
     private CasConfigurationProperties casProperties;
 
     @Autowired
     @Qualifier("localeChangeInterceptor")
-    private LocaleChangeInterceptor localeChangeInterceptor;
+    private ObjectProvider<LocaleChangeInterceptor> localeChangeInterceptor;
 
     @RefreshScope
     @Bean
     @Lazy
     public ThemeChangeInterceptor themeChangeInterceptor() {
-        final ThemeChangeInterceptor bean = new ThemeChangeInterceptor();
+        val bean = new ThemeChangeInterceptor();
         bean.setParamName(casProperties.getTheme().getParamName());
         return bean;
     }
@@ -64,10 +62,10 @@ public class CasWebAppConfiguration extends WebMvcConfigurerAdapter {
     @Bean
     @Lazy
     public LocaleResolver localeResolver() {
-        final CookieLocaleResolver bean = new CookieLocaleResolver() {
+        return new CookieLocaleResolver() {
             @Override
             protected Locale determineDefaultLocale(final HttpServletRequest request) {
-                final Locale locale = request.getLocale();
+                val locale = request.getLocale();
                 if (StringUtils.isBlank(casProperties.getLocale().getDefaultValue())
                     || !locale.getLanguage().equals(casProperties.getLocale().getDefaultValue())) {
                     return locale;
@@ -75,7 +73,6 @@ public class CasWebAppConfiguration extends WebMvcConfigurerAdapter {
                 return new Locale(casProperties.getLocale().getDefaultValue());
             }
         };
-        return bean;
     }
 
     @Bean
@@ -90,8 +87,8 @@ public class CasWebAppConfiguration extends WebMvcConfigurerAdapter {
             @Override
             protected ModelAndView handleRequestInternal(final HttpServletRequest request,
                                                          final HttpServletResponse response) {
-                final String queryString = request.getQueryString();
-                final String url = request.getContextPath() + "/login"
+                val queryString = request.getQueryString();
+                val url = request.getContextPath() + "/login"
                     + (queryString != null ? '?' + queryString : StringUtils.EMPTY);
                 return new ModelAndView(new RedirectView(response.encodeURL(url)));
             }
@@ -101,24 +98,14 @@ public class CasWebAppConfiguration extends WebMvcConfigurerAdapter {
 
     @Bean
     @Lazy
-    public ServletListenerRegistrationBean log4jServletContextListener() {
-        final ServletListenerRegistrationBean bean = new ServletListenerRegistrationBean();
-        bean.setEnabled(true);
-        bean.setName("log4jServletContextListener");
-        bean.setListener(new Log4jServletContextListener());
-        return bean;
-    }
-
-    @Bean
-    @Lazy
     public SimpleUrlHandlerMapping handlerMapping() {
-        final SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+        val mapping = new SimpleUrlHandlerMapping();
 
-        final Controller root = rootController();
+        val root = rootController();
         mapping.setOrder(1);
         mapping.setAlwaysUseFullPath(true);
         mapping.setRootHandler(root);
-        final Map urls = new HashMap();
+        val urls = new HashMap();
         urls.put("/", root);
 
         mapping.setUrlMap(urls);
@@ -133,7 +120,7 @@ public class CasWebAppConfiguration extends WebMvcConfigurerAdapter {
 
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
-        registry.addInterceptor(localeChangeInterceptor)
+        registry.addInterceptor(localeChangeInterceptor.getIfAvailable())
             .addPathPatterns("/**");
     }
 }

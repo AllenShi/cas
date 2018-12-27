@@ -93,7 +93,7 @@ public interface AuthenticationSystemSupport {
     /**
      * Handle a single-transaction authentication event and immediately produce a finalized {@link AuthenticationResult}.
      *
-     * @param service    a service for this authentication event.
+     * @param service     a service for this authentication event.
      * @param credentials credentials used for this single-transaction authentication event.
      * @return authentication result representing a final outcome of the authentication event.
      * @throws AuthenticationException exception to indicate authentication processing failure.
@@ -101,6 +101,6 @@ public interface AuthenticationSystemSupport {
      */
     default AuthenticationResult handleAndFinalizeSingleAuthenticationTransaction(final Service service,
                                                                                   final Collection<Credential> credentials) throws AuthenticationException {
-        return handleAndFinalizeSingleAuthenticationTransaction(service, credentials.toArray(new Credential[]{}));
+        return handleAndFinalizeSingleAuthenticationTransaction(service, credentials.toArray(Credential[]::new));
     }
 }

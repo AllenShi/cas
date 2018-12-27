@@ -1,8 +1,9 @@
 package org.apereo.cas.configuration.model.core.web;
 
+import org.apereo.cas.configuration.support.RequiresModule;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.apereo.cas.configuration.support.RequiresModule;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -17,10 +18,14 @@ import java.util.stream.Stream;
  * @since 5.0.0
  */
 @RequiresModule(name = "cas-server-core-web", automated = true)
-
 @Getter
 @Setter
 public class MessageBundleProperties implements Serializable {
+
+    /**
+     * Default message bundle prefix for authentication-failure messages.
+     */
+    public static final String DEFAULT_BUNDLE_PREFIX_AUTHN_FAILURE = "authenticationFailure.";
 
     private static final long serialVersionUID = 3769733438559663237L;
 

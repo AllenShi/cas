@@ -1,4 +1,8 @@
 description = "Apereo CAS SAML Identity Provider Support"
+ext {
+    maxParallelForksForTests = 1
+}
+
 dependencies {
     api project(":api:cas-server-core-api-audit")
     api project(":api:cas-server-core-api-webflow")
@@ -9,6 +13,7 @@ dependencies {
     implementation project(":core:cas-server-core-logout-api")
     implementation project(":core:cas-server-core-web-api")
     implementation project(":core:cas-server-core-services-registry")
+    implementation project(":core:cas-server-core-services-registry")
     implementation project(":core:cas-server-core-authentication-api")
     implementation project(":core:cas-server-core-webflow")
     implementation project(":core:cas-server-core-webflow-api")
@@ -18,7 +23,7 @@ dependencies {
     implementation project(":core:cas-server-core-cookie-api")
 
     implementation project(":support:cas-server-support-saml-core")
-    implementation project(":support:cas-server-support-saml")
+    implementation project(":support:cas-server-support-saml-core-api")
     implementation project(":support:cas-server-support-saml-mdui-core")
     implementation project(":support:cas-server-support-saml-idp-core")
     implementation project(":support:cas-server-support-saml-idp-metadata")
@@ -27,9 +32,10 @@ dependencies {
     
     implementation libraries.casclient
     implementation libraries.shibidp
-    implementation libraries.pac4j
-    implementation libraries.caffein
-    implementation libraries.groovy
+    implementation libraries.pac4jcore
+    implementation libraries.shibidpjavasupport
+
+    testImplementation libraries.pac4j
     
     testImplementation project(path: ":core:cas-server-core-authentication", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core-services", configuration: "tests")
@@ -37,7 +43,6 @@ dependencies {
     testImplementation project(path: ":core:cas-server-core-util-api", configuration: "tests")
 
     testImplementation project(":support:cas-server-support-json-service-registry")
-
     testImplementation project(":support:cas-server-support-jpa-service-registry")
     testImplementation project(":support:cas-server-support-jdbc-drivers")
 
@@ -62,5 +67,6 @@ dependencies {
     testImplementation project(":core:cas-server-core-web")
     testImplementation project(":core:cas-server-core-web-api")
     testImplementation project(":core:cas-server-core-tickets")
+    testImplementation project(path: ":core:cas-server-core-tickets", configuration: "tests")
     testImplementation project(":core:cas-server-core-tickets-api")
 }

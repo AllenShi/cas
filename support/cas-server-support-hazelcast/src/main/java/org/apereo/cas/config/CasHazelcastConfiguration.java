@@ -1,11 +1,12 @@
 package org.apereo.cas.config;
 
+import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.hz.HazelcastConfigurationFactory;
+
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import lombok.extern.slf4j.Slf4j;
-import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.support.hazelcast.BaseHazelcastProperties;
-import org.apereo.cas.hz.HazelcastConfigurationFactory;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -14,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Creates a singular Hazelcast Instance that other hazelcast modules add maps to
- * instead of creating thier own instance.
+ * instead of creating their own instance.
  *
  * @author Travis Schmidt
  * @since 5.3.4
@@ -30,9 +31,8 @@ public class CasHazelcastConfiguration {
     @ConditionalOnMissingBean(name = "casHazelcastInstance")
     @Bean
     public HazelcastInstance casHazelcastInstance() {
-        final BaseHazelcastProperties hz = casProperties.getTicket().getRegistry().getHazelcast();
+        val hz = casProperties.getTicket().getRegistry().getHazelcast();
         LOGGER.debug("Creating Hazelcast instance using properties [{}]", hz);
-        final HazelcastConfigurationFactory factory = new HazelcastConfigurationFactory();
-        return Hazelcast.newHazelcastInstance(factory.build(hz));
+        return Hazelcast.newHazelcastInstance(HazelcastConfigurationFactory.build(hz));
     }
 }

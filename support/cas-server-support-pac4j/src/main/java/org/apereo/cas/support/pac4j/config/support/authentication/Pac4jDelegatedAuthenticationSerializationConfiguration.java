@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
  * This is {@link Pac4jDelegatedAuthenticationSerializationConfiguration}.
  *
  * @author Misagh Moayyed
- * @since 5.3.0
+ * @since 6.0.0
  */
 @Configuration("pac4jDelegatedAuthenticationSerializationConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)

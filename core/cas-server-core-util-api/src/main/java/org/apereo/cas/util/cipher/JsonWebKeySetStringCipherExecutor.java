@@ -1,20 +1,22 @@
 package org.apereo.cas.util.cipher;
 
+import org.apereo.cas.util.io.FileWatcherService;
+
 import com.google.common.base.Predicates;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.util.io.FileWatcherService;
 import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKeySet;
 import org.jose4j.jwk.RsaJsonWebKey;
+import org.springframework.beans.factory.DisposableBean;
 
-import javax.annotation.PreDestroy;
 import java.io.File;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -30,7 +32,7 @@ import java.util.function.Predicate;
  */
 @Slf4j
 @Setter
-public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor implements AutoCloseable {
+public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor implements AutoCloseable, DisposableBean {
     private final FileWatcherService keystorePatchWatcherService;
     private final Optional<String> keyIdToUse;
     private final Optional<HttpsJwks> httpsJkws;
@@ -53,10 +55,10 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
     public JsonWebKeySetStringCipherExecutor(final File jwksKeystore, final Optional<String> keyId,
                                              final String httpsJwksEndpointUrl) {
 
-        final String json = FileUtils.readFileToString(jwksKeystore, StandardCharsets.UTF_8);
+        val json = FileUtils.readFileToString(jwksKeystore, StandardCharsets.UTF_8);
         keystorePatchWatcherService = new FileWatcherService(jwksKeystore, file -> {
             try {
-                final String reloadedJson = FileUtils.readFileToString(jwksKeystore, StandardCharsets.UTF_8);
+                val reloadedJson = FileUtils.readFileToString(jwksKeystore, StandardCharsets.UTF_8);
                 this.webKeySet = new JsonWebKeySet(reloadedJson);
             } catch (final Exception e) {
                 LOGGER.error(e.getMessage(), e);
@@ -75,12 +77,16 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
     /**
      * Close.
      */
-    @PreDestroy
     @Override
     public void close() {
         if (this.keystorePatchWatcherService != null) {
             this.keystorePatchWatcherService.close();
         }
+    }
+
+    @Override
+    public void destroy() {
+        close();
     }
 
     @Override
@@ -98,11 +104,11 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
     }
 
     private void configureSigningParametersForDecoding() {
-        final Optional<RsaJsonWebKey> result = findRsaJsonWebKeyByProvidedKeyId(webKeySet.getJsonWebKeys());
-        if (!result.isPresent()) {
+        val result = findRsaJsonWebKeyByProvidedKeyId(webKeySet.getJsonWebKeys());
+        if (result.isEmpty()) {
             throw new IllegalArgumentException("Could not locate RSA JSON web key from keystore");
         }
-        final RsaJsonWebKey key = result.get();
+        val key = result.get();
         if (key.getPublicKey() == null) {
             throw new IllegalArgumentException("Public key located from keystore for key id " + key.getKeyId() + " is undefined");
         }
@@ -110,17 +116,17 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
     }
 
     private void configureEncryptionParametersForDecoding() {
-        if (!httpsJkws.isPresent()) {
+        if (httpsJkws.isEmpty()) {
             LOGGER.debug("No JWKS endpoint is defined. Configuration of encryption parameters and keys are skipped");
         } else {
             try {
-                final List<JsonWebKey> keys = this.httpsJkws.get().getJsonWebKeys();
-                final Optional<RsaJsonWebKey> encKeyResult = findRsaJsonWebKey(keys, Predicates.alwaysTrue());
+                val keys = this.httpsJkws.get().getJsonWebKeys();
+                val encKeyResult = findRsaJsonWebKey(keys, Predicates.alwaysTrue());
 
-                if (!encKeyResult.isPresent()) {
+                if (encKeyResult.isEmpty()) {
                     throw new IllegalArgumentException("Could not locate RSA JSON web key from endpoint");
                 }
-                final RsaJsonWebKey encKey = encKeyResult.get();
+                val encKey = encKeyResult.get();
                 if (encKey.getPrivateKey() == null) {
                     throw new IllegalArgumentException("Private key located from endpoint for key id " + encKey.getKeyId() + " is undefined");
                 }
@@ -134,17 +140,17 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
     }
 
     private void configureEncryptionParametersForEncoding() {
-        if (!httpsJkws.isPresent()) {
+        if (httpsJkws.isEmpty()) {
             LOGGER.debug("No JWKS endpoint is defined. Configuration of encryption parameters and keys are skipped");
         } else {
             try {
-                final List<JsonWebKey> keys = this.httpsJkws.get().getJsonWebKeys();
-                final Optional<RsaJsonWebKey> encKeyResult = findRsaJsonWebKey(keys, Predicates.alwaysTrue());
+                val keys = this.httpsJkws.get().getJsonWebKeys();
+                val encKeyResult = findRsaJsonWebKey(keys, Predicates.alwaysTrue());
 
-                if (!encKeyResult.isPresent()) {
+                if (encKeyResult.isEmpty()) {
                     throw new IllegalArgumentException("Could not locate RSA JSON web key from endpoint");
                 }
-                final RsaJsonWebKey encKey = encKeyResult.get();
+                val encKey = encKeyResult.get();
                 if (encKey.getPublicKey() == null) {
                     throw new IllegalArgumentException("Public key located from endpoint for key id " + encKey.getKeyId() + " is undefined");
                 }
@@ -158,11 +164,11 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
     }
 
     private void configureSigningParametersForEncoding() {
-        final Optional<RsaJsonWebKey> result = findRsaJsonWebKeyByProvidedKeyId(webKeySet.getJsonWebKeys());
-        if (!result.isPresent()) {
+        val result = findRsaJsonWebKeyByProvidedKeyId(webKeySet.getJsonWebKeys());
+        if (result.isEmpty()) {
             throw new IllegalArgumentException("Could not locate RSA JSON web key from keystore");
         }
-        final RsaJsonWebKey key = result.get();
+        val key = result.get();
         if (key.getPrivateKey() == null) {
             throw new IllegalArgumentException("Private key located from keystore for key id " + key.getKeyId() + " is undefined");
         }
@@ -177,7 +183,7 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
         return findRsaJsonWebKey(keys, predicate);
     }
 
-    private Optional<RsaJsonWebKey> findRsaJsonWebKey(final List<JsonWebKey> keys, final Predicate<JsonWebKey> filter) {
+    private static Optional<RsaJsonWebKey> findRsaJsonWebKey(final List<JsonWebKey> keys, final Predicate<JsonWebKey> filter) {
         return keys
             .stream()
             .filter(key -> key instanceof RsaJsonWebKey && filter.test(key))

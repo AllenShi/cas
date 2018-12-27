@@ -1,18 +1,19 @@
 package org.apereo.cas.scim.v1;
 
+import org.apereo.cas.api.PrincipalProvisioner;
+import org.apereo.cas.authentication.Authentication;
+import org.apereo.cas.authentication.Credential;
+import org.apereo.cas.authentication.principal.Principal;
+
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.sdk.OAuthToken;
-import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.authentication.Authentication;
-import org.apereo.cas.authentication.Credential;
-import org.apereo.cas.authentication.principal.Principal;
-import org.apereo.cas.api.PrincipalProvisioner;
 
 import javax.ws.rs.core.MediaType;
 import java.net.URI;
@@ -34,14 +35,11 @@ public class ScimV1PrincipalProvisioner implements PrincipalProvisioner {
                                       final ScimV1PrincipalAttributeMapper mapper) {
         this.mapper = mapper;
 
-        final URI uri = URI.create(target);
-        final SCIMService scimService;
+        val uri = URI.create(target);
+        val scimService = StringUtils.isNotBlank(oauthToken)
+            ? new SCIMService(uri, new OAuthToken(oauthToken))
+            : new SCIMService(uri, username, password);
 
-        if (StringUtils.isNotBlank(oauthToken)) {
-            scimService = new SCIMService(uri, new OAuthToken(oauthToken));
-        } else {
-            scimService = new SCIMService(uri, username, password);
-        }
         scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
         this.endpoint = scimService.getUserEndpoint();
     }
@@ -49,13 +47,13 @@ public class ScimV1PrincipalProvisioner implements PrincipalProvisioner {
     @Override
     public boolean create(final Authentication auth, final Principal p, final Credential credential) {
         try {
-            final Resources<UserResource> resources = endpoint.query("userName eq \"" + p.getId() + "\"");
+            val resources = endpoint.query("userName eq \"" + p.getId() + '"');
             if (resources.getTotalResults() <= 0) {
                 LOGGER.debug("User [{}] not found", p.getId());
                 return false;
             }
 
-            final UserResource user = resources.iterator().next();
+            val user = resources.iterator().next();
             if (user != null) {
                 return updateUserResource(user, p, credential);
             }
@@ -75,7 +73,7 @@ public class ScimV1PrincipalProvisioner implements PrincipalProvisioner {
      */
     @SneakyThrows
     protected boolean createUserResource(final Principal p, final Credential credential) {
-        final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
+        val user = new UserResource(CoreSchema.USER_DESCRIPTOR);
         this.mapper.map(user, p, credential);
         return endpoint.create(user) != null;
     }

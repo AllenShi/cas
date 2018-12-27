@@ -1,13 +1,15 @@
 package org.apereo.cas.cosmosdb;
 
 import org.apereo.cas.configuration.model.support.cosmosdb.CosmosDbServiceRegistryProperties;
+
+import lombok.val;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.ApplicationContext;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit4.rules.SpringClassRule;
+import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import static org.junit.Assert.*;
 
@@ -17,9 +19,13 @@ import static org.junit.Assert.*;
  * @author Misagh Moayyed
  * @since 5.3.0
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = RefreshAutoConfiguration.class)
 public class CosmosDbObjectFactoryTests {
+    @ClassRule
+    public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
+
+    @Rule
+    public final SpringMethodRule springMethodRule = new SpringMethodRule();
+
     @Autowired
     private ApplicationContext applicationContext;
 
@@ -32,8 +38,8 @@ public class CosmosDbObjectFactoryTests {
 
     @Test
     public void verifyClient() {
-        final CosmosDbObjectFactory factory = new CosmosDbObjectFactory(applicationContext);
-        final CosmosDbServiceRegistryProperties properties = new CosmosDbServiceRegistryProperties();
+        val factory = new CosmosDbObjectFactory(applicationContext);
+        val properties = new CosmosDbServiceRegistryProperties();
         properties.setUri("http://localhost:1234");
         properties.setKey("123456");
         assertNotNull(factory.createDocumentClient(properties));
@@ -41,8 +47,8 @@ public class CosmosDbObjectFactoryTests {
 
     @Test
     public void verifyDocumentDb() {
-        final CosmosDbObjectFactory factory = new CosmosDbObjectFactory(applicationContext);
-        final CosmosDbServiceRegistryProperties properties = new CosmosDbServiceRegistryProperties();
+        val factory = new CosmosDbObjectFactory(applicationContext);
+        val properties = new CosmosDbServiceRegistryProperties();
         properties.setUri("http://localhost:1234");
         properties.setKey("123456");
         assertNotNull(factory.createDocumentDbFactory(properties));
@@ -50,8 +56,8 @@ public class CosmosDbObjectFactoryTests {
 
     @Test
     public void verifyDocumentDbTemplate() {
-        final CosmosDbObjectFactory factory = new CosmosDbObjectFactory(applicationContext);
-        final CosmosDbServiceRegistryProperties properties = new CosmosDbServiceRegistryProperties();
+        val factory = new CosmosDbObjectFactory(applicationContext);
+        val properties = new CosmosDbServiceRegistryProperties();
         properties.setUri("http://localhost:1234");
         properties.setKey("123456");
         assertNotNull(factory.createDocumentDbTemplate(factory.createDocumentDbFactory(properties), properties));

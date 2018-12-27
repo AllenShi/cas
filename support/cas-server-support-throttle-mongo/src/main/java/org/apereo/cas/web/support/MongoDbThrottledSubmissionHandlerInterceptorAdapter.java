@@ -1,9 +1,12 @@
 package org.apereo.cas.web.support;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.audit.AuditTrailExecutionPlan;
+import org.apereo.cas.throttle.ThrottledRequestExecutor;
+import org.apereo.cas.throttle.ThrottledRequestResponseHandler;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apereo.inspektr.audit.AuditActionContext;
-import org.apereo.inspektr.common.web.ClientInfo;
 import org.apereo.inspektr.common.web.ClientInfoHolder;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -11,8 +14,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -32,19 +33,23 @@ public class MongoDbThrottledSubmissionHandlerInterceptorAdapter extends Abstrac
                                                                final AuditTrailExecutionPlan auditTrailExecutionPlan,
                                                                final MongoTemplate mongoTemplate,
                                                                final String authenticationFailureCode,
-                                                               final String applicationCode, final String collectionName) {
+                                                               final String applicationCode,
+                                                               final String collectionName,
+                                                               final ThrottledRequestResponseHandler throttledRequestResponseHandler,
+                                                               final ThrottledRequestExecutor throttledRequestExecutor) {
         super(failureThreshold, failureRangeInSeconds, usernameParameter,
-            authenticationFailureCode, auditTrailExecutionPlan, applicationCode);
+            authenticationFailureCode, auditTrailExecutionPlan, applicationCode,
+            throttledRequestResponseHandler, throttledRequestExecutor);
         this.mongoTemplate = mongoTemplate;
         this.collectionName = collectionName;
     }
 
     @Override
     public boolean exceedsThreshold(final HttpServletRequest request) {
-        final ClientInfo clientInfo = ClientInfoHolder.getClientInfo();
-        final String remoteAddress = clientInfo.getClientIpAddress();
+        val clientInfo = ClientInfoHolder.getClientInfo();
+        val remoteAddress = clientInfo.getClientIpAddress();
 
-        final Query query = new Query()
+        val query = new Query()
             .addCriteria(Criteria.where("clientIpAddress").is(remoteAddress)
                 .and("principal").is(getUsernameParameterFromRequest(request))
                 .and("actionPerformed").is(getAuthenticationFailureCode())
@@ -56,7 +61,7 @@ public class MongoDbThrottledSubmissionHandlerInterceptorAdapter extends Abstrac
         query.fields().include("whenActionWasPerformed");
 
         LOGGER.debug("Executing MongoDb throttling query [{}]", query.toString());
-        final List<Date> failures = this.mongoTemplate.find(query, AuditActionContext.class, this.collectionName)
+        val failures = this.mongoTemplate.find(query, AuditActionContext.class, this.collectionName)
             .stream()
             .map(AuditActionContext::getWhenActionWasPerformed)
             .collect(Collectors.toList());

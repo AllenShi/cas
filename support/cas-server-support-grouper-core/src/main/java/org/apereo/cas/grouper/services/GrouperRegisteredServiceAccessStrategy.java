@@ -1,21 +1,19 @@
 package org.apereo.cas.grouper.services;
 
-import edu.internet2.middleware.grouperClient.ws.beans.WsGetGroupsResult;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.grouper.GrouperFacade;
 import org.apereo.cas.grouper.GrouperGroupField;
 import org.apereo.cas.services.TimeBasedRegisteredServiceAccessStrategy;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import lombok.Setter;
 
 /**
  * The {@link GrouperRegisteredServiceAccessStrategy} is an access strategy
@@ -39,15 +37,15 @@ public class GrouperRegisteredServiceAccessStrategy extends TimeBasedRegisteredS
 
     @Override
     public boolean doPrincipalAttributesAllowServiceAccess(final String principal, final Map<String, Object> principalAttributes) {
-        final Map<String, Object> allAttributes = new HashMap<>(principalAttributes);
-        final List<String> grouperGroups = new ArrayList<>();
-        final GrouperFacade facade = new GrouperFacade();
-        final Collection<WsGetGroupsResult> results = facade.getGroupsForSubjectId(principal);
+        val allAttributes = new HashMap<String, Object>(principalAttributes);
+        val grouperGroups = new ArrayList<String>();
+        val facade = new GrouperFacade();
+        val results = facade.getGroupsForSubjectId(principal);
         if (results.isEmpty()) {
             LOGGER.warn("Subject id [{}] could not be located. Access denied", principal);
             return false;
         }
-        final boolean denied = results
+        val denied = results
             .stream()
             .anyMatch(groupsResult -> {
                 if (groupsResult.getWsGroups() == null || groupsResult.getWsGroups().length == 0) {

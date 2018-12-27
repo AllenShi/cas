@@ -1,4 +1,23 @@
 #!/bin/bash
+source ./ci/functions.sh
+
+runBuild=false
+echo "Reviewing changes that might affect the Gradle build..."
+currentChangeSetAffectsDependencies
+retval=$?
+if [ "$retval" == 0 ]
+then
+    echo "Found changes that affect project dependencies."
+    runBuild=true
+else
+    echo "Changes do NOT affect project dependencies."
+    runBuild=false
+fi
+
+if [ "$runBuild" = false ]; then
+    exit 0
+fi
+
 
 prepCommand="echo 'Running command...'; "
 gradle="./gradlew $@"
@@ -11,10 +30,18 @@ echo -e "***********************************************"
 
 gradleBuild="$gradleBuild dependencyUpdates -Drevision=release -x javadoc -x check  \
     -DskipNpmLint=true -DskipGradleLint=true -DskipSass=true -DskipNestedConfigMetadataGen=true \
-    -DskipNodeModulesCleanUp=true -DskipNpmCache=true --parallel "
+    -DskipNodeModulesCleanUp=true -DskipNpmCache=true --parallel -DgradleReleaseChannel=current "
     
 if [[ "${TRAVIS_COMMIT_MESSAGE}" == *"[show streams]"* ]]; then
     gradleBuild="$gradleBuild -DshowStandardStreams=true "
+fi
+
+if [[ "${TRAVIS_COMMIT_MESSAGE}" == *"[rerun tasks]"* ]]; then
+    gradleBuild="$gradleBuild --rerun-tasks "
+fi
+
+if [[ "${TRAVIS_COMMIT_MESSAGE}" == *"[refresh dependencies]"* ]]; then
+    gradleBuild="$gradleBuild --refresh-dependencies "
 fi
 
 if [ -z "$gradleBuild" ]; then
@@ -40,6 +67,7 @@ else
 
     if [ $retVal == 0 ]; then
         echo "Gradle build finished successfully."
+        exit 0
     else
         echo "Gradle build did NOT finish successfully."
         exit $retVal

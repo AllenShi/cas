@@ -1,9 +1,10 @@
 package org.apereo.cas.configuration.model.support.ldap.serviceregistry;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.apereo.cas.configuration.model.support.ldap.AbstractLdapSearchProperties;
 import org.apereo.cas.configuration.support.RequiresModule;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * This is {@link LdapServiceRegistryProperties}.
@@ -12,7 +13,6 @@ import org.apereo.cas.configuration.support.RequiresModule;
  * @since 5.0.0
  */
 @RequiresModule(name = "cas-server-support-ldap-service-registry")
-
 @Getter
 @Setter
 public class LdapServiceRegistryProperties extends AbstractLdapSearchProperties {
@@ -31,7 +31,7 @@ public class LdapServiceRegistryProperties extends AbstractLdapSearchProperties 
     private String idAttribute = "uid";
 
     /**
-     * Service definintion attribute used for the registered service entry in LDAP
+     * Service definition attribute used for the registered service entry in LDAP
      * to keep a representation of the service body.
      */
     private String serviceDefinitionAttribute = "description";
@@ -52,7 +52,7 @@ public class LdapServiceRegistryProperties extends AbstractLdapSearchProperties 
     public String getSearchFilter() {
         return String.format(this.searchFilter, getIdAttribute());
     }
-    
+
     public String getLoadFilter() {
         return String.format(this.loadFilter, getObjectClass());
     }

@@ -1,13 +1,13 @@
 package org.apereo.cas.authentication;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.principal.Service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.springframework.core.OrderComparator;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
  * @author Misagh Moayyed
  * @since 5.1.0
  */
-@Slf4j
 @RequiredArgsConstructor
 public class DefaultAuthenticationServiceSelectionPlan implements AuthenticationServiceSelectionPlan {
     private final List<AuthenticationServiceSelectionStrategy> strategies;
@@ -34,13 +33,13 @@ public class DefaultAuthenticationServiceSelectionPlan implements Authentication
 
     @Override
     public Service resolveService(final Service service) {
-        final Optional<AuthenticationServiceSelectionStrategy> strategy = this.strategies
+        val strategy = this.strategies
             .stream()
             .filter(s -> s.supports(service))
             .findFirst();
 
         if (strategy.isPresent()) {
-            final AuthenticationServiceSelectionStrategy result = strategy.get();
+            val result = strategy.get();
             return result.resolveServiceFrom(service);
         }
         return null;
@@ -48,7 +47,7 @@ public class DefaultAuthenticationServiceSelectionPlan implements Authentication
 
     @Override
     public <T extends Service> T resolveService(final Service service, final Class<T> clazz) {
-        final Service result = resolveService(service);
+        val result = resolveService(service);
         if (result == null) {
             return null;
         }

@@ -2,6 +2,8 @@ package org.apereo.cas.web.flow;
 
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.web.support.WebUtils;
+
+import lombok.val;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -21,12 +23,12 @@ public class CheckConsentRequiredActionTests extends BaseConsentActionTests {
 
     @Test
     public void verifyOperation() throws Exception {
-        final MockRequestContext context = new MockRequestContext();
-        final MockHttpServletRequest request = new MockHttpServletRequest();
+        val context = new MockRequestContext();
+        val request = new MockHttpServletRequest();
         context.setExternalContext(new ServletExternalContext(new MockServletContext(), request, new MockHttpServletResponse()));
 
         WebUtils.putAuthentication(CoreAuthenticationTestUtils.getAuthentication(), context);
-        WebUtils.putService(context, CoreAuthenticationTestUtils.getWebApplicationService("consentService"));
+        WebUtils.putServiceIntoFlowScope(context, CoreAuthenticationTestUtils.getWebApplicationService("consentService"));
         assertEquals(CheckConsentRequiredAction.EVENT_ID_CONSENT_REQUIRED, checkConsentRequiredAction.execute(context).getId());
         assertTrue(context.getFlowScope().contains("attributes"));
         assertTrue(context.getFlowScope().contains("principal"));

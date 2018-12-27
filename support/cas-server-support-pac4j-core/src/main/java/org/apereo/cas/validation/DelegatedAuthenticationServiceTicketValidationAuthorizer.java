@@ -1,22 +1,19 @@
 package org.apereo.cas.validation;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.audit.AuditableContext;
 import org.apereo.cas.audit.AuditableExecution;
-import org.apereo.cas.audit.AuditableExecutionResult;
 import org.apereo.cas.authentication.principal.ClientCredential;
 import org.apereo.cas.authentication.principal.Service;
-import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.RegisteredServiceAccessStrategyUtils;
-import org.apereo.cas.services.RegisteredServiceDelegatedAuthenticationPolicy;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.util.CollectionUtils;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.pac4j.core.client.Client;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * This is {@link DelegatedAuthenticationServiceTicketValidationAuthorizer}.
@@ -33,25 +30,25 @@ public class DelegatedAuthenticationServiceTicketValidationAuthorizer implements
 
     @Override
     public void authorize(final HttpServletRequest request, final Service service, final Assertion assertion) {
-        final RegisteredService registeredService = this.servicesManager.findServiceBy(service);
+        val registeredService = this.servicesManager.findServiceBy(service);
         RegisteredServiceAccessStrategyUtils.ensureServiceAccessIsAllowed(service, registeredService);
         LOGGER.debug("Evaluating service [{}] for delegated authentication policy", service);
-        final RegisteredServiceDelegatedAuthenticationPolicy policy = registeredService.getAccessStrategy().getDelegatedAuthenticationPolicy();
+        val policy = registeredService.getAccessStrategy().getDelegatedAuthenticationPolicy();
         if (policy != null) {
-            final Map<String, Object> attributes = assertion.getPrimaryAuthentication().getAttributes();
+            val attributes = assertion.getPrimaryAuthentication().getAttributes();
 
             if (attributes.containsKey(ClientCredential.AUTHENTICATION_ATTRIBUTE_CLIENT_NAME)) {
-                final Object clientNameAttr = attributes.get(ClientCredential.AUTHENTICATION_ATTRIBUTE_CLIENT_NAME);
-                final Optional<Object> value = CollectionUtils.firstElement(clientNameAttr);
+                val clientNameAttr = attributes.get(ClientCredential.AUTHENTICATION_ATTRIBUTE_CLIENT_NAME);
+                val value = CollectionUtils.firstElement(clientNameAttr);
                 if (value.isPresent()) {
-                    final String client = value.get().toString();
+                    val client = value.get().toString();
                     LOGGER.debug("Evaluating delegated authentication policy [{}] for client [{}] and service [{}]", policy, client, registeredService);
 
-                    final AuditableContext context = AuditableContext.builder()
+                    val context = AuditableContext.builder()
                         .registeredService(registeredService)
                         .properties(CollectionUtils.wrap(Client.class.getSimpleName(), client))
                         .build();
-                    final AuditableExecutionResult result = delegatedAuthenticationPolicyEnforcer.execute(context);
+                    val result = delegatedAuthenticationPolicyEnforcer.execute(context);
                     result.throwExceptionIfNeeded();
                 }
             }

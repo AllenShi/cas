@@ -11,7 +11,7 @@ import java.io.Serializable;
  * This is {@link SamlIdPTicketProperties}.
  *
  * @author Samuel Lyons
- * @since 5.3.0
+ * @since 6.0.0
  */
 @RequiresModule(name = "cas-server-support-saml-idp")
 @Getter
@@ -24,7 +24,6 @@ public class SamlIdPTicketProperties implements Serializable {
      * name that should be given to the saml artifact cache storage name.
      */
     private String samlArtifactsCacheStorageName = "samlArtifactsCache";
-
     /**
      * The name that should be given to the saml attribute query cache storage name.
      */

@@ -1,6 +1,7 @@
 ---
 layout: default
 title: CAS - Releasing Principal Id
+category: Attributes
 ---
 
 # Principal-Id Attribute
@@ -142,6 +143,14 @@ def run(Object[] args) {
     def logger = args[2]
     logger.info("Testing username attribute")
     return "test"
+}
+```
+
+Sample javascript function follows:
+
+```javascript
+function run(uid, logger) {
+   return "test"
 }
 ```
 

@@ -1,12 +1,11 @@
 package org.apereo.cas.aws;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 
@@ -42,7 +41,7 @@ public class AmazonEnvironmentAwareClientBuilder {
      * @return the setting
      */
     public String getSetting(final String key, final String defaultValue) {
-        final String result = environment.getProperty(this.propertyPrefix + '.' + key);
+        val result = environment.getProperty(this.propertyPrefix + '.' + key);
         return StringUtils.defaultIfBlank(result, defaultValue);
     }
 
@@ -67,9 +66,9 @@ public class AmazonEnvironmentAwareClientBuilder {
      * @return the client instance
      */
     public <T> T build(final AwsClientBuilder builder, final Class<T> clientType) {
-        final ClientConfiguration cfg = new ClientConfiguration();
+        val cfg = new ClientConfiguration();
         try {
-            final String localAddress = getSetting("localAddress");
+            val localAddress = getSetting("localAddress");
             if (StringUtils.isNotBlank(localAddress)) {
                 cfg.setLocalAddress(InetAddress.getByName(localAddress));
             }
@@ -78,31 +77,31 @@ public class AmazonEnvironmentAwareClientBuilder {
         }
         builder.withClientConfiguration(cfg);
 
-        final String key = getSetting("credentialAccessKey");
-        final String secret = getSetting("credentialSecretKey");
-        final AWSCredentialsProvider credentials = ChainingAWSCredentialsProvider.getInstance(key, secret);
+        val key = getSetting("credentialAccessKey");
+        val secret = getSetting("credentialSecretKey");
+        val credentials = ChainingAWSCredentialsProvider.getInstance(key, secret);
         builder.withCredentials(credentials);
 
-        String region = getSetting("region");
-        final Region currentRegion = Regions.getCurrentRegion();
+        var region = getSetting("region");
+        val currentRegion = Regions.getCurrentRegion();
         if (currentRegion != null && StringUtils.isBlank(region)) {
             region = currentRegion.getName();
         }
-        String regionOverride = getSetting("regionOverride");
-        if (StringUtils.isNotBlank(regionOverride)) {
+        var regionOverride = getSetting("regionOverride");
+        if (currentRegion != null && StringUtils.isNotBlank(regionOverride)) {
             regionOverride = currentRegion.getName();
         }
-        final String finalRegion = StringUtils.defaultIfBlank(regionOverride, region);
+        val finalRegion = StringUtils.defaultIfBlank(regionOverride, region);
         if (StringUtils.isNotBlank(finalRegion)) {
             builder.withRegion(finalRegion);
         }
 
-        final String endpoint = getSetting("endpoint");
-        if (StringUtils.isNotBlank(endpoint) && StringUtils.isNotBlank(finalRegion)) {
+        val endpoint = getSetting("endpoint");
+        if (StringUtils.isNotBlank(endpoint)) {
             builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, finalRegion));
         }
 
-        final Object result = builder.build();
+        val result = builder.build();
         return clientType.cast(result);
     }
 }

@@ -1,15 +1,16 @@
 package org.apereo.cas.trusted.web.flow.fingerprint;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.apereo.cas.util.gen.RandomStringGenerator;
 import org.apereo.cas.web.support.CookieRetrievingCookieGenerator;
 import org.apereo.cas.web.support.WebUtils;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.val;
 import org.springframework.webflow.execution.RequestContext;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -31,10 +32,9 @@ public class CookieDeviceFingerprintComponentExtractor implements DeviceFingerpr
     @Override
     public Optional<String> extractComponent(final String principal, final RequestContext context,
                                              final boolean isNew) {
-        final HttpServletRequest request = WebUtils.getHttpServletRequestFromExternalWebflowContext(context);
-        final String cookieValue = Optional.ofNullable(cookieGenerator.retrieveCookieValue(request)).orElseGet(createDeviceFingerPrintCookieValue());
+        val request = WebUtils.getHttpServletRequestFromExternalWebflowContext(context);
+        val cookieValue = Optional.ofNullable(cookieGenerator.retrieveCookieValue(request)).orElseGet(createDeviceFingerPrintCookieValue());
 
-        // set/update the cookie in the response if we are "creating" a fingerprint
         if (isNew) {
             createDeviceFingerPrintCookie(context, request, cookieValue);
         }
@@ -50,7 +50,7 @@ public class CookieDeviceFingerprintComponentExtractor implements DeviceFingerpr
      * @param cookieValue the cookie value
      */
     protected void createDeviceFingerPrintCookie(final RequestContext context, final HttpServletRequest request, final String cookieValue) {
-        final HttpServletResponse response = WebUtils.getHttpServletResponseFromExternalWebflowContext(context);
+        val response = WebUtils.getHttpServletResponseFromExternalWebflowContext(context);
         cookieGenerator.addCookie(request, response, cookieValue);
     }
 

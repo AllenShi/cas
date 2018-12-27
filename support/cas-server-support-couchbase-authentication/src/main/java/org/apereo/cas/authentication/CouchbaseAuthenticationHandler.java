@@ -1,22 +1,20 @@
 package org.apereo.cas.authentication;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.query.N1qlQueryResult;
-import com.couchbase.client.java.query.N1qlQueryRow;
-import lombok.extern.slf4j.Slf4j;
+import org.apereo.cas.authentication.credential.UsernamePasswordCredential;
 import org.apereo.cas.authentication.handler.support.AbstractUsernamePasswordAuthenticationHandler;
-import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.configuration.model.support.couchbase.authentication.CouchbaseAuthenticationProperties;
 import org.apereo.cas.couchbase.core.CouchbaseClientFactory;
 import org.apereo.cas.services.ServicesManager;
 
+import com.couchbase.client.java.document.json.JsonObject;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.auth.login.FailedLoginException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * This is {@link CouchbaseAuthenticationHandler}.
@@ -41,7 +39,7 @@ public class CouchbaseAuthenticationHandler extends AbstractUsernamePasswordAuth
     @Override
     protected AuthenticationHandlerExecutionResult authenticateUsernamePasswordInternal(final UsernamePasswordCredential transformedCredential,
                                                                                         final String originalPassword) throws GeneralSecurityException {
-        final N1qlQueryResult result = couchbase.query(couchbaseProperties.getUsernameAttribute(), transformedCredential.getUsername());
+        val result = couchbase.query(couchbaseProperties.getUsernameAttribute(), transformedCredential.getUsername());
         if (result.allRows().isEmpty()) {
             LOGGER.error("Couchbase query did not return any results/rows.");
             throw new AccountNotFoundException("Could not locate account for user " + transformedCredential.getUsername());
@@ -51,13 +49,13 @@ public class CouchbaseAuthenticationHandler extends AbstractUsernamePasswordAuth
             throw new FailedLoginException("More then one row found for user " + transformedCredential.getId());
         }
 
-        final N1qlQueryRow row = result.allRows().get(0);
-        final Bucket bucket = couchbase.getBucket();
+        val row = result.allRows().get(0);
+        val bucket = couchbase.getBucket();
         if (!row.value().containsKey(bucket.name())) {
             throw new AccountNotFoundException("Couchbase query row does not contain this bucket [{}]" + bucket.name());
         }
 
-        final JsonObject value = (JsonObject) row.value().get(bucket.name());
+        val value = (JsonObject) row.value().get(couchbase.getBucket().name());
         if (!value.containsKey(couchbaseProperties.getUsernameAttribute())) {
             throw new FailedLoginException("No user attribute found for " + transformedCredential.getId());
         }
@@ -70,9 +68,9 @@ public class CouchbaseAuthenticationHandler extends AbstractUsernamePasswordAuth
             throw new FailedLoginException();
         }
 
-        final Map<String, Object> attributes = couchbase.collectAttributesFromEntity(value, s ->
+        val attributes = couchbase.collectAttributesFromEntity(value, s ->
             !s.equals(couchbaseProperties.getPasswordAttribute()) && !s.equals(couchbaseProperties.getUsernameAttribute()));
-        final Principal principal = this.principalFactory.createPrincipal(transformedCredential.getId(), attributes);
+        val principal = this.principalFactory.createPrincipal(transformedCredential.getId(), attributes);
         return createHandlerResult(transformedCredential, principal, new ArrayList<>());
     }
 }

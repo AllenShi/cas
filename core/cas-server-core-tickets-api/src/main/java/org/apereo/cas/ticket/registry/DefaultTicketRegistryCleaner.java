@@ -7,10 +7,10 @@ import org.apereo.cas.ticket.registry.support.LockingStrategy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * This is {@link DefaultTicketRegistryCleaner}.
@@ -29,39 +29,42 @@ public class DefaultTicketRegistryCleaner implements TicketRegistryCleaner, Seri
     private final transient TicketRegistry ticketRegistry;
 
     @Override
-    public void clean() {
+    public int clean() {
         try {
             if (!isCleanerSupported()) {
                 LOGGER.trace("Ticket registry cleaner is not supported by [{}]. No cleaner processes will run.", getClass().getSimpleName());
-                return;
+                return 0;
             }
 
-            LOGGER.debug("Attempting to acquire ticket cleanup lock.");
+            LOGGER.trace("Attempting to acquire ticket cleanup lock.");
             if (!this.lockingStrategy.acquire()) {
                 LOGGER.info("Could not obtain lock. Aborting cleanup. The ticket registry may not support self-service maintenance.");
-                return;
+                return 0;
             }
-            LOGGER.debug("Acquired lock. Proceeding with cleanup.");
-            cleanInternal();
+            LOGGER.trace("Acquired lock. Proceeding with cleanup.");
+            return cleanInternal();
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
         } finally {
-            LOGGER.debug("Releasing ticket cleanup lock.");
+            LOGGER.trace("Releasing ticket cleanup lock.");
             this.lockingStrategy.release();
             LOGGER.debug("Finished ticket cleanup.");
         }
+        return 0;
     }
 
     /**
      * Clean tickets.
+     *
+     * @return the int
      */
-    protected void cleanInternal() {
-        final int ticketsDeleted = ticketRegistry.getTicketsStream()
-            .filter(Objects::nonNull)
+    protected int cleanInternal() {
+        val ticketsDeleted = ticketRegistry.getTicketsStream()
             .filter(Ticket::isExpired)
             .mapToInt(this::cleanTicket)
             .sum();
         LOGGER.info("[{}] expired tickets removed.", ticketsDeleted);
+        return ticketsDeleted;
     }
 
     @Override
@@ -70,7 +73,7 @@ public class DefaultTicketRegistryCleaner implements TicketRegistryCleaner, Seri
             LOGGER.debug("Cleaning up expired ticket-granting ticket [{}]", ticket.getId());
             logoutManager.performLogout((TicketGrantingTicket) ticket);
         }
-        LOGGER.debug("Deleting expired ticket [{}]", ticket.getId());
+        LOGGER.debug("Cleaning up expired service ticket [{}]", ticket.getId());
         return ticketRegistry.deleteTicket(ticket);
     }
 

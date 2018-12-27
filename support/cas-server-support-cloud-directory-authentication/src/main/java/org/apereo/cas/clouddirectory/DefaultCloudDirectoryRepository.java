@@ -1,19 +1,15 @@
 package org.apereo.cas.clouddirectory;
 
-import com.amazonaws.services.clouddirectory.AmazonCloudDirectory;
-import com.amazonaws.services.clouddirectory.model.IndexAttachment;
-import com.amazonaws.services.clouddirectory.model.ListIndexRequest;
-import com.amazonaws.services.clouddirectory.model.ListIndexResult;
-import com.amazonaws.services.clouddirectory.model.ListObjectAttributesRequest;
-import com.amazonaws.services.clouddirectory.model.ListObjectAttributesResult;
-import com.amazonaws.services.clouddirectory.model.ObjectReference;
-import com.amazonaws.services.clouddirectory.model.TypedAttributeValue;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apereo.cas.configuration.model.support.clouddirectory.CloudDirectoryProperties;
 import org.apereo.cas.util.DateTimeUtils;
+
+import com.amazonaws.services.clouddirectory.AmazonCloudDirectory;
+import com.amazonaws.services.clouddirectory.model.ListIndexResult;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -34,7 +30,7 @@ public class DefaultCloudDirectoryRepository implements CloudDirectoryRepository
 
     @Override
     public Map<String, Object> getUser(final String username) {
-        final ListIndexResult indexResult = getIndexResult(username);
+        val indexResult = getIndexResult(username);
         if (indexResult == null) {
             LOGGER.warn("Index result could not be found for user [{}]", username);
             return new LinkedHashMap<>();
@@ -43,9 +39,9 @@ public class DefaultCloudDirectoryRepository implements CloudDirectoryRepository
     }
 
     private ListIndexResult getIndexResult(final String username) {
-        final ObjectReference reference = CloudDirectoryUtils.getObjectRefByPath(properties.getUsernameIndexPath());
+        val reference = CloudDirectoryUtils.getObjectRefByPath(properties.getUsernameIndexPath());
         if (reference != null) {
-            final ListIndexRequest listIndexRequest = CloudDirectoryUtils.getListIndexRequest(
+            val listIndexRequest = CloudDirectoryUtils.getListIndexRequest(
                 properties.getUsernameAttributeName(),
                 username, reference, properties);
 
@@ -64,20 +60,19 @@ public class DefaultCloudDirectoryRepository implements CloudDirectoryRepository
      * @return the user info from index result
      */
     protected Map<String, Object> getUserInfoFromIndexResult(final ListIndexResult indexResult) {
-        final IndexAttachment attachment = indexResult.getIndexAttachments().stream().findFirst().orElse(null);
-
+        val attachment = indexResult.getIndexAttachments().stream().findFirst().orElse(null);
         if (attachment == null) {
             LOGGER.warn("Index result has no attachments");
             return null;
         }
 
-        final String identifier = attachment.getObjectIdentifier();
-        final ListObjectAttributesRequest listObjectAttributesRequest = CloudDirectoryUtils.getListObjectAttributesRequest(properties.getDirectoryArn(), identifier);
+        val identifier = attachment.getObjectIdentifier();
+        val listObjectAttributesRequest = CloudDirectoryUtils.getListObjectAttributesRequest(properties.getDirectoryArn(), identifier);
         if (listObjectAttributesRequest == null) {
             LOGGER.warn("No object attribute request is available for identifier [{}]", identifier);
             return null;
         }
-        final ListObjectAttributesResult attributesResult = amazonCloudDirectory.listObjectAttributes(listObjectAttributesRequest);
+        val attributesResult = amazonCloudDirectory.listObjectAttributes(listObjectAttributesRequest);
         if (attributesResult == null || attributesResult.getAttributes() == null || attributesResult.getAttributes().isEmpty()) {
             LOGGER.warn("No object attribute result is available for identifier [{}] or not attributes are found", identifier);
             return null;
@@ -86,8 +81,8 @@ public class DefaultCloudDirectoryRepository implements CloudDirectoryRepository
         return attributesResult.getAttributes()
             .stream()
             .map(a -> {
-                Object value = null;
-                final TypedAttributeValue attributeValue = a.getValue();
+                var value = (Object) null;
+                val attributeValue = a.getValue();
                 LOGGER.debug("Examining attribute [{}]", a);
 
                 if (StringUtils.isNotBlank(attributeValue.getNumberValue())) {

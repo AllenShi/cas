@@ -19,19 +19,19 @@ public interface ProxyHandler {
     /**
      * Method to actually process the proxy request.
      *
-     * @param credential The credential of the item that will be proxying.
+     * @param credential            The credential of the item that will be proxying.
      * @param proxyGrantingTicketId The ticketId for the PGT (which really is a TGT)
      * @return the String value that needs to be passed to the CAS client.
      */
     String handle(Credential credential, TicketGrantingTicket proxyGrantingTicketId);
-    
+
     /**
      * Whether this handler can support the proxy request identified by the given credentials.
      *
      * @param credential the credential object containing the proxy request details.
      * @return true, if successful
      */
-    default boolean canHandle(Credential credential) {
+    default boolean canHandle(final Credential credential) {
         return true;
     }
 }

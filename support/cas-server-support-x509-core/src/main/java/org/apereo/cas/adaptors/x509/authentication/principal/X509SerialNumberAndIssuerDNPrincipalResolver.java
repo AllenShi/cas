@@ -1,12 +1,13 @@
 package org.apereo.cas.adaptors.x509.authentication.principal;
 
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
+
+import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 import org.apereo.services.persondir.IPersonAttributeDao;
 import org.apereo.services.persondir.support.StubPersonAttributeDao;
+
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
@@ -26,7 +27,6 @@ import java.util.HashMap;
  * @author Jan Van der Velpen
  * @since 3.1
  */
-@Slf4j
 @ToString(callSuper = true)
 public class X509SerialNumberAndIssuerDNPrincipalResolver extends AbstractX509PrincipalResolver {
 
@@ -41,23 +41,17 @@ public class X509SerialNumberAndIssuerDNPrincipalResolver extends AbstractX509Pr
     private final String valueDelimiter;
 
     public X509SerialNumberAndIssuerDNPrincipalResolver(final String serialNumberPrefix, final String valueDelimiter) {
-        this(new StubPersonAttributeDao(new HashMap<>()), new DefaultPrincipalFactory(), false, null, serialNumberPrefix, valueDelimiter);
+        this(new StubPersonAttributeDao(new HashMap<>()), new DefaultPrincipalFactory(), false,
+            null, serialNumberPrefix, valueDelimiter, false);
     }
 
-    /**
-     * Creates a new instance.
-     *
-     * @param attributeRepository      the attribute repository
-     * @param principalFactory         the principal factory
-     * @param returnNullIfNoAttributes the return null if no attributes
-     * @param principalAttributeName   the principal attribute name
-     * @param serialNumberPrefix       prefix for the certificate serialnumber (default: "SERIALNUMBER=").
-     * @param valueDelimiter           delimiter to separate the two certificate properties in the string. (default: ", ")
-     */
     public X509SerialNumberAndIssuerDNPrincipalResolver(final IPersonAttributeDao attributeRepository,
-                                                        final PrincipalFactory principalFactory, final boolean returnNullIfNoAttributes,
-                                                        final String principalAttributeName, final String serialNumberPrefix, final String valueDelimiter) {
-        super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName);
+                                                        final PrincipalFactory principalFactory,
+                                                        final boolean returnNullIfNoAttributes,
+                                                        final String principalAttributeName,
+                                                        final String serialNumberPrefix, final String valueDelimiter,
+                                                        final boolean useCurrentPrincipalId) {
+        super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName, useCurrentPrincipalId);
         this.serialNumberPrefix = StringUtils.defaultString(serialNumberPrefix, "SERIALNUMBER=");
         this.valueDelimiter = StringUtils.defaultIfBlank(valueDelimiter, ", ");
     }

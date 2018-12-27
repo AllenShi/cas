@@ -5,11 +5,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Predicates;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -24,6 +23,28 @@ import java.util.function.Predicate;
 public interface RegisteredServiceProperty extends Serializable {
 
     /**
+     * Gets values.
+     *
+     * @return the values
+     */
+    Set<String> getValues();
+
+    /**
+     * Gets the first single value.
+     *
+     * @return the value, or null if the collection is empty.
+     */
+    String getValue();
+
+    /**
+     * Contains elements?
+     *
+     * @param value the value
+     * @return true/false
+     */
+    boolean contains(String value);
+
+    /**
      * Collection of supported properties that control various functionality in CAS.
      */
     @JsonFormat(shape = JsonFormat.Shape.OBJECT)
@@ -34,13 +55,6 @@ public interface RegisteredServiceProperty extends Serializable {
          * using when delegating authentication to ADFS to indicate the relying party identifier.
          */
         WSFED_RELYING_PARTY_ID("wsfed.relyingPartyIdentifier", StringUtils.EMPTY),
-        /**
-         * Produce a JWT as a response when generating service tickets.
-         *
-         * @deprecated Use {@link #TOKEN_AS_SERVICE_TICKET} instead.
-         **/
-        @Deprecated
-        TOKEN_AS_RESPONSE("jwtAsResponse", "true"),
         /**
          * Produce a JWT as a response when generating service tickets.
          **/
@@ -121,7 +135,7 @@ public interface RegisteredServiceProperty extends Serializable {
          */
         public RegisteredServiceProperty getPropertyValue(final RegisteredService service) {
             if (isAssignedTo(service)) {
-                final Optional<Map.Entry<String, RegisteredServiceProperty>> property = service.getProperties().entrySet()
+                val property = service.getProperties().entrySet()
                     .stream().filter(entry -> entry.getKey().equalsIgnoreCase(getPropertyName())
                         && StringUtils.isNotBlank(entry.getValue().getValue()))
                     .distinct().findFirst();
@@ -142,7 +156,7 @@ public interface RegisteredServiceProperty extends Serializable {
          */
         public <T> T getPropertyValue(final RegisteredService service, final Class<T> clazz) {
             if (isAssignedTo(service)) {
-                final RegisteredServiceProperty prop = getPropertyValue(service);
+                val prop = getPropertyValue(service);
                 if (prop != null) {
                     return clazz.cast(prop.getValue());
                 }
@@ -175,26 +189,4 @@ public interface RegisteredServiceProperty extends Serializable {
                     && valueFilter.test(entry.getValue().getValue()));
         }
     }
-
-    /**
-     * Gets values.
-     *
-     * @return the values
-     */
-    Set<String> getValues();
-
-    /**
-     * Gets the first single value.
-     *
-     * @return the value, or null if the collection is empty.
-     */
-    String getValue();
-
-    /**
-     * Contains elements?
-     *
-     * @param value the value
-     * @return true/false
-     */
-    boolean contains(String value);
 }

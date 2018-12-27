@@ -1,21 +1,22 @@
 package org.apereo.cas.adaptors.x509.authentication.principal;
 
-import lombok.AllArgsConstructor;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
+
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.val;
 import org.apereo.services.persondir.IPersonAttributeDao;
+
 import java.security.cert.X509Certificate;
 
 /**
- * Returns a new principal based on the Sereial Number of the certificate.
+ * Returns a new principal based on the serial number of the certificate.
  *
  * @author Scott Battaglia
  * @since 3.0.0
  */
-@Slf4j
 @ToString(callSuper = true)
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class X509SerialNumberPrincipalResolver extends AbstractX509PrincipalResolver {
 
     private static final int DEFAULT_RADIX = 10;
@@ -33,23 +34,26 @@ public class X509SerialNumberPrincipalResolver extends AbstractX509PrincipalReso
 
     public X509SerialNumberPrincipalResolver(final IPersonAttributeDao attributeRepository,
                                              final PrincipalFactory principalFactory, final boolean returnNullIfNoAttributes,
-                                             final String principalAttributeName) {
-        this(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName, DEFAULT_RADIX, false);
+                                             final String principalAttributeName,
+                                             final boolean useCurrentPrincipalId) {
+        this(attributeRepository, principalFactory, returnNullIfNoAttributes,
+            principalAttributeName, DEFAULT_RADIX, false, useCurrentPrincipalId);
     }
 
     public X509SerialNumberPrincipalResolver(final IPersonAttributeDao attributeRepository,
                                              final PrincipalFactory principalFactory, final boolean returnNullIfNoAttributes,
-                                             final String principalAttributeName, final int radix, final boolean zeroPadding) {
-        super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName);
+                                             final String principalAttributeName, final int radix, final boolean zeroPadding,
+                                             final boolean useCurrentPrincipalId) {
+        super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalAttributeName, useCurrentPrincipalId);
         this.radix = radix;
         this.zeroPadding = zeroPadding;
     }
 
     @Override
     protected String resolvePrincipalInternal(final X509Certificate certificate) {
-        final String principal = certificate.getSerialNumber().toString(radix);
+        val principal = certificate.getSerialNumber().toString(radix);
         if (zeroPadding && principal.length() % 2 != 0) {
-            return "0" + principal;
+            return '0' + principal;
         }
         return principal;
     }

@@ -8,17 +8,17 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.OctJwkGenerator;
-import org.jose4j.jwk.OctetSequenceJsonWebKey;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 /**
  * This is {@link BaseBinaryCipherExecutor}.
@@ -34,22 +34,20 @@ import java.util.Map;
 @Getter
 @Setter
 public abstract class BaseBinaryCipherExecutor extends AbstractCipherExecutor<byte[], byte[]> {
+    private static final String CIPHER_ALGORITHM = "AES";
 
     /**
      * Name of the cipher/component whose keys are generated here.
      */
     protected final String cipherName;
-
+    
+    private final SecretKeySpec encryptionKey;
     /**
      * Secret key IV algorithm. Default is {@code AES}.
      */
     private String secretKeyAlgorithm = "AES";
-
     private byte[] encryptionSecretKey;
 
-    private final SecretKeySpec encryptionKey;
-
-    private final String cipherAlgorithm = "AES";
 
     /**
      * Instantiates a new cryptic ticket cipher executor.
@@ -68,24 +66,29 @@ public abstract class BaseBinaryCipherExecutor extends AbstractCipherExecutor<by
         this.encryptionKey = new SecretKeySpec(this.encryptionSecretKey, this.secretKeyAlgorithm);
     }
 
+    private static String generateOctetJsonWebKeyOfSize(final int size) {
+        val octetKey = OctJwkGenerator.generateJwk(size);
+        val params = octetKey.toParams(JsonWebKey.OutputControlLevel.INCLUDE_SYMMETRIC);
+        return params.get("k").toString();
+    }
+
     @Override
     @SneakyThrows
     public byte[] encode(final byte[] value, final Object[] parameters) {
-        final Cipher aesCipher = Cipher.getInstance(cipherAlgorithm);
+        val aesCipher = Cipher.getInstance(CIPHER_ALGORITHM);
         aesCipher.init(Cipher.ENCRYPT_MODE, this.encryptionKey);
-        final byte[] result = aesCipher.doFinal(value);
+        val result = aesCipher.doFinal(value);
         return sign(result);
     }
 
     @Override
     @SneakyThrows
     public byte[] decode(final byte[] value, final Object[] parameters) {
-        final Cipher aesCipher = Cipher.getInstance(cipherAlgorithm);
-        final byte[] verifiedValue = verifySignature(value);
+        val verifiedValue = verifySignature(value);
+        val aesCipher = Cipher.getInstance(CIPHER_ALGORITHM);
         aesCipher.init(Cipher.DECRYPT_MODE, this.encryptionKey);
-        final byte[] bytePlainText;
         try {
-            bytePlainText = aesCipher.doFinal(verifiedValue);
+            return aesCipher.doFinal(verifiedValue);
         } catch (final IllegalBlockSizeException | BadPaddingException e) {
             if (LOGGER.isTraceEnabled()) {
                 throw new DecryptionException(e);
@@ -93,13 +96,6 @@ public abstract class BaseBinaryCipherExecutor extends AbstractCipherExecutor<by
             //noinspection ThrowInsideCatchBlockWhichIgnoresCaughtException
             throw new DecryptionException(); //NOPMD
         }
-        return bytePlainText;
-    }
-
-    private static String generateOctetJsonWebKeyOfSize(final int size) {
-        final OctetSequenceJsonWebKey octetKey = OctJwkGenerator.generateJwk(size);
-        final Map<String, Object> params = octetKey.toParams(JsonWebKey.OutputControlLevel.INCLUDE_SYMMETRIC);
-        return params.get("k").toString();
     }
 
     /**
@@ -117,38 +113,35 @@ public abstract class BaseBinaryCipherExecutor extends AbstractCipherExecutor<by
     protected abstract String getSigningKeySetting();
 
     private void ensureEncryptionKeyExists(final String encryptionSecretKey, final int encryptionKeySize) {
-        final byte[] encryptionKey;
+        final byte[] genEncryptionKey;
         if (StringUtils.isBlank(encryptionSecretKey)) {
             LOGGER.warn("Secret key for encryption is not defined under [{}]. CAS will attempt to auto-generate the encryption key",
                 getEncryptionKeySetting());
-            final String key = new Base64RandomStringGenerator(encryptionKeySize).getNewString();
+            val key = new Base64RandomStringGenerator(encryptionKeySize).getNewString();
             LOGGER.warn("Generated encryption key [{}] of size [{}]. The generated key MUST be added to CAS settings under setting [{}].",
                 key, encryptionKeySize, getEncryptionKeySetting());
-            encryptionKey = EncodingUtils.decodeBase64(key);
+            genEncryptionKey = EncodingUtils.decodeBase64(key);
         } else {
-            final boolean base64 = EncodingUtils.isBase64(encryptionSecretKey);
-            byte[] key = new byte[0];
-            if (base64) {
-                key = EncodingUtils.decodeBase64(encryptionSecretKey);
-            }
+            val base64 = EncodingUtils.isBase64(encryptionSecretKey);
+            val key = base64 ? EncodingUtils.decodeBase64(encryptionSecretKey) : ArrayUtils.EMPTY_BYTE_ARRAY;
             if (base64 && key.length == encryptionKeySize) {
-                LOGGER.debug("Secret key for encryption defined under [{}] is Base64 encoded.", getEncryptionKeySetting());
-                encryptionKey = key;
+                LOGGER.trace("Secret key for encryption defined under [{}] is Base64 encoded.", getEncryptionKeySetting());
+                genEncryptionKey = key;
             } else if (encryptionSecretKey.length() != encryptionKeySize) {
                 LOGGER.warn("Secret key for encryption defined under [{}] is Base64 encoded but the size does not match the key size [{}].",
                     getEncryptionKeySetting(), encryptionKeySize);
-                encryptionKey = encryptionSecretKey.getBytes(StandardCharsets.UTF_8);
+                genEncryptionKey = encryptionSecretKey.getBytes(StandardCharsets.UTF_8);
             } else {
                 LOGGER.warn("Secret key for encryption defined under [{}] is not Base64 encoded. Clear the setting to regenerate (Recommended) or replace with"
                     + " [{}].", getEncryptionKeySetting(), EncodingUtils.encodeBase64(encryptionSecretKey));
-                encryptionKey = encryptionSecretKey.getBytes(StandardCharsets.UTF_8);
+                genEncryptionKey = encryptionSecretKey.getBytes(StandardCharsets.UTF_8);
             }
         }
-        this.encryptionSecretKey = encryptionKey;
+        this.encryptionSecretKey = genEncryptionKey;
     }
 
     private void ensureSigningKeyExists(final String signingSecretKey, final int signingKeySize) {
-        String signingKeyToUse = signingSecretKey;
+        var signingKeyToUse = signingSecretKey;
         if (StringUtils.isBlank(signingKeyToUse)) {
             LOGGER.warn("Secret key for signing is not defined under [{}]. CAS will attempt to auto-generate the signing key",
                 getSigningKeySetting());

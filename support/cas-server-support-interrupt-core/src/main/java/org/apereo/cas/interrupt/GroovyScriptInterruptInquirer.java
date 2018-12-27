@@ -1,18 +1,18 @@
 package org.apereo.cas.interrupt;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.Credential;
-import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.util.ResourceUtils;
-import org.apereo.cas.util.scripting.ScriptingUtils;
-import org.springframework.core.io.Resource;
+import org.apereo.cas.util.scripting.WatchableGroovyScriptResource;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.springframework.core.io.Resource;
+import org.springframework.webflow.execution.RequestContext;
+
+import java.util.HashMap;
 
 /**
  * This is {@link GroovyScriptInterruptInquirer}.
@@ -21,19 +21,24 @@ import java.util.Map;
  * @since 5.2.0
  */
 @Slf4j
-@RequiredArgsConstructor
 public class GroovyScriptInterruptInquirer extends BaseInterruptInquirer {
-    private final Resource resource;
+    private final WatchableGroovyScriptResource watchableScript;
+
+    public GroovyScriptInterruptInquirer(final Resource resource) {
+        this.watchableScript = new WatchableGroovyScriptResource(resource);
+    }
 
     @Override
-    public InterruptResponse inquireInternal(final Authentication authentication, final RegisteredService registeredService,
-                                             final Service service, final Credential credential) {
-        if (ResourceUtils.doesResourceExist(resource)) {
-            final Principal principal = authentication.getPrincipal();
-            final Map<String, Object> attributes = new LinkedHashMap<>(principal.getAttributes());
+    public InterruptResponse inquireInternal(final Authentication authentication,
+                                             final RegisteredService registeredService,
+                                             final Service service, final Credential credential,
+                                             final RequestContext requestContext) {
+        if (ResourceUtils.doesResourceExist(watchableScript.getResource())) {
+            val principal = authentication.getPrincipal();
+            val attributes = new HashMap<String, Object>(principal.getAttributes());
             attributes.putAll(authentication.getAttributes());
             final Object[] args = {principal.getId(), attributes, service != null ? service.getId() : null, LOGGER};
-            return ScriptingUtils.executeGroovyScript(resource, args, InterruptResponse.class);
+            return watchableScript.execute(args, InterruptResponse.class);
         }
         return InterruptResponse.none();
     }

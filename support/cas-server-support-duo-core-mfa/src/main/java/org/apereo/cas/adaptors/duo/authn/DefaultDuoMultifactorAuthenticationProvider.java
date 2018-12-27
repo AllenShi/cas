@@ -1,5 +1,9 @@
 package org.apereo.cas.adaptors.duo.authn;
 
+import org.apereo.cas.authentication.AbstractMultifactorAuthenticationProvider;
+import org.apereo.cas.configuration.model.support.mfa.DuoSecurityMultifactorProperties;
+import org.apereo.cas.services.RegisteredService;
+
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -8,10 +12,8 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.authentication.AbstractMultifactorAuthenticationProvider;
-import org.apereo.cas.configuration.model.support.mfa.DuoSecurityMultifactorProperties;
-import org.apereo.cas.services.RegisteredService;
-import org.springframework.util.Assert;
+
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 
 /**
  * This is {@link DefaultDuoMultifactorAuthenticationProvider}.
@@ -25,18 +27,17 @@ import org.springframework.util.Assert;
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
+@RefreshScope
 public class DefaultDuoMultifactorAuthenticationProvider extends AbstractMultifactorAuthenticationProvider implements DuoMultifactorAuthenticationProvider {
 
     private static final long serialVersionUID = 4789727148634156909L;
 
     private String registrationUrl;
 
-    @NonNull
-    private DuoSecurityAuthenticationService duoAuthenticationService;
+    private @NonNull DuoSecurityAuthenticationService duoAuthenticationService;
 
     @Override
     public boolean isAvailable(final RegisteredService service) {
-        Assert.notNull(this.duoAuthenticationService, "duoAuthenticationService cannot be null");
         return this.duoAuthenticationService.ping();
     }
 
@@ -44,7 +45,6 @@ public class DefaultDuoMultifactorAuthenticationProvider extends AbstractMultifa
     public String getId() {
         return StringUtils.defaultIfBlank(super.getId(), DuoSecurityMultifactorProperties.DEFAULT_IDENTIFIER);
     }
-
 
     @Override
     public String getFriendlyName() {

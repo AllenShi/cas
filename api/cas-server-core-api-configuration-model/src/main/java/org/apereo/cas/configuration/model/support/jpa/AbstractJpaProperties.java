@@ -1,13 +1,17 @@
 package org.apereo.cas.configuration.model.support.jpa;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apereo.cas.configuration.model.support.ConnectionPoolingProperties;
 import org.apereo.cas.configuration.support.RequiredProperty;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.hibernate.cfg.AvailableSettings;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Common properties for all jpa configs.
@@ -15,7 +19,6 @@ import lombok.Setter;
  * @author Dmitriy Kopylenko
  * @since 5.0.0
  */
-
 @Getter
 @Setter
 public abstract class AbstractJpaProperties implements Serializable {
@@ -48,7 +51,7 @@ public abstract class AbstractJpaProperties implements Serializable {
 
     /**
      * The database user.
-     * 
+     * <p>
      * The database user must have sufficient permissions to be able to handle
      * schema changes and updates, when needed.
      */
@@ -91,13 +94,14 @@ public abstract class AbstractJpaProperties implements Serializable {
     /**
      * Additional settings provided by Hibernate in form of key-value pairs.
      *
-     * @see org.hibernate.cfg.AvailableSettings
+     * @see AvailableSettings
      */
     private Map<String, String> properties = new HashMap<>();
 
     /**
      * Database connection pooling settings.
      */
+    @NestedConfigurationProperty
     private ConnectionPoolingProperties pool = new ConnectionPoolingProperties();
 
     /**
@@ -114,22 +118,22 @@ public abstract class AbstractJpaProperties implements Serializable {
     /**
      * Set the pool initialization failure timeout.
      * <ul>
-     *   <li>Any value greater than zero will be treated as a timeout for pool initialization.
-     *       The calling thread will be blocked from continuing until a successful connection
-     *       to the database, or until the timeout is reached.  If the timeout is reached, then
-     *       a {@code PoolInitializationException} will be thrown. </li>
-     *   <li>A value of zero will <i>not</i>  prevent the pool from starting in the
-     *       case that a connection cannot be obtained. However, upon start the pool will
-     *       attempt to obtain a connection and validate that the {@code connectionTestQuery}
-     *       and {@code connectionInitSql} are valid.  If those validations fail, an exception
-     *       will be thrown.  If a connection cannot be obtained, the validation is skipped
-     *       and the the pool will start and continue to try to obtain connections in the
-     *       background.  This can mean that callers to {@code DataSource#getConnection()} may
-     *       encounter exceptions. </li>
-     *   <li>A value less than zero will <i>not</i> bypass any connection attempt and
-     *       validation during startup, and therefore the pool will start immediately.  The
-     *       pool will continue to try to obtain connections in the background. This can mean
-     *       that callers to {@code DataSource#getConnection()} may encounter exceptions. </li>
+     * <li>Any value greater than zero will be treated as a timeout for pool initialization.
+     * The calling thread will be blocked from continuing until a successful connection
+     * to the database, or until the timeout is reached.  If the timeout is reached, then
+     * a {@code PoolInitializationException} will be thrown. </li>
+     * <li>A value of zero will <i>not</i>  prevent the pool from starting in the
+     * case that a connection cannot be obtained. However, upon start the pool will
+     * attempt to obtain a connection and validate that the {@code connectionTestQuery}
+     * and {@code connectionInitSql} are valid.  If those validations fail, an exception
+     * will be thrown.  If a connection cannot be obtained, the validation is skipped
+     * and the the pool will start and continue to try to obtain connections in the
+     * background. This can mean that callers to {@code DataSource#getConnection()} may
+     * encounter exceptions. </li>
+     * <li>A value less than zero will <i>not</i> bypass any connection attempt and
+     * validation during startup, and therefore the pool will start immediately.  The
+     * pool will continue to try to obtain connections in the background. This can mean
+     * that callers to {@code DataSource#getConnection()} may encounter exceptions. </li>
      * </ul>
      * Note that if this timeout value is greater than or equal to zero (0), and therefore an
      * initial connection validation is performed, this timeout does not override the
@@ -159,4 +163,9 @@ public abstract class AbstractJpaProperties implements Serializable {
      * or returned back verbatim.
      */
     private boolean dataSourceProxy;
+
+    /**
+     * Fully-qualified name of the class that can control the physical naming strategy of hibernate.
+     */
+    private String physicalNamingStrategyClassName = "org.apereo.cas.jpa.CasHibernatePhysicalNamingStrategy";
 }

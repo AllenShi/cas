@@ -1,6 +1,5 @@
 package org.apereo.cas.support.pac4j.config.support.authentication;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.audit.AuditTrailRecordResolutionPlan;
 import org.apereo.cas.audit.AuditTrailRecordResolutionPlanConfigurer;
 import org.apereo.cas.audit.DelegatedAuthenticationAuditResourceResolver;
@@ -11,15 +10,17 @@ import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.PrincipalFactoryUtils;
 import org.apereo.cas.authentication.principal.PrincipalResolver;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.support.pac4j.Pac4jDelegatedAuthenticationProperties;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.pac4j.authentication.ClientAuthenticationMetaDataPopulator;
 import org.apereo.cas.support.pac4j.authentication.DelegatedClientFactory;
 import org.apereo.cas.support.pac4j.authentication.handler.support.ClientAuthenticationHandler;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apereo.inspektr.audit.spi.AuditActionResolver;
 import org.apereo.inspektr.audit.spi.AuditResourceResolver;
-import org.pac4j.core.client.BaseClient;
 import org.pac4j.core.client.Clients;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -29,7 +30,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
-import java.util.Set;
 
 /**
  * This is {@link Pac4jAuthenticationEventExecutionPlanConfiguration}.
@@ -47,15 +47,15 @@ public class Pac4jAuthenticationEventExecutionPlanConfiguration implements Audit
 
     @Autowired
     @Qualifier("servicesManager")
-    private ServicesManager servicesManager;
+    private ObjectProvider<ServicesManager> servicesManager;
 
     @Autowired
-    @Qualifier("personDirectoryPrincipalResolver")
-    private PrincipalResolver personDirectoryPrincipalResolver;
+    @Qualifier("defaultPrincipalResolver")
+    private ObjectProvider<PrincipalResolver> defaultPrincipalResolver;
 
     @Autowired
     @Qualifier("authenticationActionResolver")
-    private AuditActionResolver authenticationActionResolver;
+    private ObjectProvider<AuditActionResolver> authenticationActionResolver;
 
     @Bean
     @ConditionalOnMissingBean(name = "pac4jDelegatedClientFactory")
@@ -67,7 +67,7 @@ public class Pac4jAuthenticationEventExecutionPlanConfiguration implements Audit
     @RefreshScope
     @Bean
     public Clients builtClients() {
-        final Set<BaseClient> clients = pac4jDelegatedClientFactory().build();
+        val clients = pac4jDelegatedClientFactory().build();
         LOGGER.debug("The following clients are built: [{}]", clients);
         if (clients.isEmpty()) {
             LOGGER.warn("No delegated authentication clients are defined and/or configured");
@@ -93,10 +93,9 @@ public class Pac4jAuthenticationEventExecutionPlanConfiguration implements Audit
     @Bean
     @ConditionalOnMissingBean(name = "clientAuthenticationHandler")
     public AuthenticationHandler clientAuthenticationHandler() {
-        final Pac4jDelegatedAuthenticationProperties pac4j = casProperties.getAuthn().getPac4j();
-        final ClientAuthenticationHandler h = new ClientAuthenticationHandler(pac4j.getName(), servicesManager,
-            clientPrincipalFactory(),
-            builtClients());
+        val pac4j = casProperties.getAuthn().getPac4j();
+        val h = new ClientAuthenticationHandler(pac4j.getName(), servicesManager.getIfAvailable(),
+            clientPrincipalFactory(), builtClients());
         h.setTypedIdUsed(pac4j.isTypedIdUsed());
         h.setPrincipalAttributeId(pac4j.getPrincipalAttributeId());
         return h;
@@ -108,8 +107,8 @@ public class Pac4jAuthenticationEventExecutionPlanConfiguration implements Audit
         return plan -> {
             if (!builtClients().findAllClients().isEmpty()) {
                 LOGGER.info("Registering delegated authentication clients...");
-                plan.registerAuthenticationHandlerWithPrincipalResolver(clientAuthenticationHandler(), personDirectoryPrincipalResolver);
-                plan.registerMetadataPopulator(clientAuthenticationMetaDataPopulator());
+                plan.registerAuthenticationHandlerWithPrincipalResolver(clientAuthenticationHandler(), defaultPrincipalResolver.getIfAvailable());
+                plan.registerAuthenticationMetadataPopulator(clientAuthenticationMetaDataPopulator());
             }
         };
     }
@@ -122,7 +121,7 @@ public class Pac4jAuthenticationEventExecutionPlanConfiguration implements Audit
 
     @Override
     public void configureAuditTrailRecordResolutionPlan(final AuditTrailRecordResolutionPlan plan) {
-        plan.registerAuditActionResolver("DELEGATED_CLIENT_ACTION_RESOLVER", this.authenticationActionResolver);
+        plan.registerAuditActionResolver("DELEGATED_CLIENT_ACTION_RESOLVER", authenticationActionResolver.getIfAvailable());
         plan.registerAuditResourceResolver("DELEGATED_CLIENT_RESOURCE_RESOLVER", delegatedAuthenticationAuditResourceResolver());
     }
 }

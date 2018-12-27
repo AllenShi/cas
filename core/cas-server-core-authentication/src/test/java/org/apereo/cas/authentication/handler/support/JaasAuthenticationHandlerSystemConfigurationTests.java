@@ -1,9 +1,10 @@
 package org.apereo.cas.authentication.handler.support;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.authentication.handler.support.jaas.JaasAuthenticationHandler;
+
+import lombok.val;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -12,7 +13,6 @@ import org.springframework.core.io.ClassPathResource;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,7 +23,6 @@ import static org.junit.Assert.*;
  * @author Marvin S. Addison
  * @since 3.0.0
  */
-@Slf4j
 public class JaasAuthenticationHandlerSystemConfigurationTests {
 
     private static final String USERNAME = "test";
@@ -34,10 +33,10 @@ public class JaasAuthenticationHandlerSystemConfigurationTests {
     private JaasAuthenticationHandler handler;
 
     @Before
-    public void setUp() throws Exception {
-        final ClassPathResource resource = new ClassPathResource("jaas-system.conf");
-        final File fileName = new File(System.getProperty("java.io.tmpdir"), "jaas-system.conf");
-        try (Writer writer = Files.newBufferedWriter(fileName.toPath(), StandardCharsets.UTF_8)) {
+    public void initialize() throws Exception {
+        val resource = new ClassPathResource("jaas-system.conf");
+        val fileName = new File(System.getProperty("java.io.tmpdir"), "jaas-system.conf");
+        try (val writer = Files.newBufferedWriter(fileName.toPath(), StandardCharsets.UTF_8)) {
             IOUtils.copy(resource.getInputStream(), writer, Charset.defaultCharset());
             writer.flush();
         }

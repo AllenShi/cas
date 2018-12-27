@@ -1,7 +1,6 @@
 package org.apereo.cas.support.saml.web.idp.profile.builders.response.soap;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.velocity.app.VelocityEngine;
+import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.support.saml.OpenSamlConfigBean;
 import org.apereo.cas.support.saml.SamlException;
 import org.apereo.cas.support.saml.SamlIdPConstants;
@@ -9,8 +8,11 @@ import org.apereo.cas.support.saml.SamlIdPUtils;
 import org.apereo.cas.support.saml.services.SamlRegisteredService;
 import org.apereo.cas.support.saml.services.idp.metadata.SamlRegisteredServiceServiceProviderMetadataFacade;
 import org.apereo.cas.support.saml.web.idp.profile.builders.SamlProfileObjectBuilder;
+import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlIdPObjectEncrypter;
 import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlIdPObjectSigner;
-import org.apereo.cas.support.saml.web.idp.profile.builders.enc.SamlObjectEncrypter;
+
+import lombok.val;
+import org.apache.velocity.app.VelocityEngine;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.saml.common.SAMLObject;
 import org.opensaml.saml.saml2.core.Assertion;
@@ -33,7 +35,6 @@ import javax.servlet.http.HttpServletResponse;
  * @author Misagh Moayyed
  * @since 4.2
  */
-@Slf4j
 public class SamlProfileSamlSoap11FaultResponseBuilder extends SamlProfileSamlSoap11ResponseBuilder {
     private static final long serialVersionUID = -1875903354216171261L;
 
@@ -42,9 +43,10 @@ public class SamlProfileSamlSoap11FaultResponseBuilder extends SamlProfileSamlSo
                                                      final VelocityEngine velocityEngineFactory,
                                                      final SamlProfileObjectBuilder<Assertion> samlProfileSamlAssertionBuilder,
                                                      final SamlProfileObjectBuilder<? extends SAMLObject> saml2ResponseBuilder,
-                                                     final SamlObjectEncrypter samlObjectEncrypter) {
+                                                     final SamlIdPObjectEncrypter samlObjectEncrypter,
+                                                     final CasConfigurationProperties casProperties) {
         super(openSamlConfigBean, samlObjectSigner, velocityEngineFactory,
-                samlProfileSamlAssertionBuilder, saml2ResponseBuilder, samlObjectEncrypter);
+            samlProfileSamlAssertionBuilder, saml2ResponseBuilder, samlObjectEncrypter, casProperties);
     }
 
 
@@ -57,26 +59,26 @@ public class SamlProfileSamlSoap11FaultResponseBuilder extends SamlProfileSamlSo
                           final SamlRegisteredServiceServiceProviderMetadataFacade adaptor,
                           final String binding,
                           final MessageContext messageContext) throws SamlException {
-        final Header header = newSoapObject(Header.class);
 
-        final Body body = newSoapObject(Body.class);
-        final Fault fault = newSoapObject(Fault.class);
+        val body = newSoapObject(Body.class);
+        val fault = newSoapObject(Fault.class);
 
-        final FaultCode faultCode = newSoapObject(FaultCode.class);
+        val faultCode = newSoapObject(FaultCode.class);
         faultCode.setValue(FaultCode.SERVER);
         fault.setCode(faultCode);
 
-        final FaultActor faultActor = newSoapObject(FaultActor.class);
-        faultActor.setValue(SamlIdPUtils.getIssuerFromSamlRequest(authnRequest));
+        val faultActor = newSoapObject(FaultActor.class);
+        faultActor.setValue(SamlIdPUtils.getIssuerFromSamlObject(authnRequest));
         fault.setActor(faultActor);
 
-        final FaultString faultString = newSoapObject(FaultString.class);
+        val faultString = newSoapObject(FaultString.class);
         faultString.setValue(request.getAttribute(SamlIdPConstants.REQUEST_ATTRIBUTE_ERROR).toString());
         fault.setMessage(faultString);
 
         body.getUnknownXMLObjects().add(fault);
 
-        final Envelope envelope = newSoapObject(Envelope.class);
+        val envelope = newSoapObject(Envelope.class);
+        val header = newSoapObject(Header.class);
         envelope.setHeader(header);
         envelope.setBody(body);
         encodeFinalResponse(request, response, service, adaptor, envelope, binding, authnRequest, casAssertion);

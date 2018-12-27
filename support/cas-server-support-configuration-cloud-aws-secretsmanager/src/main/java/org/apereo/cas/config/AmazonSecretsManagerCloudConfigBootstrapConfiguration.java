@@ -1,22 +1,21 @@
 package org.apereo.cas.config;
 
+import org.apereo.cas.aws.AmazonEnvironmentAwareClientBuilder;
+
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
 import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
-import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
 import com.amazonaws.services.secretsmanager.model.ListSecretsRequest;
-import com.amazonaws.services.secretsmanager.model.ListSecretsResult;
 import com.amazonaws.services.secretsmanager.model.SecretListEntry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apereo.cas.aws.AmazonEnvironmentAwareClientBuilder;
+import lombok.val;
 import org.springframework.cloud.bootstrap.config.PropertySourceLocator;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.PropertySource;
 
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -33,14 +32,13 @@ public class AmazonSecretsManagerCloudConfigBootstrapConfiguration implements Pr
 
     @Override
     public PropertySource<?> locate(final Environment environment) {
-        final Properties props = new Properties();
+        val props = new Properties();
         try {
-            final AmazonEnvironmentAwareClientBuilder builder = new AmazonEnvironmentAwareClientBuilder(CAS_CONFIGURATION_PREFIX, environment);
-            final AWSSecretsManager secretsManager = builder.build(AWSSecretsManagerClientBuilder.standard(), AWSSecretsManager.class);
-
-            final ListSecretsRequest listRequest = new ListSecretsRequest();
-            final ListSecretsResult listResults = secretsManager.listSecrets(listRequest);
-            final List<SecretListEntry> secretList = listResults.getSecretList();
+            val builder = new AmazonEnvironmentAwareClientBuilder(CAS_CONFIGURATION_PREFIX, environment);
+            val secretsManager = builder.build(AWSSecretsManagerClientBuilder.standard(), AWSSecretsManager.class);
+            val listRequest = new ListSecretsRequest();
+            val listResults = secretsManager.listSecrets(listRequest);
+            val secretList = listResults.getSecretList();
             if (secretList != null && secretList.isEmpty()) {
                 LOGGER.debug("Fetched [{}] secret(s)", secretList.size());
                 secretList
@@ -48,8 +46,8 @@ public class AmazonSecretsManagerCloudConfigBootstrapConfiguration implements Pr
                     .map(SecretListEntry::getName)
                     .forEach(name -> {
                         LOGGER.debug("Fetching secret [{}]", name);
-                        final GetSecretValueRequest getRequest = new GetSecretValueRequest().withSecretId(name);
-                        final GetSecretValueResult result = secretsManager.getSecretValue(getRequest);
+                        val getRequest = new GetSecretValueRequest().withSecretId(name);
+                        val result = secretsManager.getSecretValue(getRequest);
                         if (result != null) {
                             props.put(name, result.getSecretString());
                         }

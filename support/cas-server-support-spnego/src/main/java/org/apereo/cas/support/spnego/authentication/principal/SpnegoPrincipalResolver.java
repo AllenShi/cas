@@ -1,14 +1,15 @@
 package org.apereo.cas.support.spnego.authentication.principal;
 
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.authentication.handler.PrincipalNameTransformer;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.authentication.principal.resolvers.PersonDirectoryPrincipalResolver;
-import org.apereo.services.persondir.IPersonAttributeDao;
+
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.val;
+import org.apereo.services.persondir.IPersonAttributeDao;
 
 import java.util.Optional;
 
@@ -20,21 +21,21 @@ import java.util.Optional;
  * @author Marc-Antoine Garrigue
  * @since 3.1
  */
-@Slf4j
 @ToString(callSuper = true)
 @NoArgsConstructor
 public class SpnegoPrincipalResolver extends PersonDirectoryPrincipalResolver {
 
     public SpnegoPrincipalResolver(final IPersonAttributeDao attributeRepository, final PrincipalFactory principalFactory,
-                                   final boolean returnNullIfNoAttributes, final PrincipalNameTransformer principalNameTransformer, final String principalAttributeName) {
-        super(attributeRepository, principalFactory, returnNullIfNoAttributes, principalNameTransformer, principalAttributeName);
+                                   final boolean returnNullIfNoAttributes, final PrincipalNameTransformer principalNameTransformer,
+                                   final String principalAttributeName, final boolean useCurrentPrincipalId) {
+        super(attributeRepository, principalFactory, returnNullIfNoAttributes,
+            principalNameTransformer, principalAttributeName, useCurrentPrincipalId);
     }
 
     @Override
     protected String extractPrincipalId(final Credential credential, final Optional<Principal> currentPrincipal) {
-        final SpnegoCredential c = (SpnegoCredential) credential;
-        final String id = c.getPrincipal().getId();
-        return id;
+        val c = (SpnegoCredential) credential;
+        return c.getPrincipal().getId();
     }
 
     @Override

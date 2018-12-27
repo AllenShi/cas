@@ -1,8 +1,9 @@
 package org.apereo.cas.configuration.model.support.dynamodb;
 
+import org.apereo.cas.configuration.model.support.aws.BaseAmazonWebServicesProperties;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.apereo.cas.configuration.model.support.aws.BaseAmazonWebServicesProperties;
 
 /**
  * This is {@link AbstractDynamoDbProperties}.
@@ -10,7 +11,6 @@ import org.apereo.cas.configuration.model.support.aws.BaseAmazonWebServicesPrope
  * @author Misagh Moayyed
  * @since 5.1.0
  */
-
 @Getter
 @Setter
 public abstract class AbstractDynamoDbProperties extends BaseAmazonWebServicesProperties {
@@ -41,65 +41,15 @@ public abstract class AbstractDynamoDbProperties extends BaseAmazonWebServicesPr
      */
     private long writeCapacity = 10;
 
-    /**
-     * Connection timeout.
-     */
-    private int connectionTimeout = 5000;
 
-    /**
-     * Request timeout.
-     */
-    private int requestTimeout = 5000;
 
-    /**
-     * Socket timeout.
-     */
-    private int socketTimeout = 5000;
 
-    /**
-     * Flag that indicates whether to use Gzip compression.
-     */
-    private boolean useGzip;
 
-    /**
-     * Flag that indicates whether to use reaper.
-     */
-    private boolean useReaper;
 
-    /**
-     * Flag that indicates whether to throttle retries.
-     */
-    private boolean useThrottleRetries;
 
-    /**
-     * Flag that indicates whether to keep TCP connection alive.
-     */
-    private boolean useTcpKeepAlive;
 
-    /**
-     * Protocol setting.
-     */
-    private String protocol = "HTTPS";
 
-    /**
-     * Client execution timeout.
-     */
-    private int clientExecutionTimeout = 10000;
 
-    /**
-     * Flag that indicates whether to cache response metadata.
-     */
-    private boolean cacheResponseMetadata;
-
-    /**
-     * Local address.
-     */
-    private String localAddress;
-
-    /**
-     * Maximum connections setting.
-     */
-    private int maxConnections = 10;
 
     /**
      * Indicates that the database instance is local to the deployment
@@ -108,4 +58,8 @@ public abstract class AbstractDynamoDbProperties extends BaseAmazonWebServicesPr
      * and testing.
      */
     private boolean localInstance;
+
+
+
+
 }

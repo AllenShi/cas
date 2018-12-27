@@ -1,15 +1,16 @@
 package org.apereo.cas.adaptors.duo.authn;
 
+import org.apereo.cas.authentication.MultifactorAuthenticationCredential;
+import org.apereo.cas.authentication.credential.AbstractCredential;
+
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.lang3.StringUtils;
-import org.apereo.cas.authentication.Credential;
-import org.apereo.cas.authentication.MultifactorAuthenticationCredential;
 
 /**
  * Represents the duo credential.
@@ -17,14 +18,13 @@ import org.apereo.cas.authentication.MultifactorAuthenticationCredential;
  * @author Misagh Moayyed
  * @since 4.2
  */
-@Slf4j
 @ToString
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = {"username"})
-public class DuoCredential implements Credential, MultifactorAuthenticationCredential {
+@EqualsAndHashCode(of = {"username"}, callSuper = true)
+public class DuoCredential extends AbstractCredential implements MultifactorAuthenticationCredential {
 
     private static final long serialVersionUID = -7570600733132111037L;
 
@@ -42,5 +42,4 @@ public class DuoCredential implements Credential, MultifactorAuthenticationCrede
     public boolean isValid() {
         return StringUtils.isNotBlank(this.username) && StringUtils.isNotBlank(this.signedDuoResponse);
     }
-
 }

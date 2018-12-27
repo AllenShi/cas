@@ -1,7 +1,8 @@
 package org.apereo.cas.oidc.jwks;
 
 import org.apereo.cas.oidc.AbstractOidcTests;
-import org.apereo.cas.services.OidcRegisteredService;
+
+import lombok.val;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -15,7 +16,7 @@ import static org.junit.Assert.*;
 public class OidcServiceJsonWebKeystoreCacheLoaderTests extends AbstractOidcTests {
     @Test
     public void verifyOperation() {
-        final OidcRegisteredService service = getOidcRegisteredService();
+        val service = getOidcRegisteredService();
         assertTrue(oidcServiceJsonWebKeystoreCache.get(service).isPresent());
         assertTrue(oidcServiceJsonWebKeystoreCache.get(service).isPresent());
     }

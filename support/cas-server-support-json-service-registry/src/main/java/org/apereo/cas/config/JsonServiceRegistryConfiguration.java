@@ -1,18 +1,20 @@
 package org.apereo.cas.config;
 
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.core.services.ServiceRegistryProperties;
 import org.apereo.cas.services.JsonServiceRegistry;
 import org.apereo.cas.services.ServiceRegistry;
 import org.apereo.cas.services.ServiceRegistryExecutionPlan;
 import org.apereo.cas.services.ServiceRegistryExecutionPlanConfigurer;
 import org.apereo.cas.services.replication.RegisteredServiceReplicationStrategy;
 import org.apereo.cas.services.resource.RegisteredServiceResourceNamingStrategy;
+
+import lombok.SneakyThrows;
+import lombok.val;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,9 +31,8 @@ import org.springframework.core.Ordered;
 @Configuration("jsonServiceRegistryConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE + 1)
-@Slf4j
 @ConditionalOnProperty(prefix = "cas.serviceRegistry.json", name = "location")
-public class JsonServiceRegistryConfiguration implements ServiceRegistryExecutionPlanConfigurer {
+public class JsonServiceRegistryConfiguration {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -41,23 +42,29 @@ public class JsonServiceRegistryConfiguration implements ServiceRegistryExecutio
 
     @Autowired
     @Qualifier("registeredServiceReplicationStrategy")
-    private RegisteredServiceReplicationStrategy registeredServiceReplicationStrategy;
+    private ObjectProvider<RegisteredServiceReplicationStrategy> registeredServiceReplicationStrategy;
 
     @Autowired
     @Qualifier("registeredServiceResourceNamingStrategy")
-    private RegisteredServiceResourceNamingStrategy resourceNamingStrategy;
+    private ObjectProvider<RegisteredServiceResourceNamingStrategy> resourceNamingStrategy;
 
     @Bean
     @SneakyThrows
     public ServiceRegistry jsonServiceRegistry() {
-        final ServiceRegistryProperties registry = casProperties.getServiceRegistry();
+        val registry = casProperties.getServiceRegistry();
         return new JsonServiceRegistry(registry.getJson().getLocation(),
             registry.isWatcherEnabled(), eventPublisher,
-            registeredServiceReplicationStrategy, resourceNamingStrategy);
+            registeredServiceReplicationStrategy.getIfAvailable(), resourceNamingStrategy.getIfAvailable());
     }
 
-    @Override
-    public void configureServiceRegistry(final ServiceRegistryExecutionPlan plan) {
-        plan.registerServiceRegistry(jsonServiceRegistry());
+    @Bean
+    @ConditionalOnMissingBean(name = "jsonServiceRegistryExecutionPlanConfigurer")
+    public ServiceRegistryExecutionPlanConfigurer jsonServiceRegistryExecutionPlanConfigurer() {
+        return new ServiceRegistryExecutionPlanConfigurer() {
+            @Override
+            public void configureServiceRegistry(final ServiceRegistryExecutionPlan plan) {
+                plan.registerServiceRegistry(jsonServiceRegistry());
+            }
+        };
     }
 }

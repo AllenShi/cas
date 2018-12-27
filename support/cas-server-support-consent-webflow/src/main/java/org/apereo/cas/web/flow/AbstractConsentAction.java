@@ -1,24 +1,19 @@
 package org.apereo.cas.web.flow;
 
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.configuration.CasConfigurationProperties;
-import org.apereo.cas.configuration.model.support.consent.ConsentProperties;
-import org.apereo.cas.consent.ConsentDecision;
 import org.apereo.cas.consent.ConsentEngine;
 import org.apereo.cas.consent.ConsentReminderOptions;
 import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.services.RegisteredServiceAccessStrategyUtils;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.web.support.WebUtils;
-import org.springframework.webflow.action.AbstractAction;
-import org.springframework.webflow.core.collection.MutableAttributeMap;
-import org.springframework.webflow.execution.RequestContext;
 
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.val;
+import org.springframework.webflow.action.AbstractAction;
+import org.springframework.webflow.execution.RequestContext;
 
 /**
  * This is {@link AbstractConsentAction}.
@@ -26,8 +21,7 @@ import java.util.Map;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
-@Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public abstract class AbstractConsentAction extends AbstractAction {
     /**
      * CAS Settings.
@@ -57,33 +51,38 @@ public abstract class AbstractConsentAction extends AbstractAction {
      * @return the registered service for consent
      */
     protected RegisteredService getRegisteredServiceForConsent(final RequestContext requestContext, final Service service) {
-        final Service serviceToUse = this.authenticationRequestServiceSelectionStrategies.resolveService(service);
-        final RegisteredService registeredService = this.servicesManager.findServiceBy(serviceToUse);
+        val serviceToUse = this.authenticationRequestServiceSelectionStrategies.resolveService(service);
+        val registeredService = this.servicesManager.findServiceBy(serviceToUse);
         RegisteredServiceAccessStrategyUtils.ensureServiceAccessIsAllowed(service, registeredService);
         return registeredService;
     }
 
     /**
      * Prepare consent for request context.
+     * The original service is kept, and the resolved service is
+     * added to the flash-scope only to ensure consent works
+     * for all other callback services that deal with different protocols.
      *
      * @param requestContext the request context
      */
     protected void prepareConsentForRequestContext(final RequestContext requestContext) {
-        final ConsentProperties consentProperties = casProperties.getConsent();
+        val consentProperties = casProperties.getConsent();
 
-        final Service service = this.authenticationRequestServiceSelectionStrategies.resolveService(WebUtils.getService(requestContext));
-        final RegisteredService registeredService = getRegisteredServiceForConsent(requestContext, service);
-        final Authentication authentication = WebUtils.getAuthentication(requestContext);
-        final Map<String, Object> attributes = consentEngine.resolveConsentableAttributesFrom(authentication, service, registeredService);
-        final MutableAttributeMap<Object> flowScope = requestContext.getFlowScope();
+        val originalService = WebUtils.getService(requestContext);
+        val service = this.authenticationRequestServiceSelectionStrategies.resolveService(originalService);
+        val registeredService = getRegisteredServiceForConsent(requestContext, service);
+        val authentication = WebUtils.getAuthentication(requestContext);
+        val attributes = consentEngine.resolveConsentableAttributesFrom(authentication, service, registeredService);
+        val flowScope = requestContext.getFlowScope();
         flowScope.put("attributes", attributes);
-        flowScope.put("principal", authentication.getPrincipal());
-        requestContext.getFlashScope().put("service", service);
 
-        final ConsentDecision decision = consentEngine.findConsentDecision(service, registeredService, authentication);
+        WebUtils.putPrincipal(requestContext, authentication.getPrincipal());
+        WebUtils.putServiceIntoFlashScope(requestContext, service);
+
+        val decision = consentEngine.findConsentDecision(service, registeredService, authentication);
         flowScope.put("option", decision == null ? ConsentReminderOptions.ATTRIBUTE_NAME.getValue() : decision.getOptions().getValue());
 
-        final long reminder = decision == null ? consentProperties.getReminder() : decision.getReminder();
+        val reminder = decision == null ? consentProperties.getReminder() : decision.getReminder();
         flowScope.put("reminder", Long.valueOf(reminder));
         flowScope.put("reminderTimeUnit", decision == null
             ? consentProperties.getReminderTimeUnit().name() : decision.getReminderTimeUnit().name());

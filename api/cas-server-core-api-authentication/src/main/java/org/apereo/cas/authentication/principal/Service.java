@@ -1,5 +1,6 @@
 package org.apereo.cas.authentication.principal;
 
+import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +19,14 @@ import java.nio.charset.StandardCharsets;
 @FunctionalInterface
 public interface Service extends Principal {
     Logger LOGGER = LoggerFactory.getLogger(Service.class);
-    
+
     /**
      * Sets the principal.
      *
      * @param principal the new principal
      */
-    default void setPrincipal(String principal) {}
+    default void setPrincipal(final String principal) {
+    }
 
     /**
      * Whether the services matches another.
@@ -32,10 +34,10 @@ public interface Service extends Principal {
      * @param service the service
      * @return true, if successful
      */
-    default boolean matches(Service service) {
+    default boolean matches(final Service service) {
         try {
-            final String thisUrl = URLDecoder.decode(getId(), StandardCharsets.UTF_8.name());
-            final String serviceUrl = URLDecoder.decode(service.getId(), StandardCharsets.UTF_8.name());
+            val thisUrl = URLDecoder.decode(getId(), StandardCharsets.UTF_8.name());
+            val serviceUrl = URLDecoder.decode(service.getId(), StandardCharsets.UTF_8.name());
 
             LOGGER.trace("Decoded urls and comparing [{}] with [{}]", thisUrl, serviceUrl);
             return thisUrl.equalsIgnoreCase(serviceUrl);

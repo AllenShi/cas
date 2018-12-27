@@ -1,7 +1,8 @@
 package org.apereo.cas.oidc.token;
 
 import org.apereo.cas.oidc.AbstractOidcTests;
-import org.jose4j.jwt.JwtClaims;
+
+import lombok.val;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -15,8 +16,16 @@ import static org.junit.Assert.*;
 public class OidcIdTokenSigningAndEncryptionServiceTests extends AbstractOidcTests {
     @Test
     public void verifyOperation() {
-        final JwtClaims claims = getClaims();
-        final String result = oidcTokenSigningAndEncryptionService.encode(getOidcRegisteredService(), claims);
+        val claims = getClaims();
+        val result = oidcTokenSigningAndEncryptionService.encode(getOidcRegisteredService(), claims);
         assertNotNull(result);
+    }
+
+    @Test
+    public void verifyValidationOperation() {
+        val claims = getClaims();
+        val result = oidcTokenSigningAndEncryptionService.encode(getOidcRegisteredService(true, false), claims);
+        val jwt = oidcTokenSigningAndEncryptionService.validate(result);
+        assertNotNull(jwt);
     }
 }

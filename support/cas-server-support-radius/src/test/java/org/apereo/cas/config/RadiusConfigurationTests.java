@@ -1,22 +1,41 @@
 package org.apereo.cas.config;
 
-import org.apereo.cas.adaptors.radius.RadiusServer;
+import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
+import org.apereo.cas.authentication.mfa.TestMultifactorAuthenticationProvider;
+import org.apereo.cas.category.RadiusCategory;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.support.radius.RadiusClientProperties;
-import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
+import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.web.flow.config.CasMultifactorAuthenticationWebflowConfiguration;
+import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
+import org.apereo.cas.web.support.WebUtils;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import net.jradius.dictionary.Attr_ReplyMessage;
+import net.jradius.dictionary.Attr_State;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.experimental.categories.Category;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.binding.expression.support.LiteralExpression;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit4.rules.SpringClassRule;
+import org.springframework.test.context.junit4.rules.SpringMethodRule;
+import org.springframework.webflow.context.servlet.ServletExternalContext;
+import org.springframework.webflow.engine.Transition;
+import org.springframework.webflow.engine.support.DefaultTargetStateResolver;
+import org.springframework.webflow.engine.support.DefaultTransitionCriteria;
+import org.springframework.webflow.test.MockRequestContext;
 
-import java.util.List;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.*;
 
@@ -24,16 +43,25 @@ import static org.junit.Assert.*;
  * @author Jozef Kotlar
  * @since 5.3.0
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
-    CasCoreServicesConfiguration.class,
-    CasCoreWebflowConfiguration.class,
+    CasMultifactorAuthenticationWebflowConfiguration.class,
     RadiusConfiguration.class,
+    CasCoreConfiguration.class,
+    CasCoreUtilConfiguration.class,
     RefreshAutoConfiguration.class
 })
-@TestPropertySource(locations = {"classpath:/radius2.properties"})
-@Slf4j
+@TestPropertySource(properties = {
+    "cas.authn.radius.client.sharedSecret=NoSecret",
+    "cas.authn.radius.client.inetAddress=localhost,localguest",
+    "cas.authn.mfa.radius.id=" + TestMultifactorAuthenticationProvider.ID
+})
+@Category(RadiusCategory.class)
 public class RadiusConfigurationTests {
+    @ClassRule
+    public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
+
+    @Rule
+    public final SpringMethodRule springMethodRule = new SpringMethodRule();
 
     @Autowired
     private CasConfigurationProperties casProperties;
@@ -42,19 +70,26 @@ public class RadiusConfigurationTests {
     @Qualifier("radiusConfiguration")
     private RadiusConfiguration radiusConfiguration;
 
+    @Autowired
+    @Qualifier("radiusAccessChallengedAuthenticationWebflowEventResolver")
+    private CasWebflowEventResolver radiusAccessChallengedAuthenticationWebflowEventResolver;
+
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
+
     @Test
     public void emptyAddress() {
-        final RadiusClientProperties clientProperties = new RadiusClientProperties();
+        val clientProperties = new RadiusClientProperties();
         clientProperties.setInetAddress("  ");
-        final Set<String> ips = RadiusConfiguration.getClientIps(clientProperties);
+        val ips = RadiusConfiguration.getClientIps(clientProperties);
         assertEquals(0, ips.size());
     }
 
     @Test
     public void someAddressesWithSpaces() {
-        final RadiusClientProperties clientProperties = new RadiusClientProperties();
+        val clientProperties = new RadiusClientProperties();
         clientProperties.setInetAddress("localhost,  localguest  ");
-        final Set<String> ips = RadiusConfiguration.getClientIps(clientProperties);
+        val ips = RadiusConfiguration.getClientIps(clientProperties);
         assertEquals(2, ips.size());
         assertTrue(ips.contains("localhost"));
         assertTrue(ips.contains("localguest"));
@@ -68,8 +103,33 @@ public class RadiusConfigurationTests {
     @Test
     public void radiusServers() {
         assertEquals("localhost,localguest", casProperties.getAuthn().getRadius().getClient().getInetAddress());
-        final List<RadiusServer> servers = radiusConfiguration.radiusServers();
+        val servers = radiusConfiguration.radiusServers();
         assertNotNull(servers);
         assertEquals(2, servers.size());
+    }
+
+    @Test
+    public void verifyAccessChallengedWebflowEventResolver() {
+        val context = new MockRequestContext();
+        val request = new MockHttpServletRequest();
+        val response = new MockHttpServletResponse();
+        context.setExternalContext(new ServletExternalContext(new MockServletContext(), request, response));
+
+        var result = radiusAccessChallengedAuthenticationWebflowEventResolver.resolve(context);
+        assertNull(result);
+
+        val principal = CoreAuthenticationTestUtils.getPrincipal("casuser",
+            CollectionUtils.wrap(Attr_ReplyMessage.NAME, "Reply-Back", Attr_State.NAME, "State".getBytes(StandardCharsets.UTF_8)));
+
+        WebUtils.putAuthentication(CoreAuthenticationTestUtils.getAuthentication(principal), context);
+        TestMultifactorAuthenticationProvider.registerProviderIntoApplicationContext(applicationContext);
+
+        val targetResolver = new DefaultTargetStateResolver(TestMultifactorAuthenticationProvider.ID);
+        val transition = new Transition(new DefaultTransitionCriteria(new LiteralExpression(TestMultifactorAuthenticationProvider.ID)), targetResolver);
+        context.getRootFlow().getGlobalTransitionSet().add(transition);
+
+        result = radiusAccessChallengedAuthenticationWebflowEventResolver.resolve(context);
+        assertEquals(1, result.size());
+        assertEquals(TestMultifactorAuthenticationProvider.ID, result.iterator().next().getId());
     }
 }

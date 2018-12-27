@@ -40,7 +40,7 @@
 <main role="main" class="container mt-3 mb-3">
     <div layout:fragment="content">
 
-        <form method="post" id="fm1">
+        <form method="post" id="fm1" th:action="@{/login}">
             <div class="alert alert-info">
                 <h2 th:text="#{screen.consent.title}">Attribute Consent</h2>
 
@@ -106,6 +106,7 @@
                                     <input class="form-check-input" type="radio" name="option" value="2"
                                            th:checked="${option == 2}"
                                            onclick="optionSelected()" />
+
                                     <label class="form-check-label" th:utext="#{screen.consent.options.attributevalue}">Attribute
                                         Value</label>
                                     <span class="help-block" th:utext="#{screen.consent.options.desc.attributevalue.intro} +

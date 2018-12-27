@@ -1,17 +1,18 @@
 package org.apereo.cas.config;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.ServicesManager;
-import org.apereo.cas.support.saml.services.SamlRegisteredService;
 import org.apereo.cas.support.saml.services.idp.metadata.cache.SamlRegisteredServiceCachingMetadataResolver;
 import org.apereo.cas.util.SamlSPUtils;
+
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-
-import javax.annotation.PostConstruct;
 
 /**
  * This is {@link CasSamlSPInCommonConfiguration}.
@@ -22,7 +23,7 @@ import javax.annotation.PostConstruct;
 @Configuration("casSamlSPInCommonConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @Slf4j
-public class CasSamlSPInCommonConfiguration {
+public class CasSamlSPInCommonConfiguration implements InitializingBean {
 
 
     @Autowired
@@ -30,24 +31,25 @@ public class CasSamlSPInCommonConfiguration {
 
     @Autowired
     @Qualifier("servicesManager")
-    private ServicesManager servicesManager;
+    private ObjectProvider<ServicesManager> servicesManager;
 
     @Autowired
     @Qualifier("defaultSamlRegisteredServiceCachingMetadataResolver")
-    private SamlRegisteredServiceCachingMetadataResolver samlRegisteredServiceCachingMetadataResolver;
+    private ObjectProvider<SamlRegisteredServiceCachingMetadataResolver> samlRegisteredServiceCachingMetadataResolver;
 
-    @PostConstruct
-    public void init() {
-        final SamlRegisteredService service = SamlSPUtils.newSamlServiceProviderService(
-                casProperties.getSamlSp().getInCommon(),
-                samlRegisteredServiceCachingMetadataResolver);
+    @Override
+    public void afterPropertiesSet() {
+        val resolver = samlRegisteredServiceCachingMetadataResolver.getIfAvailable();
+        val service = SamlSPUtils.newSamlServiceProviderService(
+            casProperties.getSamlSp().getInCommon(),
+            resolver);
         if (service != null) {
-            SamlSPUtils.saveService(service, servicesManager);
+            SamlSPUtils.saveService(service, servicesManager.getIfAvailable());
 
             LOGGER.info("Launching background thread to load the InCommon metadata. Depending on bandwidth, this might take a while...");
             new Thread(() -> {
                 LOGGER.debug("Loading InCommon metadata at [{}]...", service.getMetadataLocation());
-                samlRegisteredServiceCachingMetadataResolver.resolve(service);
+                resolver.resolve(service);
             }).start();
         }
     }

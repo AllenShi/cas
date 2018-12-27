@@ -1,8 +1,8 @@
 package org.apereo.cas.web.flow.config;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.throttle.AuthenticationThrottlingExecutionPlan;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.web.flow.CasFlowHandlerAdapter;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
@@ -15,7 +15,8 @@ import org.apereo.cas.web.flow.configurer.DefaultLogoutWebflowConfigurer;
 import org.apereo.cas.web.flow.configurer.GroovyWebflowConfigurer;
 import org.apereo.cas.web.flow.configurer.plan.DefaultCasWebflowExecutionPlan;
 import org.apereo.cas.web.flow.executor.WebflowExecutorFactory;
-import org.apereo.cas.web.support.AuthenticationThrottlingExecutionPlan;
+
+import lombok.val;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -46,7 +47,6 @@ import org.springframework.webflow.execution.FlowExecutionListener;
 import org.springframework.webflow.executor.FlowExecutor;
 import org.springframework.webflow.expression.spel.WebFlowSpringELExpressionParser;
 import org.springframework.webflow.mvc.builder.MvcViewFactoryCreator;
-import org.springframework.webflow.mvc.servlet.FlowHandlerAdapter;
 import org.springframework.webflow.mvc.servlet.FlowHandlerMapping;
 
 import java.util.ArrayList;
@@ -62,7 +62,6 @@ import java.util.List;
  */
 @Configuration("casWebflowContextConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@Slf4j
 public class CasWebflowContextConfiguration {
 
     private static final int LOGOUT_FLOW_HANDLER_ORDER = 3;
@@ -85,7 +84,7 @@ public class CasWebflowContextConfiguration {
 
     @Autowired
     @Qualifier("webflowCipherExecutor")
-    private CipherExecutor webflowCipherExecutor;
+    private ObjectProvider<CipherExecutor> webflowCipherExecutor;
 
     @Bean
     public ExpressionParser expressionParser() {
@@ -100,7 +99,7 @@ public class CasWebflowContextConfiguration {
     @RefreshScope
     @Bean
     public ViewFactoryCreator viewFactoryCreator() {
-        final MvcViewFactoryCreator resolver = new MvcViewFactoryCreator();
+        val resolver = new MvcViewFactoryCreator();
         resolver.setViewResolvers(CollectionUtils.wrap(this.registeredServiceViewResolver.getIfAvailable()));
         return resolver;
     }
@@ -112,7 +111,7 @@ public class CasWebflowContextConfiguration {
 
     @Bean
     public FlowUrlHandler logoutFlowUrlHandler() {
-        final CasDefaultFlowUrlHandler handler = new CasDefaultFlowUrlHandler();
+        val handler = new CasDefaultFlowUrlHandler();
         handler.setFlowExecutionKeyParameter("RelayState");
         return handler;
     }
@@ -120,7 +119,7 @@ public class CasWebflowContextConfiguration {
     @RefreshScope
     @Bean
     public HandlerAdapter logoutHandlerAdapter() {
-        final FlowHandlerAdapter handler = new CasFlowHandlerAdapter(CasWebflowConfigurer.FLOW_ID_LOGOUT);
+        val handler = new CasFlowHandlerAdapter(CasWebflowConfigurer.FLOW_ID_LOGOUT);
         handler.setFlowExecutor(logoutFlowExecutor());
         handler.setFlowUrlHandler(logoutFlowUrlHandler());
         return handler;
@@ -129,7 +128,7 @@ public class CasWebflowContextConfiguration {
     @RefreshScope
     @Bean
     public FlowBuilderServices builder() {
-        final FlowBuilderServicesBuilder builder = new FlowBuilderServicesBuilder();
+        val builder = new FlowBuilderServicesBuilder();
         builder.setViewFactoryCreator(viewFactoryCreator());
         builder.setExpressionParser(expressionParser());
         builder.setDevelopmentMode(casProperties.getWebflow().isRefresh());
@@ -139,7 +138,7 @@ public class CasWebflowContextConfiguration {
 
     @Bean
     public HandlerAdapter loginHandlerAdapter() {
-        final FlowHandlerAdapter handler = new CasFlowHandlerAdapter(CasWebflowConfigurer.FLOW_ID_LOGIN);
+        val handler = new CasFlowHandlerAdapter(CasWebflowConfigurer.FLOW_ID_LOGIN);
         handler.setFlowExecutor(loginFlowExecutor());
         handler.setFlowUrlHandler(loginFlowUrlHandler());
         return handler;
@@ -149,17 +148,17 @@ public class CasWebflowContextConfiguration {
     @Bean
     @ConditionalOnMissingBean(name = "localeChangeInterceptor")
     public LocaleChangeInterceptor localeChangeInterceptor() {
-        final LocaleChangeInterceptor bean = new LocaleChangeInterceptor();
+        val bean = new LocaleChangeInterceptor();
         bean.setParamName(this.casProperties.getLocale().getParamName());
         return bean;
     }
 
     @Bean
     public HandlerMapping logoutFlowHandlerMapping() {
-        final FlowHandlerMapping handler = new FlowHandlerMapping();
+        val handler = new FlowHandlerMapping();
         handler.setOrder(LOGOUT_FLOW_HANDLER_ORDER);
         handler.setFlowRegistry(logoutFlowRegistry());
-        final Object[] interceptors = new Object[]{localeChangeInterceptor()};
+        val interceptors = new Object[]{localeChangeInterceptor()};
         handler.setInterceptors(interceptors);
         return handler;
     }
@@ -167,9 +166,9 @@ public class CasWebflowContextConfiguration {
     @Lazy
     @Bean
     public Object[] loginFlowHandlerMappingInterceptors() {
-        final List interceptors = new ArrayList<>();
+        val interceptors = new ArrayList<Object>();
         interceptors.add(localeChangeInterceptor());
-        final AuthenticationThrottlingExecutionPlan plan = authenticationThrottlingExecutionPlan.getIfAvailable();
+        val plan = authenticationThrottlingExecutionPlan.getIfAvailable();
         if (plan != null) {
             interceptors.addAll(plan.getAuthenticationThrottleInterceptors());
         }
@@ -178,7 +177,7 @@ public class CasWebflowContextConfiguration {
 
     @Bean
     public HandlerMapping loginFlowHandlerMapping() {
-        final FlowHandlerMapping handler = new FlowHandlerMapping();
+        val handler = new FlowHandlerMapping();
         handler.setOrder(LOGOUT_FLOW_HANDLER_ORDER - 1);
         handler.setFlowRegistry(loginFlowRegistry());
         handler.setInterceptors(loginFlowHandlerMappingInterceptors());
@@ -187,7 +186,7 @@ public class CasWebflowContextConfiguration {
 
     @Bean
     public FlowDefinitionRegistry logoutFlowRegistry() {
-        final FlowDefinitionRegistryBuilder builder = new FlowDefinitionRegistryBuilder(this.applicationContext, builder());
+        val builder = new FlowDefinitionRegistryBuilder(this.applicationContext, builder());
         builder.setBasePath(BASE_CLASSPATH_WEBFLOW);
         builder.addFlowLocationPattern("/logout/*-webflow.xml");
         return builder.build();
@@ -195,7 +194,7 @@ public class CasWebflowContextConfiguration {
 
     @Bean
     public FlowDefinitionRegistry loginFlowRegistry() {
-        final FlowDefinitionRegistryBuilder builder = new FlowDefinitionRegistryBuilder(this.applicationContext, builder());
+        val builder = new FlowDefinitionRegistryBuilder(this.applicationContext, builder());
         builder.setBasePath(BASE_CLASSPATH_WEBFLOW);
         builder.addFlowLocationPattern("/login/*-webflow.xml");
         return builder.build();
@@ -204,16 +203,16 @@ public class CasWebflowContextConfiguration {
     @RefreshScope
     @Bean
     public FlowExecutor logoutFlowExecutor() {
-        final WebflowExecutorFactory factory = new WebflowExecutorFactory(casProperties.getWebflow(),
-            logoutFlowRegistry(), this.webflowCipherExecutor, new FlowExecutionListener[0]);
+        val factory = new WebflowExecutorFactory(casProperties.getWebflow(),
+            logoutFlowRegistry(), this.webflowCipherExecutor.getIfAvailable(), new FlowExecutionListener[0]);
         return factory.build();
     }
 
     @RefreshScope
     @Bean
     public FlowExecutor loginFlowExecutor() {
-        final WebflowExecutorFactory factory = new WebflowExecutorFactory(casProperties.getWebflow(),
-            loginFlowRegistry(), this.webflowCipherExecutor,
+        val factory = new WebflowExecutorFactory(casProperties.getWebflow(),
+            loginFlowRegistry(), this.webflowCipherExecutor.getIfAvailable(),
             new FlowExecutionListener[0]);
 
         return factory.build();
@@ -224,7 +223,7 @@ public class CasWebflowContextConfiguration {
     @Order(0)
     @RefreshScope
     public CasWebflowConfigurer defaultWebflowConfigurer() {
-        final DefaultLoginWebflowConfigurer c = new DefaultLoginWebflowConfigurer(builder(), loginFlowRegistry(), applicationContext, casProperties);
+        val c = new DefaultLoginWebflowConfigurer(builder(), loginFlowRegistry(), applicationContext, casProperties);
         c.setLogoutFlowDefinitionRegistry(logoutFlowRegistry());
         c.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return c;
@@ -235,7 +234,7 @@ public class CasWebflowContextConfiguration {
     @Order(0)
     @RefreshScope
     public CasWebflowConfigurer defaultLogoutWebflowConfigurer() {
-        final DefaultLogoutWebflowConfigurer c = new DefaultLogoutWebflowConfigurer(builder(), loginFlowRegistry(),
+        val c = new DefaultLogoutWebflowConfigurer(builder(), loginFlowRegistry(),
             applicationContext, casProperties);
         c.setLogoutFlowDefinitionRegistry(logoutFlowRegistry());
         c.setOrder(Ordered.HIGHEST_PRECEDENCE);
@@ -247,7 +246,7 @@ public class CasWebflowContextConfiguration {
     @DependsOn("defaultWebflowConfigurer")
     @RefreshScope
     public CasWebflowConfigurer groovyWebflowConfigurer() {
-        final GroovyWebflowConfigurer c = new GroovyWebflowConfigurer(builder(), loginFlowRegistry(), applicationContext, casProperties);
+        val c = new GroovyWebflowConfigurer(builder(), loginFlowRegistry(), applicationContext, casProperties);
         c.setLogoutFlowDefinitionRegistry(logoutFlowRegistry());
         return c;
     }
@@ -255,7 +254,7 @@ public class CasWebflowContextConfiguration {
     @Autowired
     @Bean
     public CasWebflowExecutionPlan casWebflowExecutionPlan(final List<CasWebflowExecutionPlanConfigurer> configurers) {
-        final DefaultCasWebflowExecutionPlan plan = new DefaultCasWebflowExecutionPlan();
+        val plan = new DefaultCasWebflowExecutionPlan();
         configurers.forEach(c -> c.configureWebflowExecutionPlan(plan));
         plan.execute();
         return plan;

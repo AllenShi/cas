@@ -1,22 +1,15 @@
 package org.apereo.cas.configuration.model.core;
 
 import org.apereo.cas.CasProtocolConstants;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatAjpProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatBasicAuthenticationProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatClusteringProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatCsrfProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatExtendedAccessLogProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatHttpProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatHttpProxyProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatRemoteAddressProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatRewriteValveProperties;
-import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatSslValveProperties;
+import org.apereo.cas.configuration.model.core.web.tomcat.CasEmbeddedApacheTomcatProperties;
 import org.apereo.cas.configuration.support.RequiredProperty;
 import org.apereo.cas.configuration.support.RequiresModule;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import java.io.Serializable;
+
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
+
+import java.io.Serializable;
 
 /**
  * This is {@link CasServerProperties}.
@@ -47,87 +40,10 @@ public class CasServerProperties implements Serializable {
     private String prefix = name.concat("/cas");
 
     /**
-     * Flag to do Jaas trap.
-     */
-    private boolean jaasCheck = false;
-
-    /**
-     * Flag to dp TLS Check.
-     */
-    private boolean tlsCheck = false;
-
-    /**
-     * Flag to allow impersonation.
-     */
-    private boolean impersonate = false;
-
-    /**
-     * File containing allowed impersonators.
-     */
-    private String impersonateFile;
-
-    /**
-     * Embedded container AJP settings.
+     * Configuration settings that control the embedded Apache Tomcat container.
      */
     @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatAjpProperties ajp = new CasEmbeddedApacheTomcatAjpProperties();
-
-    /**
-     * Embedded container HTTP port settings as an additional option.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatHttpProperties http = new CasEmbeddedApacheTomcatHttpProperties();
-
-    /**
-     * Embedded container tomcat clustering options.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatClusteringProperties clustering = new CasEmbeddedApacheTomcatClusteringProperties();
-
-    
-    /**
-     * Http proxy configuration properties.
-     * In the event that you decide to run CAS without any SSL configuration in the embedded Tomcat container and on a non-secure
-     * port yet wish to customize the connector configuration that is linked to the running port (i.e. 8080), this setting may apply.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatHttpProxyProperties httpProxy = new CasEmbeddedApacheTomcatHttpProxyProperties();
-
-    /**
-     * Embedded container's SSL valve setting.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatSslValveProperties sslValve = new CasEmbeddedApacheTomcatSslValveProperties();
-
-    /**
-     * Embedded container's rewrite valve setting.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatRewriteValveProperties rewriteValve = new CasEmbeddedApacheTomcatRewriteValveProperties();
-
-    /**
-     * Configuration properties for access logging beyond defaults.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatExtendedAccessLogProperties extAccessLog = new CasEmbeddedApacheTomcatExtendedAccessLogProperties();
-
-    /**
-     * Enable Tomcat's RemoteAddress filter.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatRemoteAddressProperties remoteAddr = new CasEmbeddedApacheTomcatRemoteAddressProperties();
-
-    /**
-     * Enable Tomcat's CSRF filter.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatCsrfProperties csrf = new CasEmbeddedApacheTomcatCsrfProperties();
-
-    /**
-     * Enable basic authentication for the embedded tomcat.
-     */
-    @NestedConfigurationProperty
-    private CasEmbeddedApacheTomcatBasicAuthenticationProperties basicAuthn = new CasEmbeddedApacheTomcatBasicAuthenticationProperties();
+    private CasEmbeddedApacheTomcatProperties tomcat = new CasEmbeddedApacheTomcatProperties();
 
     public String getLoginUrl() {
         return getPrefix().concat(CasProtocolConstants.ENDPOINT_LOGIN);
@@ -136,4 +52,5 @@ public class CasServerProperties implements Serializable {
     public String getLogoutUrl() {
         return getPrefix().concat(CasProtocolConstants.ENDPOINT_LOGOUT);
     }
+
 }

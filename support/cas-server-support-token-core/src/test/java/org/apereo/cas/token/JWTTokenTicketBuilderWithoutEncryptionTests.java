@@ -1,10 +1,14 @@
 package org.apereo.cas.token;
 
-import com.nimbusds.jwt.JWTClaimsSet;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.util.EncodingUtils;
+
+import com.nimbusds.jwt.JWTClaimsSet;
+import lombok.val;
 import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
+
+import java.text.ParseException;
 
 import static org.junit.Assert.*;
 
@@ -18,19 +22,19 @@ import static org.junit.Assert.*;
 public class JWTTokenTicketBuilderWithoutEncryptionTests extends BaseJWTTokenTicketBuilderTests {
 
     @Test
-    public void verifyJwtForServiceTicket() throws Exception {
-        final String jwt = tokenTicketBuilder.build("ST-123456", CoreAuthenticationTestUtils.getService());
+    public void verifyJwtForServiceTicket() throws ParseException {
+        val jwt = tokenTicketBuilder.build("ST-123456", CoreAuthenticationTestUtils.getService());
         assertNotNull(jwt);
-        final Object result = tokenCipherExecutor.decode(jwt);
-        final JWTClaimsSet claims = JWTClaimsSet.parse(result.toString());
+        val result = tokenCipherExecutor.decode(jwt);
+        val claims = JWTClaimsSet.parse(result.toString());
         assertEquals("casuser", claims.getSubject());
     }
 
     @Test
-    public void verifyJwtForServiceTicketEncoding() throws Exception {
-        final String jwt = tokenTicketBuilder.build("ST-123456", CoreAuthenticationTestUtils.getService());
+    public void verifyJwtForServiceTicketEncoding() {
+        val jwt = tokenTicketBuilder.build("ST-123456", CoreAuthenticationTestUtils.getService());
         assertNotNull(jwt);
-        final String jwtDec = EncodingUtils.decodeBase64ToString(jwt);
+        val jwtDec = EncodingUtils.decodeBase64ToString(jwt);
         assertNotNull(jwtDec);
     }
 

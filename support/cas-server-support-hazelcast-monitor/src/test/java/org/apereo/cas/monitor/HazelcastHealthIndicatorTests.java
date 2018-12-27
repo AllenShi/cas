@@ -1,6 +1,5 @@
 package org.apereo.cas.monitor;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.config.CasCoreAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationHandlersConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationMetadataConfiguration;
@@ -23,20 +22,24 @@ import org.apereo.cas.config.HazelcastTicketRegistryTicketCatalogConfiguration;
 import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguration;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.monitor.config.HazelcastMonitorConfiguration;
-import org.apereo.cas.util.junit.ConditionalSpringRunner;
+
+import lombok.val;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.rules.SpringClassRule;
+import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import java.util.Map;
 
+import static org.hamcrest.Matchers.isOneOf;
 import static org.junit.Assert.*;
 
 /**
@@ -45,13 +48,14 @@ import static org.junit.Assert.*;
  * @author Misagh Moayyed
  * @since 5.3.0
  */
-@RunWith(ConditionalSpringRunner.class)
 @SpringBootTest(classes = {
+    RefreshAutoConfiguration.class,
     CasHazelcastConfiguration.class,
     HazelcastTicketRegistryConfiguration.class,
+    HazelcastTicketRegistryTicketCatalogConfiguration.class,
+    HazelcastMonitorConfiguration.class,
     CasCoreTicketsConfiguration.class,
     CasCoreTicketCatalogConfiguration.class,
-    HazelcastTicketRegistryTicketCatalogConfiguration.class,
     CasCoreUtilConfiguration.class,
     CasPersonDirectoryConfiguration.class,
     CasCoreLogoutConfiguration.class,
@@ -63,27 +67,31 @@ import static org.junit.Assert.*;
     CasCoreAuthenticationSupportConfiguration.class,
     CasCoreAuthenticationHandlersConfiguration.class,
     CasCoreHttpConfiguration.class,
-    RefreshAutoConfiguration.class,
     CasCoreConfiguration.class,
     CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
     CasCoreServicesConfiguration.class,
     CasCoreLogoutConfiguration.class,
     CasCoreWebConfiguration.class,
-    CasWebApplicationServiceFactoryConfiguration.class,
-    HazelcastMonitorConfiguration.class
+    CasWebApplicationServiceFactoryConfiguration.class
 })
 @TestPropertySource(properties = {"cas.ticket.registry.hazelcast.cluster.instanceName=testlocalmonitor"})
-@Slf4j
 public class HazelcastHealthIndicatorTests {
+    @ClassRule
+    public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
+
+    @Rule
+    public final SpringMethodRule springMethodRule = new SpringMethodRule();
+
     @Autowired
     @Qualifier("hazelcastHealthIndicator")
     private HealthIndicator hazelcastHealthIndicator;
 
     @Test
     public void verifyMonitor() {
-        final Health health = hazelcastHealthIndicator.health();
-        assertEquals(Status.UP, health.getStatus());
-        final Map<String, Object> details = health.getDetails();
+        val health = hazelcastHealthIndicator.health();
+        assertThat(health.getStatus(), isOneOf(Status.UP, Status.OUT_OF_SERVICE));
+
+        val details = health.getDetails();
         details.values().stream()
             .map(Map.class::cast)
             .forEach(map -> {

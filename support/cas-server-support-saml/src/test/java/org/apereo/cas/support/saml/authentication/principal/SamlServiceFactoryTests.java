@@ -1,6 +1,5 @@
 package org.apereo.cas.support.saml.authentication.principal;
 
-import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.authentication.principal.ServiceFactory;
 import org.apereo.cas.config.SamlConfiguration;
 import org.apereo.cas.config.authentication.support.SamlAuthenticationEventExecutionPlanConfiguration;
@@ -8,11 +7,11 @@ import org.apereo.cas.config.authentication.support.SamlServiceFactoryConfigurat
 import org.apereo.cas.support.saml.AbstractOpenSamlTests;
 import org.apereo.cas.support.saml.SamlProtocolConstants;
 
+import lombok.val;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.nio.charset.StandardCharsets;
@@ -38,23 +37,22 @@ public class SamlServiceFactoryTests extends AbstractOpenSamlTests {
 
     @Test
     public void verifyObtainService() {
-        final MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setMethod(HttpMethod.POST.name());
+        val request = new MockHttpServletRequest();
         request.setParameter(SamlProtocolConstants.CONST_PARAM_TARGET, "test");
-        final Service service = samlServiceFactory.createService(request);
+
+        val service = samlServiceFactory.createService(request);
         assertEquals("test", service.getId());
     }
 
     @Test
     public void verifyServiceDoesNotExist() {
-        final MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setMethod(HttpMethod.POST.name());
+        val request = new MockHttpServletRequest();
         assertNull(samlServiceFactory.createService(request));
     }
 
     @Test
     public void verifyPayloadCanBeParsedProperly() {
-        final String body = "<!--    Licensed to Jasig under one or more contributor license    agreements. See the NOTICE file distributed with this work"
+        val body = "<!--    Licensed to Jasig under one or more contributor license    agreements. See the NOTICE file distributed with this work"
             + "for additional information regarding copyright ownership.    Jasig licenses this file to you under the Apache License,    "
             + "Version 2.0 (the \"License\"); you may not use this file    except in compliance with the License.  You may obtain a    "
             + "copy of the License at the following location:      http://www.apache.org/licenses/LICENSE-2.0    Unless required by applicable law or agreed to in writing,"
@@ -63,25 +61,10 @@ public class SamlServiceFactoryTests extends AbstractOpenSamlTests {
             + "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns=\"urn:oasis:names:tc:SAML:1.0:protocol\">    <soap:Header/>   "
             + "<soap:Body>        <Request MajorVersion=\"1\" MinorVersion=\"1\" RequestID=\"_e444ee1af9a7f6d656d76e8810299544\" IssueInstant=\"2018-05-10T16:39:46Z\">"
             + "<AssertionArtifact>ST-AAHJJ4pD5ZyoQkY9i08GsvYRVOyKeWws4SA4xwv+5HX9UgL7fCRBp2Ad</AssertionArtifact>        </Request>    </soap:Body></soap:Envelope>";
-        final MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setMethod(HttpMethod.POST.name());
+        val request = new MockHttpServletRequest();
         request.setParameter(SamlProtocolConstants.CONST_PARAM_TARGET, "test");
         request.setContent(body.getBytes(StandardCharsets.UTF_8));
-        assertNotNull(samlServiceFactory.createService(request));
-    }
-
-    @Test
-    public void verifyXmlPayloadWorksWithBadDocument() {
-        final String body = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open"
-            + ".org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" "
-            + "soap:mustUnderstand=\"1\"><wsu:Timestamp wsu:Id=\"TS-251abb2a-d5ba-4fe9-858a-a90e873c0a57\"><wsu:Created>2018-12-05T19:55:10"
-            + ".301Z</wsu:Created><wsu:Expires>2018-12-05T20:00:10.301Z</wsu:Expires></wsu:Timestamp></soap:Body></soap:Envelope>";
-
-        final MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setParameter(SamlProtocolConstants.CONST_PARAM_TARGET, "test");
-        request.setContent(body.getBytes(StandardCharsets.UTF_8));
-        request.setMethod(HttpMethod.POST.name());
         request.setRequestURI(SamlProtocolConstants.ENDPOINT_SAML_VALIDATE);
-        assertNull(samlServiceFactory.createService(request));
+        assertNotNull(samlServiceFactory.createService(request));
     }
 }

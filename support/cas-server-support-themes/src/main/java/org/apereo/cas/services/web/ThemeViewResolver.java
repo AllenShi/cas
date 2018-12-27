@@ -1,10 +1,12 @@
 package org.apereo.cas.services.web;
 
+import org.apereo.cas.configuration.CasConfigurationProperties;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apereo.cas.configuration.CasConfigurationProperties;
+import lombok.val;
 import org.springframework.boot.autoconfigure.template.TemplateLocation;
 import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafProperties;
 import org.springframework.context.ApplicationContext;
@@ -12,7 +14,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.view.AbstractCachingViewResolver;
-import org.thymeleaf.spring4.view.AbstractThymeleafView;
+import org.thymeleaf.spring5.view.AbstractThymeleafView;
 
 import java.util.Locale;
 
@@ -38,20 +40,20 @@ public class ThemeViewResolver extends AbstractCachingViewResolver {
 
     @Override
     protected View loadView(final String viewName, final Locale locale) throws Exception {
-        final View view = delegate.resolveViewName(viewName, locale);
+        val view = delegate.resolveViewName(viewName, locale);
         if (view instanceof AbstractThymeleafView) {
-            final AbstractThymeleafView thymeleafView = (AbstractThymeleafView) view;
+            val thymeleafView = (AbstractThymeleafView) view;
             configureTemplateThemeDefaultLocation(thymeleafView);
         }
         return view;
     }
 
     private void configureTemplateThemeDefaultLocation(final AbstractThymeleafView thymeleafView) {
-        final String baseTemplateName = thymeleafView.getTemplateName();
-        final String templateName = theme + "/" + baseTemplateName;
-        final String path = thymeleafProperties.getPrefix().concat(templateName).concat(thymeleafProperties.getSuffix());
+        val baseTemplateName = thymeleafView.getTemplateName();
+        val templateName = theme + '/' + baseTemplateName;
+        val path = thymeleafProperties.getPrefix().concat(templateName).concat(thymeleafProperties.getSuffix());
         LOGGER.trace("Attempting to locate theme location at [{}]", path);
-        final TemplateLocation location = new TemplateLocation(path);
+        val location = new TemplateLocation(path);
         if (location.exists(getApplicationContext())) {
             thymeleafView.setTemplateName(templateName);
         }
@@ -80,7 +82,7 @@ public class ThemeViewResolver extends AbstractCachingViewResolver {
 
         @Override
         public ThemeViewResolver create(final String theme) {
-            final ThemeViewResolver resolver = new ThemeViewResolver(delegate, thymeleafProperties, casProperties, theme);
+            val resolver = new ThemeViewResolver(delegate, thymeleafProperties, casProperties, theme);
             resolver.setApplicationContext(applicationContext);
             resolver.setCache(thymeleafProperties.isCache());
             return resolver;

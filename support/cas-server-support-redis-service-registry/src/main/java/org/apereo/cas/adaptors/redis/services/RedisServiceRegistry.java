@@ -1,15 +1,18 @@
 package org.apereo.cas.adaptors.redis.services;
 
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.services.AbstractServiceRegistry;
 import org.apereo.cas.services.RegisteredService;
+
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -20,17 +23,21 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @ToString
-@RequiredArgsConstructor
 public class RedisServiceRegistry extends AbstractServiceRegistry {
 
     private static final String CAS_SERVICE_PREFIX = RegisteredService.class.getSimpleName() + ':';
 
     private final RedisTemplate<String, RegisteredService> template;
 
+    public RedisServiceRegistry(final ApplicationEventPublisher eventPublisher, final RedisTemplate<String, RegisteredService> template) {
+        super(eventPublisher);
+        this.template = template;
+    }
+
     @Override
     public RegisteredService save(final RegisteredService rs) {
         try {
-            final String redisKey = getRegisteredServiceRedisKey(rs);
+            val redisKey = getRegisteredServiceRedisKey(rs);
             this.template.boundValueOps(redisKey).set(rs);
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -41,7 +48,7 @@ public class RedisServiceRegistry extends AbstractServiceRegistry {
     @Override
     public boolean delete(final RegisteredService registeredService) {
         try {
-            final String redisKey = getRegisteredServiceRedisKey(registeredService);
+            val redisKey = getRegisteredServiceRedisKey(registeredService);
             this.template.delete(redisKey);
             return true;
         } catch (final Exception e) {
@@ -53,7 +60,7 @@ public class RedisServiceRegistry extends AbstractServiceRegistry {
     @Override
     public long size() {
         try {
-            return this.template.keys(getPatternRegisteredServiceRedisKey()).size();
+            return getRegisteredServiceKeys().size();
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -61,9 +68,9 @@ public class RedisServiceRegistry extends AbstractServiceRegistry {
     }
 
     @Override
-    public List<RegisteredService> load() {
+    public Collection<RegisteredService> load() {
         try {
-            return this.template.keys(getPatternRegisteredServiceRedisKey())
+            return getRegisteredServiceKeys()
                 .stream()
                 .map(redisKey -> this.template.boundValueOps(redisKey).get())
                 .filter(Objects::nonNull).collect(Collectors.toList());
@@ -76,7 +83,7 @@ public class RedisServiceRegistry extends AbstractServiceRegistry {
     @Override
     public RegisteredService findServiceById(final long id) {
         try {
-            final String redisKey = getRegisteredServiceRedisKey(id);
+            val redisKey = getRegisteredServiceRedisKey(id);
             return this.template.boundValueOps(redisKey).get();
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -98,6 +105,10 @@ public class RedisServiceRegistry extends AbstractServiceRegistry {
     }
 
     private static String getPatternRegisteredServiceRedisKey() {
-        return CAS_SERVICE_PREFIX + "*";
+        return CAS_SERVICE_PREFIX + '*';
+    }
+
+    private Set<String> getRegisteredServiceKeys() {
+        return this.template.keys(getPatternRegisteredServiceRedisKey());
     }
 }

@@ -11,7 +11,7 @@ import com.maxmind.geoip2.record.MaxMind;
 import com.maxmind.geoip2.record.Postal;
 import com.maxmind.geoip2.record.RepresentedCountry;
 import com.maxmind.geoip2.record.Traits;
-import org.apereo.cas.authentication.adaptive.geo.GeoLocationResponse;
+import lombok.val;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -30,22 +30,22 @@ public class MaxmindDatabaseGeoLocationServiceTests {
 
     @Test
     public void verifyOperation() throws Exception {
-        final DatabaseReader city = mock(DatabaseReader.class);
-        final CityResponse cityResponse = new CityResponse(new City(), new Continent(), new Country(),
+        val city = mock(DatabaseReader.class);
+        val cityResponse = new CityResponse(new City(), new Continent(), new Country(),
             new Location(), new MaxMind(), new Postal(),
             new Country(), new RepresentedCountry(), new ArrayList<>(), new Traits());
         when(city.city(any(InetAddress.class))).thenReturn(cityResponse);
 
-        final DatabaseReader country = mock(DatabaseReader.class);
-        final CountryResponse countryResponse = new CountryResponse(new Continent(), new Country(),
+        val country = mock(DatabaseReader.class);
+        val countryResponse = new CountryResponse(new Continent(), new Country(),
             new MaxMind(), new Country(),
             new RepresentedCountry(), new Traits());
         when(country.country(any(InetAddress.class))).thenReturn(countryResponse);
 
-        final MaxmindDatabaseGeoLocationService service = new MaxmindDatabaseGeoLocationService(city, country);
-        GeoLocationResponse response = service.locate("127.0.0.1");
+        val service = new MaxmindDatabaseGeoLocationService(city, country);
+        val response = service.locate("127.0.0.1");
         assertNotNull(response);
-        response = service.locate(100D, 100D);
-        assertNull(response);
+        val response2 = service.locate(100D, 100D);
+        assertNull(response2);
     }
 }

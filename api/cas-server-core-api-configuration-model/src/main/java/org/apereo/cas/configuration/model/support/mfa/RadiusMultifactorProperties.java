@@ -15,7 +15,6 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
  * @since 5.2.0
  */
 @RequiresModule(name = "cas-server-support-radius-mfa")
-
 @Getter
 @Setter
 public class RadiusMultifactorProperties extends BaseMultifactorProviderProperties {
@@ -52,17 +51,17 @@ public class RadiusMultifactorProperties extends BaseMultifactorProviderProperti
     private RadiusClientProperties client = new RadiusClientProperties();
 
     /**
-     * Indicates whether this provider should support trusted devices.
-     */
-    private boolean trustedDeviceEnabled;
-
-    /**
      * Total number of allowed authentication attempts
      * with the radius mfa server before the authentication event
      * is considered cancelled. A negative/zero value indicates
      * that no limit is enforced.
      */
     private long allowedAuthenticationAttempts = -1;
+    
+    /**
+     * Indicates whether this provider should support trusted devices.
+     */
+    private boolean trustedDeviceEnabled;
 
     public RadiusMultifactorProperties() {
         setId(DEFAULT_IDENTIFIER);
