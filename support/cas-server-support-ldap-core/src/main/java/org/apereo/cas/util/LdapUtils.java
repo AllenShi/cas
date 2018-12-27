@@ -1,13 +1,14 @@
 package org.apereo.cas.util;
 
+import org.apereo.cas.configuration.model.support.ldap.AbstractLdapAuthenticationProperties;
+import org.apereo.cas.configuration.model.support.ldap.AbstractLdapProperties;
+import org.apereo.cas.configuration.support.Beans;
+
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apereo.cas.configuration.model.support.ldap.AbstractLdapAuthenticationProperties;
-import org.apereo.cas.configuration.model.support.ldap.AbstractLdapProperties;
-import org.apereo.cas.configuration.support.Beans;
 import org.ldaptive.ActivePassiveConnectionStrategy;
 import org.ldaptive.AddOperation;
 import org.ldaptive.AddRequest;
@@ -54,7 +55,6 @@ import org.ldaptive.auth.FormatDnResolver;
 import org.ldaptive.auth.PooledBindAuthenticationHandler;
 import org.ldaptive.auth.PooledCompareAuthenticationHandler;
 import org.ldaptive.auth.PooledSearchDnResolver;
-import org.ldaptive.auth.PooledSearchEntryResolver;
 import org.ldaptive.control.PasswordPolicyControl;
 import org.ldaptive.extended.PasswordModifyOperation;
 import org.ldaptive.extended.PasswordModifyRequest;
@@ -84,6 +84,8 @@ import org.ldaptive.sasl.Mechanism;
 import org.ldaptive.sasl.QualityOfProtection;
 import org.ldaptive.sasl.SaslConfig;
 import org.ldaptive.sasl.SecurityStrength;
+import org.ldaptive.ssl.AllowAnyHostnameVerifier;
+import org.ldaptive.ssl.DefaultHostnameVerifier;
 import org.ldaptive.ssl.KeyStoreCredentialConfig;
 import org.ldaptive.ssl.SslConfig;
 import org.ldaptive.ssl.X509CredentialConfig;
@@ -492,7 +494,7 @@ public class LdapUtils {
     }
 
     /**
-     * Constructs a new search filter using {@link SearchExecutor#searchFilter} as a template and
+     * Constructs a new search filter using {@link SearchExecutor#getSearchFilter()} as a template and
      * the username as a parameter.
      *
      * @param filterQuery the query filter
@@ -503,7 +505,7 @@ public class LdapUtils {
     }
 
     /**
-     * Constructs a new search filter using {@link SearchExecutor#searchFilter} as a template and
+     * Constructs a new search filter using {@link SearchExecutor#getSearchFilter()} as a template and
      * the username as a parameter.
      *
      * @param filterQuery the query filter
@@ -515,7 +517,7 @@ public class LdapUtils {
     }
 
     /**
-     * Constructs a new search filter using {@link SearchExecutor#searchFilter} as a template and
+     * Constructs a new search filter using {@link SearchExecutor#getSearchFilter()} as a template and
      * the username as a parameter.
      *
      * @param filterQuery the query filter
@@ -661,8 +663,9 @@ public class LdapUtils {
         resolver.setAllowMultipleDns(l.isAllowMultipleDns());
         resolver.setConnectionFactory(connectionFactoryForSearch);
         resolver.setUserFilter(l.getSearchFilter());
-        resolver.setReferralHandler(new SearchReferralHandler());
-
+        if (l.isFollowReferrals()) {
+            resolver.setReferralHandler(new SearchReferralHandler());
+        }
         if (StringUtils.isNotBlank(l.getDerefAliases())) {
             resolver.setDerefAliases(DerefAliases.valueOf(l.getDerefAliases()));
         }
@@ -747,7 +750,7 @@ public class LdapUtils {
 
         final String urls = l.getLdapUrl().contains(" ")
             ? l.getLdapUrl()
-            : Arrays.stream(l.getLdapUrl().split(",")).collect(Collectors.joining(" "));
+            : String.join(" ", l.getLdapUrl().split(","));
         LOGGER.debug("Transformed LDAP urls from [{}] to [{}]", l.getLdapUrl(), urls);
         cc.setLdapUrl(urls);
 
@@ -784,7 +787,6 @@ public class LdapUtils {
             final X509CredentialConfig cfg = new X509CredentialConfig();
             cfg.setTrustCertificates(l.getTrustCertificates());
             cc.setSslConfig(new SslConfig(cfg));
-
         } else if (l.getKeystore() != null) {
             LOGGER.debug("Creating LDAP SSL configuration via keystore [{}]", l.getKeystore());
             final KeyStoreCredentialConfig cfg = new KeyStoreCredentialConfig();
@@ -795,6 +797,18 @@ public class LdapUtils {
         } else {
             LOGGER.debug("Creating LDAP SSL configuration via the native JVM truststore");
             cc.setSslConfig(new SslConfig());
+        }
+        final SslConfig sslConfig = cc.getSslConfig();
+        if (sslConfig != null) {
+            switch (l.getHostnameVerifier()) {
+                case ANY:
+                    sslConfig.setHostnameVerifier(new AllowAnyHostnameVerifier());
+                    break;
+                case DEFAULT:
+                default:
+                    sslConfig.setHostnameVerifier(new DefaultHostnameVerifier());
+                    break;
+            }
         }
         if (StringUtils.isNotBlank(l.getSaslMechanism())) {
             LOGGER.debug("Creating LDAP SASL mechanism via [{}]", l.getSaslMechanism());
@@ -905,7 +919,9 @@ public class LdapUtils {
                 compareRequest.setDn(l.getValidator().getDn());
                 compareRequest.setAttribute(new LdapAttribute(l.getValidator().getAttributeName(),
                     l.getValidator().getAttributeValues().toArray(new String[]{})));
-                compareRequest.setReferralHandler(new SearchReferralHandler());
+                if (l.isFollowReferrals()) {
+                    compareRequest.setReferralHandler(new SearchReferralHandler());
+                }
                 cp.setValidator(new CompareValidator(compareRequest));
                 break;
             case "none":
@@ -919,7 +935,9 @@ public class LdapUtils {
                 searchRequest.setReturnAttributes(ReturnAttributes.NONE.value());
                 searchRequest.setSearchScope(SearchScope.valueOf(l.getValidator().getScope()));
                 searchRequest.setSizeLimit(1L);
-                searchRequest.setReferralHandler(new SearchReferralHandler());
+                if (l.isFollowReferrals()) {
+                    searchRequest.setReferralHandler(new SearchReferralHandler());
+                }
                 cp.setValidator(new SearchValidator(searchRequest));
                 break;
         }
@@ -978,12 +996,14 @@ public class LdapUtils {
             throw new IllegalArgumentException("To create a search entry resolver, user filter cannot be empty/blank");
         }
 
-        final PooledSearchEntryResolver entryResolver = new PooledSearchEntryResolver();
+        final BinaryAttributeAwarePooledSearchEntryResolver entryResolver = new BinaryAttributeAwarePooledSearchEntryResolver();
         entryResolver.setBaseDn(l.getBaseDn());
         entryResolver.setUserFilter(l.getSearchFilter());
         entryResolver.setSubtreeSearch(l.isSubtreeSearch());
         entryResolver.setConnectionFactory(factory);
         entryResolver.setAllowMultipleEntries(l.isAllowMultipleEntries());
+        entryResolver.setBinaryAttributes(l.getBinaryAttributes());
+
         if (StringUtils.isNotBlank(l.getDerefAliases())) {
             entryResolver.setDerefAliases(DerefAliases.valueOf(l.getDerefAliases()));
         }
@@ -1039,7 +1059,9 @@ public class LdapUtils {
             LOGGER.debug("Search entry handlers defined for the entry resolver of [{}] are [{}]", l.getLdapUrl(), handlers);
             entryResolver.setSearchEntryHandlers(handlers.toArray(new SearchEntryHandler[]{}));
         }
-        entryResolver.setReferralHandler(new SearchReferralHandler());
+        if (l.isFollowReferrals()) {
+            entryResolver.setReferralHandler(new SearchReferralHandler());
+        }
         return entryResolver;
     }
 

@@ -166,6 +166,7 @@ subprojects {
         mavenLocal()
         mavenCentral()
         maven { url "https://build.shibboleth.net/nexus/content/repositories/releases" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases" }
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
         maven { url "https://repo.spring.io/plugins-release/" }
         maven { url "https://dl.bintray.com/uniconiam/maven" }
@@ -298,7 +299,7 @@ subprojects {
          * Specifies if the build should be failed if a CVSS score equal
          * to or above a specified level is identified.
          */
-        failBuildOnCVSS = 7
+        failBuildOnCVSS = 8
         skipTestGroups = true
         suppressionFile = file("$rootProject.projectDir/style/dependency-check-suppressions.xml")
         analyzers {

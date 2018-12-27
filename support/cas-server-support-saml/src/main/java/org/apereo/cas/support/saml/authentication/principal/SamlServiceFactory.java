@@ -36,17 +36,21 @@ public class SamlServiceFactory extends AbstractServiceFactory<SamlService> {
 
     @Override
     public SamlService createService(final HttpServletRequest request) {
-        /**
+        /*
           * As per http://docs.oasis-open.org/security/saml/Post2.0/saml-ecp/v2.0/saml-ecp-v2.0.html we cannot create service from SAML ECP Request.
           * This will result in NullPointerException, when trying to get samlp:Request from S:Body.
           */
-        if (request.getRequestURI().contains(SamlIdPConstants.ENDPOINT_SAML2_IDP_ECP_PROFILE_SSO)) {
-            LOGGER.trace("The {} request on {} seems to be a SOAP ECP Request, skip creating service from it.", request.getMethod(), request.getRequestURI());
+        final String requestURI = request.getRequestURI();
+        LOGGER.trace("Current request URI is [{}]", requestURI);
+
+        if (requestURI.contains(SamlIdPConstants.ENDPOINT_SAML2_IDP_ECP_PROFILE_SSO)) {
+            LOGGER.trace("The [{}] request on [{}] seems to be a SOAP ECP Request, skip creating service from it.", request.getMethod(), requestURI);
             return null;
         }
 
         final String service = request.getParameter(SamlProtocolConstants.CONST_PARAM_TARGET);
-        final String requestBody = request.getMethod().equalsIgnoreCase(HttpMethod.POST.name()) ? getRequestBody(request) : null;
+        final String requestBody = requestURI.contains(SamlProtocolConstants.ENDPOINT_SAML_VALIDATE)
+            && request.getMethod().equalsIgnoreCase(HttpMethod.POST.name()) ? getRequestBody(request) : null;
 
         String artifactId = null;
         String requestId = null;
@@ -63,23 +67,35 @@ public class SamlServiceFactory extends AbstractServiceFactory<SamlService> {
             request.setAttribute(SamlProtocolConstants.PARAMETER_SAML_REQUEST, requestBody);
 
             final Document document = saml10ObjectBuilder.constructDocumentFromXml(requestBody);
+            if (document == null) {
+                LOGGER.trace("Could not construct SAML document from request body [{}]", requestBody);
+                return null;
+            }
             final Element root = document.getRootElement();
 
             @NonNull final Element body = root.getChild("Body", NAMESPACE_ENVELOPE);
+            if (body == null) {
+                LOGGER.trace("Request body not specify a [Body] element");
+                return null;
+            }
+
             @NonNull final Element requestChild = body.getChild("Request", NAMESPACE_SAML1);
+            if (requestChild == null) {
+                LOGGER.trace("Request body not specify a [Request] element");
+                return null;
+            }
 
             @NonNull final Element artifactElement = requestChild.getChild("AssertionArtifact", NAMESPACE_SAML1);
-            artifactId = artifactElement.getValue();
+            artifactId = artifactElement.getValue().trim();
 
             final Attribute requestIdAttribute = requestChild.getAttribute("RequestID");
             if (requestIdAttribute == null) {
-
                 LOGGER.error("SAML request body does not specify the RequestID attribute. This is a required attribute per the schema definition and MUST be provided by the client. "
                     + " RequestID needs to be unique on a per-request basis and per OWASP, it may be 16 bytes of entropy in session identifiers which have similar requirements. "
                     + "While CAS does allow the RequestID attribute to be optional for the time being to preserve backward compatibility, this behavior MUST be fixed by the client "
                     + "and future CAS versions begin to enforce the presence of RequestID more forcefully to remain compliant with schema and protocol.");
             } else {
-                requestId = requestIdAttribute.getValue();
+                requestId = requestIdAttribute.getValue().trim();
             }
         }
 
