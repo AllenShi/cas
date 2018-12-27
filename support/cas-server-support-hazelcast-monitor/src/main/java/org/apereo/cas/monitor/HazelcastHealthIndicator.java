@@ -26,8 +26,6 @@ import java.util.concurrent.Executors;
 @ToString
 public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
 
-    private static int clusterSize;
-
     /**
      * CAS Hazelcast Instance.
      */
@@ -42,7 +40,7 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
     @Override
     protected CacheStatistics[] getStatistics() {
         final List<CacheStatistics> statsList = new ArrayList<>();
-        getClusterSize(instance);
+        final int clusterSize = instance.getOriginal().node.getClusterService().getSize();
         final boolean isMaster = instance.getOriginal().node.isMaster();
         final MemoryStats memoryStats = instance.getOriginal().getMemoryStats();
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
@@ -51,13 +49,6 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
             statsList.add(new HazelcastStatistics(map, clusterSize, isMaster, memoryStats));
         });
         return statsList.toArray(new CacheStatistics[0]);
-    }
-
-    private void getClusterSize(final HazelcastInstanceProxy instance) {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.execute(() -> HazelcastHealthIndicator.clusterSize =
-                instance.getOriginal().node.getClusterService().getSize()
-        );
     }
 
     /**

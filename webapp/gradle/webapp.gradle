@@ -151,7 +151,7 @@ dependencies {
     implementation project(":support:cas-server-support-hazelcast")
     implementation project(":support:cas-server-support-hazelcast-monitor")
     implementation project(":support:cas-server-support-hazelcast-ticket-registry")
-    implementation project(":support:cas-server-support-throttle-hazelcast")
+    //implementation project(":support:cas-server-support-throttle-hazelcast")
     implementation project(":support:cas-server-support-json-service-registry")
     implementation project(":support:cas-server-support-discovery-profile")
     //implementation project(":support:cas-server-support-oidc")
