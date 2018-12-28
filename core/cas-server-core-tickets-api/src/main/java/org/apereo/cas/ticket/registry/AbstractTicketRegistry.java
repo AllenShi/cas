@@ -18,6 +18,7 @@ import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,6 +88,13 @@ public abstract class AbstractTicketRegistry implements TicketRegistry {
                 + "Message is: [{}] Returning unknown as [{}]", this.getClass().getName(), t.getMessage(), Long.MIN_VALUE);
             return Long.MIN_VALUE;
         }
+    }
+
+    @Override
+    public long userCount() {
+        LOGGER.debug("userCount() operation is not implemented by the ticket registry instance {}. Returning unknown as {}",
+                this.getClass().getName(), Long.MIN_VALUE);
+        return Long.MIN_VALUE;
     }
 
     @Override
@@ -275,5 +283,9 @@ public abstract class AbstractTicketRegistry implements TicketRegistry {
 
     protected boolean isCipherExecutorEnabled() {
         return this.cipherExecutor != null && this.cipherExecutor.isEnabled();
+    }
+
+    public Collection<Ticket> getTicketsByUser(String user) {
+        return Collections.EMPTY_LIST;
     }
 }

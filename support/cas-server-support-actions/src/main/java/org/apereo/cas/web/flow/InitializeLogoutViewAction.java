@@ -26,7 +26,7 @@ public class InitializeLogoutViewAction extends AbstractLogoutAction {
     protected Event doInternalExecute(final HttpServletRequest request, final HttpServletResponse response, final RequestContext context) {
         WebUtils.putGoogleAnalyticsTrackingIdIntoFlowScope(context, casProperties.getGoogleAnalytics().getGoogleAnalyticsTrackingId());
         WebUtils.putGeoLocationTrackingIntoFlowScope(context, casProperties.getEvents().isTrackGeolocation());
-        WebUtils.putRecaptchaSiteKeyIntoFlowScope(context, casProperties.getGoogleRecaptcha().getSiteKey());
+        WebUtils.putRecaptchaPropertiesFlowScope(context, casProperties.getGoogleRecaptcha());
         return null;
     }
 }

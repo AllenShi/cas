@@ -15,8 +15,10 @@ import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.web.FlowExecutionExceptionResolver;
 import org.apereo.cas.web.flow.GatewayServicesManagementCheckAction;
 import org.apereo.cas.web.flow.GenerateServiceTicketAction;
+import org.apereo.cas.web.flow.JaasCheck;
 import org.apereo.cas.web.flow.ServiceAuthorizationCheckAction;
 import org.apereo.cas.web.flow.SingleSignOnParticipationStrategy;
+import org.apereo.cas.web.flow.TlsCheck;
 import org.apereo.cas.web.flow.actions.InitialAuthenticationAction;
 import org.apereo.cas.web.flow.login.CreateTicketGrantingTicketAction;
 import org.apereo.cas.web.flow.login.GenericSuccessViewAction;
@@ -142,6 +144,16 @@ public class CasSupportActionsConfiguration {
             initialAuthenticationAttemptWebflowEventResolver.getIfAvailable(),
             serviceTicketRequestWebflowEventResolver.getIfAvailable(),
             adaptiveAuthenticationPolicy.getIfAvailable());
+    }
+
+    @Bean
+    public Action doJaasCheck() {
+        return new JaasCheck(casProperties.getServer().isJaasCheck());
+    }
+
+    @Bean
+    public Action doTlsCheck() {
+        return new TlsCheck(casProperties.getServer().isTlsCheck());
     }
 
     @RefreshScope

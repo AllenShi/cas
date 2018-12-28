@@ -13,6 +13,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.webflow.config.FlowDefinitionRegistryBuilder;
 import org.springframework.webflow.definition.registry.FlowDefinitionRegistry;
+import org.springframework.webflow.engine.Flow;
 import org.springframework.webflow.engine.builder.model.FlowModelFlowBuilder;
 import org.springframework.webflow.engine.builder.support.FlowBuilderServices;
 import org.springframework.webflow.engine.model.AbstractActionModel;
@@ -69,8 +70,18 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
             val duoFlowRegistry = buildDuoFlowRegistry(duo);
             applicationContext.getAutowireCapableBeanFactory().initializeBean(duoFlowRegistry, duo.getId());
             val cfg = (ConfigurableListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
+            createMultifactorProviderAuthenticationWebflow(duo.getId(), duoFlowRegistry, duo.getId());
             cfg.registerSingleton(duo.getId(), duoFlowRegistry);
-            registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), duo.getId(), duoFlowRegistry, duo.getId());
+            registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), duo.getId(), duoFlowRegistry, loginFlowDefinitionRegistry);
+            try {
+                val impersonate = applicationContext.getBean("impersonateFlowRegistry", FlowDefinitionRegistry.class);
+                if (impersonate != null) {
+                    registerMultifactorProviderAuthenticationWebflow((Flow) impersonate.getFlowDefinition("impersonate"),
+                            duo.getId(), duoFlowRegistry, impersonate);
+                }
+            } catch (final Exception e) {
+                // do nothing if impersonate not available
+            }
         });
 
         casProperties.getAuthn().getMfa().getDuo()
@@ -126,6 +137,7 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_SUCCESS));
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_DENY));
         states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE));
+        states.add(new EndStateModel(CasWebflowConstants.TRANSITION_ID_ENROLL));
     }
 
     private static void createDuoRedirectToRegistrationAction(final List<AbstractStateModel> states) {
@@ -263,7 +275,7 @@ public class DuoMultifactorWebflowConfigurer extends AbstractMultifactorTrustedD
 
         transModel = new TransitionModel();
         transModel.setOn(CasWebflowConstants.TRANSITION_ID_ENROLL);
-        transModel.setTo(VIEW_ID_REDIRECT_TO_DUO_REGISTRATION);
+        transModel.setTo(CasWebflowConstants.TRANSITION_ID_ENROLL);
         trans.add(transModel);
 
         transModel = new TransitionModel();

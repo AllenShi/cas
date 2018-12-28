@@ -51,6 +51,7 @@ public class DefaultCasDelegatingWebflowEventResolver extends AbstractCasWebflow
     private final List<CasWebflowEventResolver> orderedResolvers = new ArrayList<>();
     private final AuditableExecution registeredServiceAccessStrategyEnforcer;
     private CasWebflowEventResolver selectiveResolver;
+    private boolean jaasCheck;
 
     public DefaultCasDelegatingWebflowEventResolver(final AuthenticationSystemSupport authenticationSystemSupport,
                                                     final CentralAuthenticationService centralAuthenticationService,
@@ -72,6 +73,7 @@ public class DefaultCasDelegatingWebflowEventResolver extends AbstractCasWebflow
         try {
             val credential = getCredentialFromContext(context);
             val service = WebUtils.getService(context);
+            context.getConversationScope().put("jaasCheck", jaasCheck);
             if (credential != null) {
                 val builder = this.authenticationSystemSupport.handleInitialAuthenticationTransaction(service, credential);
                 if (builder.getInitialAuthentication().isPresent()) {

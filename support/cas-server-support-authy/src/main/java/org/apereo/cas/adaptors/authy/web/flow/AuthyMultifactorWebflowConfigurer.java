@@ -33,6 +33,6 @@ public class AuthyMultifactorWebflowConfigurer extends AbstractCasMultifactorWeb
     @Override
     protected void doInitialize() {
         registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), MFA_AUTHY_EVENT_ID,
-                this.flowDefinitionRegistry, casProperties.getAuthn().getMfa().getAuthy().getId());
+                this.flowDefinitionRegistry, getLoginFlowDefinitionRegistry());
     }
 }

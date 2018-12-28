@@ -34,6 +34,6 @@ public class CasSimpleMultifactorWebflowConfigurer extends AbstractCasMultifacto
     @Override
     protected void doInitialize() {
         registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), MFA_SIMPLE_EVENT_ID,
-                this.flowDefinitionRegistry, casProperties.getAuthn().getMfa().getSimple().getId());
+                this.flowDefinitionRegistry, getLoginFlowDefinitionRegistry());
     }
 }

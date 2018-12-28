@@ -2,7 +2,6 @@ package org.apereo.cas.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.CipherExecutor;
-import org.apereo.cas.authentication.AuthenticationAttributeReleasePolicy;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.ProtocolAttributeEncoder;
@@ -10,6 +9,7 @@ import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.impersonate.ImpersonateCredentialsMetaDataPopulator;
 import org.apereo.cas.impersonate.ImpersonateLoginWebflowConfigurer;
 import org.apereo.cas.impersonate.Impersonators;
+import org.apereo.cas.validation.AuthenticationAttributeReleasePolicy;
 import org.apereo.cas.web.flow.CasFlowHandlerAdapter;
 import org.apereo.cas.web.flow.CasWebflowConfigurer;
 import org.apereo.cas.web.flow.actions.CasDefaultFlowUrlHandler;
@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -92,32 +91,31 @@ public class CasImpersonateConfiguration {
         return new CasImpersonate10ResponseView(true,
                 protocolAttributeEncoder,
                 servicesManager,
-                casProperties.getAuthn().getMfa().getAuthenticationContextAttribute(),
-                authenticationAttributeReleasePolicy);
+                authenticationAttributeReleasePolicy,
+                authenticationServiceSelectionPlan.getIfAvailable(),
+                new DefaultCas30ProtocolAttributesRenderer());
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "cas.server", name = "impersonate", havingValue = "true")
     public View cas2ServiceSuccessView() {
-        return new CasImpersonate20ResponseView(true, protocolAttributeEncoder,
+        return new CasImpersonate20ResponseView(true,
+                protocolAttributeEncoder,
                 servicesManager,
-                casProperties.getAuthn().getMfa().getAuthenticationContextAttribute(),
                 cas2SuccessView,
                 authenticationAttributeReleasePolicy,
-                authenticationServiceSelectionPlan.getIfAvailable());
+                authenticationServiceSelectionPlan.getIfAvailable(),
+                new DefaultCas30ProtocolAttributesRenderer());
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "cas.server", name = "impersonate", havingValue = "true")
     public View cas3ServiceSuccessView() {
         final String authenticationContextAttribute = casProperties.getAuthn().getMfa().getAuthenticationContextAttribute();
-        final boolean isReleaseProtocolAttributes = casProperties.getAuthn().isReleaseProtocolAttributes();
         return new Cas30ResponseView(true,
                 protocolAttributeEncoder,
                 servicesManager,
-                authenticationContextAttribute,
                 cas3SuccessView,
-                isReleaseProtocolAttributes,
                 authenticationAttributeReleasePolicy,
                 authenticationServiceSelectionPlan.getIfAvailable(),
                 new DefaultCas30ProtocolAttributesRenderer());
@@ -140,7 +138,7 @@ public class CasImpersonateConfiguration {
     @ConditionalOnProperty(prefix = "cas.server", name = "impersonate", havingValue = "true")
     public AuthenticationEventExecutionPlanConfigurer casImpersonateMetadataAuthenticationEventExecutionPlanConfigurer() {
         return plan -> {
-            plan.registerMetadataPopulator(impersonateCredentialsMetaDataPopulator());
+            plan.registerAuthenticationMetadataPopulator(impersonateCredentialsMetaDataPopulator());
         };
     }
 

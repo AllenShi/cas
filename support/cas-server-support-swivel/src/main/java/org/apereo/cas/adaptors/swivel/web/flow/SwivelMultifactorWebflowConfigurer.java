@@ -34,6 +34,6 @@ public class SwivelMultifactorWebflowConfigurer extends AbstractCasMultifactorWe
     @Override
     protected void doInitialize() {
         registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), MFA_SWIVEL_EVENT_ID,
-                this.flowDefinitionRegistry, casProperties.getAuthn().getMfa().getSwivel().getId());
+                this.flowDefinitionRegistry, getLoginFlowDefinitionRegistry());
     }
 }

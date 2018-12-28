@@ -104,7 +104,7 @@ public class DomainServicesManager extends AbstractServicesManager {
         val services = map.containsKey(domain)
             ? map.get(domain)
             : new TreeSet<RegisteredService>();
-        LOGGER.debug("Added service [{}] mapped to domain definition [{}]", r, domain);
+        LOGGER.trace("Added service [{}] mapped to domain definition [{}]", r, domain);
         services.add(r);
         map.put(domain, services);
     }

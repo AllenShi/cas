@@ -1,20 +1,30 @@
 package org.apereo.cas.ticket.registry;
 
+import com.hazelcast.core.EntryEvent;
+import org.apereo.cas.CipherExecutor;
 import org.apereo.cas.ticket.Ticket;
 import org.apereo.cas.ticket.TicketCatalog;
 import org.apereo.cas.ticket.TicketDefinition;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import org.apereo.cas.ticket.TicketGrantingTicket;
 import org.springframework.beans.factory.DisposableBean;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -36,6 +46,44 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements A
     private final HazelcastInstance hazelcastInstance;
     private final TicketCatalog ticketCatalog;
     private final long pageSize;
+
+    private IMap<String, Ticket> tgts;
+    private IMap<String, Set<String>> users;
+
+    /**
+     * Init.
+     */
+    @PostConstruct
+    public void init() {
+        //LOGGER.info("Setting up Hazelcast Ticket Registry instance [{}] with name [{}]", this.hazelcastInstance.getName(), tgts.getName());
+        this.tgts = getTicketMapInstance("ticketGrantingTicketsCache");
+        this.users = hazelcastInstance.getMap("users");
+
+        /**
+         * Add MapListeners to update user map
+         */
+        tgts.addLocalEntryListener(new EntryRemovedListener<String,Ticket>() {
+            @Override
+            public void entryRemoved(EntryEvent<String,Ticket> entryEvent) {
+                val user = ((TicketGrantingTicket)entryEvent.getOldValue()).getAuthentication().getPrincipal().getId();
+                removeTGTfromUser(user,entryEvent.getKey());
+            }
+        });
+        tgts.addLocalEntryListener(new EntryExpiredListener<String,Ticket>() {
+            @Override
+            public void entryExpired(EntryEvent<String,Ticket> entryEvent) {
+                val user = ((TicketGrantingTicket)entryEvent.getOldValue()).getAuthentication().getPrincipal().getId();
+                removeTGTfromUser(user,entryEvent.getKey());
+            }
+        });
+        tgts.addLocalEntryListener(new EntryAddedListener<String,Ticket>() {
+            @Override
+            public void entryAdded(EntryEvent<String, Ticket> entryEvent) {
+                val user = ((TicketGrantingTicket)entryEvent.getValue()).getAuthentication().getPrincipal().getId();
+                addTGTtoUser(user,entryEvent.getKey());
+            }
+        });
+    }
 
     @Override
     public Ticket updateTicket(final Ticket ticket) {
@@ -109,7 +157,23 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements A
     }
 
     @Override
+    public long sessionCount() {
+        return getTicketMapInstance("ticketGrantingTicketsCache").size();
+    }
+
+    @Override
+    public long serviceTicketCount() {
+        return getTicketMapInstance("serviceTicketsCache").size();
+    }
+
+    @Override
+    public long userCount() {
+        return this.users.size();
+    }
+
+    @Override
     public Collection<? extends Ticket> getTickets() {
+        /*
         return this.ticketCatalog.findAll()
             .stream()
             .map(metadata -> getTicketMapInstanceByMetadata(metadata).values())
@@ -121,6 +185,8 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements A
             })
             .map(this::decodeTicket)
             .collect(Collectors.toSet());
+        */
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -154,5 +220,47 @@ public class HazelcastTicketRegistry extends AbstractTicketRegistry implements A
             LOGGER.error(e.getMessage(), e);
         }
         return null;
+    }
+
+    private void addTGTtoUser(String user, String ticketId) {
+        val encodedUser = encodeTicketId(user);
+        val encodedTicketId = encodeTicketId(ticketId);
+        var tgtSet = this.users.get(encodedUser);
+        if (tgtSet == null) {
+            tgtSet = new HashSet<String>();
+        }
+        tgtSet.add(encodedTicketId);
+        LOGGER.trace("Added tgt [{}] to user [{}], tgts size now [{}]",ticketId,user,tgtSet.size());
+        this.users.set(encodedUser,tgtSet);
+    }
+
+    private void removeTGTfromUser(String user, String ticketId) {
+        val encodedUser = encodeTicketId(user);
+        val encodedTicketId = encodeTicketId(ticketId);
+        val tgtSet = this.users.get(encodedUser);
+        if(tgtSet != null && !tgtSet.isEmpty()) {
+            tgtSet.remove(encodedTicketId);
+            LOGGER.trace("Removed tgt [{}] from user [{}], tgt size now [{}]",ticketId,user,tgtSet.size());
+            if (tgtSet.isEmpty()) {
+                this.users.remove(encodedUser);
+            } else {
+                this.users.set(encodedUser,tgtSet);
+            }
+        }
+    }
+
+    @Override
+    public Collection<Ticket> getTicketsByUser(String user){
+        return users.values((k) -> ((String)k.getKey()).matches(user))
+                .stream()
+                .limit(10)
+                .flatMap(h -> h.stream().limit(100))
+                .map(s -> getTicket(s))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void setCipherExecutor(CipherExecutor cipherExecutor) {
+        super.setCipherExecutor(null);
     }
 }

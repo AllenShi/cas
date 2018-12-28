@@ -195,12 +195,12 @@ public abstract class AbstractServicesManager implements ServicesManager, Initia
         this.services = this.serviceRegistry.load()
             .stream()
             .collect(Collectors.toConcurrentMap(r -> {
-                LOGGER.debug("Adding registered service [{}]", r.getServiceId());
+                LOGGER.trace("Adding registered service [{}]", r.getServiceId());
                 return r.getId();
             }, Function.identity(), (r, s) -> s == null ? r : s));
         loadInternal();
         publishEvent(new CasRegisteredServicesLoadedEvent(this, getAllServices()));
-        evaluateExpiredServiceDefinitions();
+        //evaluateExpiredServiceDefinitions();
         LOGGER.info("Loaded [{}] service(s) from [{}].", this.services.size(), this.serviceRegistry.getName());
         return services.values();
     }
@@ -215,7 +215,7 @@ public abstract class AbstractServicesManager implements ServicesManager, Initia
     private void evaluateExpiredServiceDefinitions() {
         this.services.values()
             .stream()
-            .filter((Predicate<RegisteredService>) getRegisteredServicesFilteringPredicate().negate())
+            .filter(getRegisteredServicesFilteringPredicate().negate())
             .filter(Objects::nonNull)
             .forEach(this::processExpiredRegisteredService);
     }
@@ -226,11 +226,9 @@ public abstract class AbstractServicesManager implements ServicesManager, Initia
     }
 
     private RegisteredService validateRegisteredService(final RegisteredService registeredService) {
-        val result = checkServiceExpirationPolicyIfAny(registeredService);
-        if (validateAndFilterServiceByEnvironment(result)) {
-            return result;
-        }
-        return null;
+        //final RegisteredService result = checkServiceExpirationPolicyIfAny(registeredService);
+        //return result;
+        return registeredService;
     }
 
     private RegisteredService checkServiceExpirationPolicyIfAny(final RegisteredService registeredService) {

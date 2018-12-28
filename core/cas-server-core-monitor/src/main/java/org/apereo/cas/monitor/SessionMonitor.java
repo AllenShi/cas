@@ -38,30 +38,32 @@ public class SessionMonitor extends AbstractHealthIndicator {
 
         val sessionCount = this.registryState.sessionCount();
         val ticketCount = this.registryState.serviceTicketCount();
+        val userCount = this.registryState.userCount();
 
         if (sessionCount == Integer.MIN_VALUE || ticketCount == Integer.MIN_VALUE) {
             val msg = String.format("Ticket registry %s reports unknown session and/or ticket counts.", this.registryState.getClass().getName());
-            buildHealthCheckStatus(builder.unknown(), sessionCount, ticketCount, msg);
+            buildHealthCheckStatus(builder.unknown(), sessionCount, userCount, ticketCount, msg);
             return;
         }
 
         if (this.sessionCountWarnThreshold > -1 && sessionCount > this.sessionCountWarnThreshold) {
             val msg = String.format("Session count (%s) is above threshold %s. ", sessionCount, this.sessionCountWarnThreshold);
-            buildHealthCheckStatus(builder.status("WARN"), sessionCount, ticketCount, msg);
+            buildHealthCheckStatus(builder.status("WARN"), sessionCount, userCount, ticketCount, msg);
             return;
         }
 
         if (this.serviceTicketCountWarnThreshold > -1 && ticketCount > this.serviceTicketCountWarnThreshold) {
             val msg = String.format("Service ticket count (%s) is above threshold %s.", ticketCount, this.serviceTicketCountWarnThreshold);
-            buildHealthCheckStatus(builder.status("WARN"), sessionCount, ticketCount, msg);
+            buildHealthCheckStatus(builder.status("WARN"), sessionCount, userCount, ticketCount, msg);
             return;
         }
 
-        buildHealthCheckStatus(builder.up(), sessionCount, ticketCount, "OK");
+        buildHealthCheckStatus(builder.up(), sessionCount, ticketCount, userCount, "OK");
     }
 
-    private static void buildHealthCheckStatus(final Health.Builder builder,
-                                               final long sessionCount, final long ticketCount, final String msg) {
+    private void buildHealthCheckStatus(final Health.Builder builder,
+                                        final long sessionCount, final long ticketCount,
+                                        final long userCount, final String msg) {
         builder
             .withDetail("sessionCount", sessionCount)
             .withDetail("ticketCount", ticketCount)

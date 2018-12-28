@@ -50,11 +50,13 @@ public class StatisticsEndpoint extends BaseCasMvcEndpoint {
         model.put("maxMemory", FileUtils.byteCountToDisplaySize(runtime.maxMemory()));
         model.put("freeMemory", FileUtils.byteCountToDisplaySize(runtime.freeMemory()));
 
-        val unexpiredTgts = new AtomicInteger();
-        val unexpiredSts = new AtomicInteger();
+        val tr = centralAuthenticationService.getTicketRegistry();
+        val unexpiredTgts = tr.sessionCount();
+        val unexpiredSts = tr.serviceTicketCount();
         val expiredTgts = new AtomicInteger();
         val expiredSts = new AtomicInteger();
 
+        /*
         val tickets = this.centralAuthenticationService.getTickets(ticket -> true);
         tickets.forEach(ticket -> {
             if (ticket instanceof ServiceTicket) {
@@ -74,6 +76,7 @@ public class StatisticsEndpoint extends BaseCasMvcEndpoint {
             }
         });
 
+        */
         model.put("unexpiredTgts", unexpiredTgts);
         model.put("unexpiredSts", unexpiredSts);
         model.put("expiredTgts", expiredTgts);

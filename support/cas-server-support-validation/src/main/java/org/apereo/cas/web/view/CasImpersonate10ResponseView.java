@@ -2,19 +2,16 @@ package org.apereo.cas.web.view;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apereo.cas.authentication.Authentication;
-import org.apereo.cas.authentication.AuthenticationAttributeReleasePolicy;
+import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
 import org.apereo.cas.authentication.ProtocolAttributeEncoder;
 import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.services.ServicesManager;
-import org.apereo.cas.services.web.view.AbstractCasView;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.validation.Assertion;
-import org.apereo.cas.web.view.Cas10ResponseView;
+import org.apereo.cas.validation.AuthenticationAttributeReleasePolicy;
+import org.apereo.cas.validation.CasProtocolAttributesRenderer;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,12 +26,13 @@ import java.util.Map;
 public class CasImpersonate10ResponseView extends Cas10ResponseView {
 
     public CasImpersonate10ResponseView(final boolean successResponse,
-                                        final ProtocolAttributeEncoder protocolAttributeEncoder,
-                                        final ServicesManager servicesManager,
-                                        final String authenticationContextAttribute,
-                                        final AuthenticationAttributeReleasePolicy authenticationAttributeReleasePolicy) {
-        super(successResponse, protocolAttributeEncoder, servicesManager, authenticationContextAttribute,
-                authenticationAttributeReleasePolicy);
+                             final ProtocolAttributeEncoder protocolAttributeEncoder,
+                             final ServicesManager servicesManager,
+                             final AuthenticationAttributeReleasePolicy authenticationAttributeReleasePolicy,
+                             final AuthenticationServiceSelectionPlan serviceSelectionStrategy,
+                             final CasProtocolAttributesRenderer attributesRenderer) {
+        super(successResponse, protocolAttributeEncoder, servicesManager,
+                authenticationAttributeReleasePolicy, serviceSelectionStrategy, attributesRenderer);
     }
 
     @Override

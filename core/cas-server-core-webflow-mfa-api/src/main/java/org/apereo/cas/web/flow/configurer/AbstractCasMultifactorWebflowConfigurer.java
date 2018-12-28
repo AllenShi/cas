@@ -49,12 +49,13 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
      *
      * @param sourceRegistry the source registry
      */
-    protected void registerMultifactorFlowDefinitionIntoLoginFlowRegistry(final FlowDefinitionRegistry sourceRegistry) {
+    protected void registerMultifactorFlowDefinitionIntoLoginFlowRegistry(final FlowDefinitionRegistry sourceRegistry,
+                                                                          final FlowDefinitionRegistry destinationRegistry) {
         val flowIds = sourceRegistry.getFlowDefinitionIds();
         for (val flowId : flowIds) {
             val definition = sourceRegistry.getFlowDefinition(flowId);
             LOGGER.trace("Registering flow definition [{}]", flowId);
-            this.loginFlowDefinitionRegistry.registerFlowDefinition(definition);
+            destinationRegistry.registerFlowDefinition(definition);
         }
     }
 
@@ -85,6 +86,7 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS, CasWebflowConstants.TRANSITION_ID_SUCCESS_WITH_WARNINGS);
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE);
                     ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_DENY, CasWebflowConstants.STATE_ID_MFA_DENIED);
+                    ensureEndStateTransitionExists(state, flow, CasWebflowConstants.TRANSITION_ID_ENROLL, CasWebflowConstants.STATE_ID_MFA_ENROLL);
                 });
             }
         });
@@ -92,16 +94,15 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
     }
 
     /**
-     * Register multifactor provider authentication webflow.
+     * Creates initial mfa provider webflow states.
      *
-     * @param flow                    the flow
-     * @param subflowId               the subflow id
-     * @param mfaProviderFlowRegistry the registry
-     * @param providerId              the provider id
+     * @param subflowId                 the subflow id
+     * @param mfaProviderFlowRegistry   the registry
+     * @param providerId                the provider id
      */
-    protected void registerMultifactorProviderAuthenticationWebflow(final Flow flow, final String subflowId,
-                                                                    final FlowDefinitionRegistry mfaProviderFlowRegistry,
-                                                                    final String providerId) {
+    protected void createMultifactorProviderAuthenticationWebflow(final String subflowId,
+                                                                  final FlowDefinitionRegistry mfaProviderFlowRegistry,
+                                                                  final String providerId) {
         val mfaFlow = (Flow) mfaProviderFlowRegistry.getFlowDefinition(subflowId);
 
         mfaFlow.getStartActionList().add(createSetAction("flowScope.".concat(CasWebflowConstants.VAR_ID_MFA_PROVIDER_ID), StringUtils.quote(providerId)));
@@ -126,7 +127,19 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
         val failureAction = createActionState(mfaFlow, CasWebflowConstants.TRANSITION_ID_MFA_FAILURE, createEvaluateAction(MFA_CHECK_FAILURE_BEAN_ID));
         createTransitionForState(failureAction, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE);
         createTransitionForState(failureAction, CasWebflowConstants.TRANSITION_ID_BYPASS, CasWebflowConstants.TRANSITION_ID_SUCCESS);
+    }
 
+    /**
+     * Register multifactor provider authentication webflow.
+     *
+     * @param flow                    the flow
+     * @param subflowId               the subflow id
+     * @param mfaProviderFlowRegistry the registry
+     * @param destFlowRegistry        the destination registry
+     **/
+    protected void registerMultifactorProviderAuthenticationWebflow(final Flow flow, final String subflowId,
+                                                                    final FlowDefinitionRegistry mfaProviderFlowRegistry,
+                                                                    final FlowDefinitionRegistry destFlowRegistry) {
         LOGGER.trace("Adding end state [{}] with transition to [{}] to flow [{}] for MFA",
             CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, CasWebflowConstants.VIEW_ID_MFA_UNAVAILABLE, flow.getId());
         createEndState(flow, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, CasWebflowConstants.VIEW_ID_MFA_UNAVAILABLE);
@@ -134,6 +147,10 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
         LOGGER.trace("Adding end state [{}] with transition to [{}] to flow [{}] for MFA",
             CasWebflowConstants.STATE_ID_MFA_DENIED, CasWebflowConstants.VIEW_ID_MFA_DENIED, flow.getId());
         createEndState(flow, CasWebflowConstants.STATE_ID_MFA_DENIED, CasWebflowConstants.VIEW_ID_MFA_DENIED);
+
+        LOGGER.trace("Adding end state [{}] with transistion to [{}] to flow [{}] for MFA",
+            CasWebflowConstants.STATE_ID_MFA_ENROLL, CasWebflowConstants.VIEW_ID_MFA_ENROLL, flow.getId());
+        createEndState(flow, CasWebflowConstants.STATE_ID_MFA_ENROLL, CasWebflowConstants.VIEW_ID_MFA_ENROLL);
 
         val subflowState = createSubflowState(flow, subflowId, subflowId);
         val states = getCandidateStatesForMultifactorAuthentication();
@@ -149,6 +166,9 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
             LOGGER.trace("Adding transition [{}] to [{}] for [{}]", CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE, s);
             createTransitionForState(actionState, CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, CasWebflowConstants.STATE_ID_MFA_UNAVAILABLE);
 
+            LOGGER.trace("Adding transition [{}] to [{}] for [{}]", CasWebflowConstants.TRANSITION_ID_ENROLL, CasWebflowConstants.STATE_ID_MFA_ENROLL, s);
+            createTransitionForState(actionState, CasWebflowConstants.TRANSITION_ID_ENROLL, CasWebflowConstants.STATE_ID_MFA_ENROLL);
+
             LOGGER.trace("Locating transition id [{}] to process multifactor authentication for state [{}]", CasWebflowConstants.TRANSITION_ID_SUCCESS, s);
             val targetSuccessId = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_SUCCESS).getTargetStateId();
 
@@ -158,8 +178,11 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
             LOGGER.trace("Locating transition id [{}] to process multifactor authentication for state [{}]", CasWebflowConstants.TRANSITION_ID_DENY, s);
             val targetDenied = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_DENY).getTargetStateId();
 
-            LOGGER.trace("Location transition id [{}] to process multifactor authentication for stat [{}]", CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, s);
+            LOGGER.trace("Location transition id [{}] to process multifactor authentication for state [{}]", CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, s);
             val targetUnavailable = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE).getTargetStateId();
+
+            LOGGER.trace("Location transition id [{}] to process multifactor authentication for state [{}]", CasWebflowConstants.TRANSITION_ID_ENROLL, s);
+            val targetEnroll = actionState.getTransition(CasWebflowConstants.TRANSITION_ID_ENROLL).getTargetStateId();
 
             val mappings = new ArrayList<DefaultMapping>();
             val inputMapper = createMapperToSubflowState(mappings);
@@ -173,11 +196,12 @@ public abstract class AbstractCasMultifactorWebflowConfigurer extends AbstractCa
             transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_DENY, targetDenied));
             transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_UNAVAILABLE, targetUnavailable));
             transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_CANCEL, CasWebflowConstants.STATE_ID_INIT_LOGIN_FORM));
+            transitionSet.add(createTransition(CasWebflowConstants.TRANSITION_ID_ENROLL, targetEnroll));
 
             LOGGER.trace("Creating transition [{}] for state [{}]", subflowId, actionState.getId());
             createTransitionForState(actionState, subflowId, subflowId);
 
-            registerMultifactorFlowDefinitionIntoLoginFlowRegistry(mfaProviderFlowRegistry);
+            registerMultifactorFlowDefinitionIntoLoginFlowRegistry(mfaProviderFlowRegistry, destFlowRegistry);
             augmentMultifactorProviderFlowRegistry(mfaProviderFlowRegistry);
 
             LOGGER.trace("Registering the [{}] flow into the flow [{}]", subflowId, flow.getId());

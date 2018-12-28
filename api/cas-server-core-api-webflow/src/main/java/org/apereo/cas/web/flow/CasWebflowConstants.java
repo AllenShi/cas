@@ -433,6 +433,11 @@ public interface CasWebflowConstants {
      */
     String STATE_ID_MFA_PRE_AUTH = "mfaPreAuth";
 
+    /**
+     * State that can be used to indicate user needs to enroll.
+     */
+    String STATE_ID_MFA_ENROLL = "mfaEnroll";
+
     /*
      ****************************************
      * Views.
@@ -562,6 +567,12 @@ public interface CasWebflowConstants {
      * View name used for form-login into admin/actuator endpoints.
      */
     String VIEW_ID_ENDPOINT_ADMIN_LOGIN_VIEW = "casAdminLoginView";
+
+    /**
+     * View name used for mfa enroll view.
+     */
+    String VIEW_ID_MFA_ENROLL = "mfaEnrollView";
+
     /*
      ****************************************
      * Decisions.

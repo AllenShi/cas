@@ -34,6 +34,6 @@ public class RadiusMultifactorWebflowConfigurer extends AbstractCasMultifactorWe
     @Override
     protected void doInitialize() {
         registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), MFA_RADIUS_EVENT_ID,
-                this.radiusFlowRegistry, casProperties.getAuthn().getMfa().getRadius().getId());
+                this.radiusFlowRegistry, getLoginFlowDefinitionRegistry());
     }
 }

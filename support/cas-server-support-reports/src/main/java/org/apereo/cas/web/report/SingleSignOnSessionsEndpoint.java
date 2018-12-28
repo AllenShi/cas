@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -55,10 +56,10 @@ public class SingleSignOnSessionsEndpoint extends BaseCasMvcEndpoint {
      * @param option the option
      * @return the sso sessions
      */
-    private Collection<Map<String, Object>> getActiveSsoSessions(final SsoSessionReportOptions option) {
+    private Collection<Map<String, Object>> getActiveSsoSessions(final SsoSessionReportOptions option, final String user) {
         val activeSessions = new ArrayList<Map<String, Object>>();
         val dateFormat = new ISOStandardDateFormat();
-        getNonExpiredTicketGrantingTickets().stream().map(TicketGrantingTicket.class::cast)
+        getNonExpiredTicketGrantingTickets(user).stream().map(TicketGrantingTicket.class::cast)
             .filter(tgt -> !(option == SsoSessionReportOptions.DIRECT && tgt.getProxiedBy() != null))
             .forEach(tgt -> {
                 val authentication = tgt.getAuthentication();
@@ -91,8 +92,8 @@ public class SingleSignOnSessionsEndpoint extends BaseCasMvcEndpoint {
      *
      * @return the non expired ticket granting tickets
      */
-    private Collection<Ticket> getNonExpiredTicketGrantingTickets() {
-        return this.centralAuthenticationService.getTickets(ticket -> ticket instanceof TicketGrantingTicket && !ticket.isExpired());
+    private Collection<Ticket> getNonExpiredTicketGrantingTickets(final String user) {
+        return this.centralAuthenticationService.getTickets(user, ticket -> ticket instanceof TicketGrantingTicket && !ticket.isExpired());
     }
 
     /**
@@ -102,10 +103,10 @@ public class SingleSignOnSessionsEndpoint extends BaseCasMvcEndpoint {
      * @return the sso sessions
      */
     @ReadOperation
-    public Map<String, Object> getSsoSessions(final String type) {
+    public Map<String, Object> getSsoSessions(final String user, final String type) {
         val sessionsMap = new HashMap<String, Object>(1);
         val option = SsoSessionReportOptions.valueOf(type);
-        val activeSsoSessions = getActiveSsoSessions(option);
+        val activeSsoSessions = getActiveSsoSessions(option, user);
         sessionsMap.put("activeSsoSessions", activeSsoSessions);
         val totalTicketGrantingTickets = new AtomicLong();
         val totalProxyGrantingTickets = new AtomicLong();
@@ -163,20 +164,16 @@ public class SingleSignOnSessionsEndpoint extends BaseCasMvcEndpoint {
     /**
      * Destroy sso sessions map.
      *
-     * @param type the type
+     * @param tickets - list of tickets
      * @return the map
      */
     @WriteOperation
-    public Map<String, Object> destroySsoSessions(final String type) {
+    public Map<String, Object> destroySsoSessions(final List<String> tickets) {
 
         val sessionsMap = new HashMap<String, Object>();
         val failedTickets = new HashMap<String, String>();
-        val option = SsoSessionReportOptions.valueOf(type);
-        val collection = getActiveSsoSessions(option);
-        collection
-            .stream()
-            .map(sso -> sso.get(SsoSessionAttributeKeys.TICKET_GRANTING_TICKET.toString()).toString())
-            .forEach(ticketGrantingTicket -> {
+
+        tickets.forEach(ticketGrantingTicket -> {
                 try {
                     this.centralAuthenticationService.destroyTicketGrantingTicket(ticketGrantingTicket);
                 } catch (final Exception e) {
@@ -184,6 +181,36 @@ public class SingleSignOnSessionsEndpoint extends BaseCasMvcEndpoint {
                     failedTickets.put(ticketGrantingTicket, e.getMessage());
                 }
             });
+        if (failedTickets.isEmpty()) {
+            sessionsMap.put(STATUS, HttpServletResponse.SC_OK);
+        } else {
+            sessionsMap.put(STATUS, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            sessionsMap.put("failedTicketGrantingTickets", failedTickets);
+        }
+        return sessionsMap;
+    }
+
+    /**
+     * Destroy sso sessions map.
+     *
+     * @param user - user id
+     * @return the map
+     */
+    @WriteOperation
+    public Map<String, Object> destroySsoSessions(final String user) {
+
+        val sessionsMap = new HashMap<String, Object>();
+        val failedTickets = new HashMap<String, String>();
+        val tickets = getNonExpiredTicketGrantingTickets(user);
+
+        tickets.forEach(ticketGrantingTicket -> {
+            try {
+                this.centralAuthenticationService.destroyTicketGrantingTicket(ticketGrantingTicket.getId());
+            } catch (final Exception e) {
+                LOGGER.error(e.getMessage(), e);
+                failedTickets.put(ticketGrantingTicket.getId(), e.getMessage());
+            }
+        });
         if (failedTickets.isEmpty()) {
             sessionsMap.put(STATUS, HttpServletResponse.SC_OK);
         } else {

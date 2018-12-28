@@ -65,7 +65,12 @@ public class MockOnlyOneTicketRegistry implements TicketRegistry {
     }
 
     @Override
-    public Collection<? extends Ticket> getTickets() {
+    public Collection<Ticket> getTickets() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Collection<Ticket> getTicketsByUser(final String user) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
@@ -78,4 +83,7 @@ public class MockOnlyOneTicketRegistry implements TicketRegistry {
     public long serviceTicketCount() {
         return 1;
     }
+
+    @Override
+    public long userCount() { return 1; }
 }

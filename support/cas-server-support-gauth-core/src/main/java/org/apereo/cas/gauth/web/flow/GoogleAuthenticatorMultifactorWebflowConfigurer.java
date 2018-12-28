@@ -34,6 +34,6 @@ public class GoogleAuthenticatorMultifactorWebflowConfigurer extends AbstractCas
     @Override
     protected void doInitialize() {
         registerMultifactorProviderAuthenticationWebflow(getLoginFlow(), MFA_GAUTH_EVENT_ID,
-                this.flowDefinitionRegistry, casProperties.getAuthn().getMfa().getGauth().getId());
+                this.flowDefinitionRegistry, getLoginFlowDefinitionRegistry());
     }
 }

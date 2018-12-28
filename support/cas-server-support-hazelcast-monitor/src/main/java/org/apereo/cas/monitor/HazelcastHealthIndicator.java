@@ -7,6 +7,8 @@ import com.hazelcast.memory.MemoryStats;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apereo.cas.configuration.model.core.monitor.MonitorWarningProperties;
+import org.springframework.boot.actuate.health.Status;
 
 import java.util.ArrayList;
 
@@ -25,20 +27,25 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
      */
     private final HazelcastInstanceProxy instance;
 
+    private final long evictionThreshold;
+
     public HazelcastHealthIndicator(final long evictionThreshold, final long threshold,
                                     final HazelcastInstance instance) {
         super(evictionThreshold, threshold);
+        this.evictionThreshold = evictionThreshold;
         this.instance = (HazelcastInstanceProxy) instance;
     }
 
     @Override
     protected CacheStatistics[] getStatistics() {
         val statsList = new ArrayList<CacheStatistics>();
+        val clusterSize = instance.getOriginal().node.getClusterService().getSize();
+        val isMaster = instance.getOriginal().node.isMaster();
+        val memoryStats = instance.getOriginal().getMemoryStats();
         instance.getConfig().getMapConfigs().keySet().forEach(key -> {
             val map = instance.getMap(key);
-            val memoryStats = instance.getOriginal().getMemoryStats();
-            LOGGER.debug("Starting to collect hazelcast statistics for map [{}] identified by key [{}]...", map, key);
-            statsList.add(new HazelcastStatistics(map, instance.getCluster().getMembers().size(), memoryStats));
+            LOGGER.trace("Starting to collect hazelcast statistics for map [{}] identified by key [{}]...", map, key);
+            statsList.add(new HazelcastStatistics(map, clusterSize, isMaster, memoryStats));
         });
         return statsList.toArray(CacheStatistics[]::new);
     }
@@ -49,21 +56,24 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
     public static class HazelcastStatistics implements CacheStatistics {
 
         private static final int PERCENTAGE_VALUE = 100;
+        private static final double BYTES_PER_MB = 1048510.0;
+        private static final double BYTEST_PER_KB = 1024.0;
 
         private final IMap map;
-        private final long clusterSize;
-
+        private final int clusterSize;
+        private boolean isMaster;
         private final MemoryStats memoryStats;
 
-        protected HazelcastStatistics(final IMap map, final int clusterSize, final MemoryStats memoryStats) {
+        protected HazelcastStatistics(final IMap map, final int clusterSize, final boolean isMaster, final MemoryStats memoryStats) {
             this.map = map;
             this.clusterSize = clusterSize;
+            this.isMaster = isMaster;
             this.memoryStats = memoryStats;
         }
 
         @Override
         public long getSize() {
-            return this.map.size();
+            return this.map.getLocalMapStats().getOwnedEntryCount() + this.map.getLocalMapStats().getBackupEntryCount();
         }
 
         @Override
@@ -84,46 +94,101 @@ public class HazelcastHealthIndicator extends AbstractCacheHealthIndicator {
             return this.map.getName();
         }
 
+        /**
+         * Hijacked this method to instead return Percent of heap used.
+         *
+         * @return - Percent of heap.
+         */
         @Override
         public long getPercentFree() {
-            return (int) this.memoryStats.getFreeHeap() * PERCENTAGE_VALUE / this.memoryStats.getCommittedHeap();
+            if (memoryStats.getCommittedHeap() > 0) {
+                return map.getLocalMapStats().getHeapCost() * PERCENTAGE_VALUE / memoryStats.getCommittedHeap();
+            }
+            return -1;
+        }
+
+        @Override
+        public int getNumberOfMembers() {
+            return clusterSize;
+        }
+
+        @Override
+        public boolean isMaster() {
+            return isMaster;
+        }
+
+        @Override
+        public long getMemoryCost() {
+            return map.getLocalMapStats().getHeapCost();
+        }
+
+        @Override
+        public long getLocalEntryCount() {
+            return map.getLocalMapStats().getOwnedEntryCount();
+        }
+
+        @Override
+        public long getBackupEntryCount() {
+            return map.getLocalMapStats().getBackupEntryCount();
         }
 
         @Override
         public String toString(final StringBuilder builder) {
-            val localMapStats = map.getLocalMapStats();
-            builder.append("Creation time: ")
-                .append(localMapStats.getCreationTime())
-                .append(", Cluster size: ")
-                .append(clusterSize)
-                .append(", Owned entry count: ")
-                .append(localMapStats.getOwnedEntryCount())
-                .append(", Backup entry count: ")
-                .append(localMapStats.getBackupEntryCount())
-                .append(", Backup count: ")
-                .append(localMapStats.getBackupCount())
-                .append(", Hits count: ")
-                .append(localMapStats.getHits())
-                .append(", Last update time: ")
-                .append(localMapStats.getLastUpdateTime())
-                .append(", Last access time: ")
-                .append(localMapStats.getLastAccessTime())
-                .append(", Locked entry count: ")
-                .append(localMapStats.getLockedEntryCount())
-                .append(", Dirty entry count: ")
-                .append(localMapStats.getDirtyEntryCount())
-                .append(", Total get latency: ")
-                .append(localMapStats.getMaxGetLatency())
-                .append(", Total put latency: ")
-                .append(localMapStats.getTotalPutLatency())
-                .append(", Total remove latency: ")
-                .append(localMapStats.getTotalRemoveLatency())
-                .append(", Heap cost: ")
-                .append(localMapStats.getHeapCost());
+             val localMapStats = map.getLocalMapStats();
+             builder.append("\n\t  ")
+                    .append("Map: "+map.getName())
+                    .append(" - ")
+                    .append("Size: ")
+                    .append(formatMemory(localMapStats.getHeapCost()))
+                    .append("\n\t    ")
+                    .append("Local entry count: ")
+                    .append(localMapStats.getOwnedEntryCount())
+                    .append("\t    ")
+                    .append("Local entry memory:")
+                    .append(formatMemory(localMapStats.getOwnedEntryMemoryCost()))
+                    .append("\n\t    ")
+                    .append("Backup entry count: ")
+                    .append(localMapStats.getBackupEntryCount())
+                     .append("\t    ")
+                     .append("Backup entry memory: ")
+                     .append(formatMemory(localMapStats.getBackupEntryMemoryCost()))
+                     .append("\n\t    ")
+                    .append("Max get latency: ")
+                    .append(localMapStats.getMaxGetLatency())
+                     .append("\t\t    ")
+                    .append("Max put latency: ")
+                    .append(localMapStats.getMaxPutLatency());
+
+
             if (localMapStats.getNearCacheStats() != null) {
                 builder.append(", Misses: ").append(localMapStats.getNearCacheStats().getMisses());
             }
             return builder.toString();
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder builder = new StringBuilder();
+            this.toString(builder);
+            return builder.toString();
+        }
+
+        public String formatMemory(long mem) {
+            if (mem < BYTEST_PER_KB) {
+                return String.format(mem+"B");
+            }
+            if (mem < BYTES_PER_MB) {
+                return String.format("%.2fKB", mem / BYTEST_PER_KB);
+            }
+            return String.format("%.2fMB", mem / BYTES_PER_MB);
+        }
+    }
+
+    @Override
+    protected Status status(CacheStatistics statistics) {
+        if (statistics.getEvictions() > 0 && statistics.getEvictions() > evictionThreshold) {
+            return new Status("WARN");
+        }
+        return Status.UP;
     }
 }

@@ -1,6 +1,6 @@
 package org.apereo.cas.impersonate;
 
-import org.apereo.cas.authentication.UsernamePasswordCredential;
+import org.apereo.cas.authentication.credential.UsernamePasswordCredential;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
