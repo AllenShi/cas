@@ -1054,7 +1054,7 @@ with the following configured properties:
 
 ### Couchbase
 
-This option will fetch attributes from a Couchbase database for a given CAS principal. To learn more about this topic, [please review this guide](../ticketing/Couchbase-Authentication.html). Database settings for this feature are available [here](Configuration-Properties-Common.html#couchbase-integration-settings) under the configuration key `cas.authn.attributeRepository.couchbase`.
+This option will fetch attributes from a Couchbase database for a given CAS principal. To learn more about this topic, [please review this guide](../installation/Couchbase-Authentication.html). Database settings for this feature are available [here](Configuration-Properties-Common.html#couchbase-integration-settings) under the configuration key `cas.authn.attributeRepository.couchbase`.
 
 ```properties
 # cas.authn.attributeRepository.couchbase.usernameAttribute=username
@@ -1265,7 +1265,7 @@ under the configuration key `cas.authn.throttle.jdbc`.
 ### CouchDb
 
 Queries the data source used by the CAS audit facility to prevent successive failed login attempts for a particular username from the
-same IP address. CouchDb settings for this feature are available [here](Configuration-Properties-Common.html#couchdb-settings) under the configuration key
+same IP address. CouchDb settings for this feature are available [here](Configuration-Properties-Common.html#couchdb-configuration) under the configuration key
 `cas.authn.throttle`. When using this feature the audit facility should be in synchronous mode.
 
 ## Adaptive Authentication
@@ -1351,7 +1351,7 @@ LDAP settings for this feature are available [here](Configuration-Properties-Com
 
 ### CouchDb Surrogate Accounts
 
-Settings for this feature are available [here](Configuration-Properties-Common.html#couchdb-settings) under the configuration key `cas.authn.surrogate`. Surrogates may be stored either as part of the principals profile or as a series of principal/surrogate pair. The default is a key/value pair.
+Settings for this feature are available [here](Configuration-Properties-Common.html#couchdb-configuration) under the configuration key `cas.authn.surrogate`. Surrogates may be stored either as part of the principals profile or as a series of principal/surrogate pair. The default is a key/value pair.
 
 ```properties
 # cas.authn.surrogate.ldap.surrogateSearchFilter=(&(principal={user})(memberOf=cn=edu:example:cas:something:{user},dc=example,dc=edu))
@@ -1578,7 +1578,7 @@ To learn more about this topic, [please review this guide](../installation/Diges
 
 ## Radius Authentication
 
-To learn more about this topic, [please review this guide](../installation/RADIUS-Authentication.html).
+To learn more about this topic, [please review this guide](../mfa/RADIUS-Authentication.html).
 
 Principal transformation settings for this feature are available [here](Configuration-Properties-Common.html#authentication-principal-transformation) under the configuration key `cas.authn.radius`.
 
@@ -1728,7 +1728,7 @@ Password encoding  settings for this feature are available [here](Configuration-
 
 ## CouchDb Authentication
 
-To learn more about this topic, [please review this guide](CouchDb-Authentication.html).
+To learn more about this topic, [please review this guide](../installation/CouchDb-Authentication.html).
 
 Principal transformation settings for this feature are available [here](Configuration-Properties-Common.html#authentication-principal-transformation) under the configuration key `cas.authn.couchDb`.
 Password encoding  settings for this feature are available [here](Configuration-Properties-Common.html#password-encoding) under the configuration key `cas.authn.couchDb`.
@@ -2297,7 +2297,7 @@ The encryption algorithm is set to `AES_128_CBC_HMAC_SHA_256`. Signing & encrypt
 
 ## Multifactor Authentication
 
-To learn more about this topic, [please review this guide](Configuring-Multifactor-Authentication.html).
+To learn more about this topic, [please review this guide](../mfa/Configuring-Multifactor-Authentication.html).
 
 ```properties
 # Activate MFA globally for all, regardless of other settings
@@ -2464,6 +2464,10 @@ under the configuration key `cas.authn.mfa.gauth`.
 The signing and encryption keys [are both JWKs](Configuration-Properties-Common.html#signing--encryption) of size `512` and `256`.
 The encryption algorithm is set to `AES_128_CBC_HMAC_SHA_256`.  Signing & encryption settings for this feature are
 available [here](Configuration-Properties-Common.html#signing--encryption) under the configuration key `cas.authn.mfa.gauth`.
+
+#### Google Authenticator CouchDb
+
+Configuration settings for this feature are available [here](Configuration-Properties-Common.html#couchdb-configuration) under the configuration key `cas.authn.mfa.gauth`.  
 
 #### Google Authenticator JSON
 
@@ -3146,7 +3150,7 @@ To learn more about this topic, [please review this guide](../installation/OAuth
 
 ### OAuth2 UMA
 
-To learn more about this topic, [please review this guide](../protocol/OAuth-OpenId-Authentication.html).
+To learn more about this topic, [please review this guide](../installation/OAuth-OpenId-Authentication.html).
 
 ```properties
 # cas.authn.uma.issuer=http://localhost:8080/cas
@@ -3718,6 +3722,10 @@ To learn more about this topic, [please review this guide](../ticketing/JPA-Tick
 ```
 
 Signing & encryption settings for this registry are available [here](Configuration-Properties-Common.html#signing--encryption) under the configuration key `cas.ticket.registry.jpa`.
+
+### CouchDb Ticket Registry
+
+To learn more about this topic, [please review this guide](../ticketing/CouchDb-Ticket-Registry.html). Database settings for this feature are available [here](Configuration-Properties-Common.html#couchdb-integration-settings) under the configuration key `cas.ticket.registry.couchdb`.
 
 ### Couchbase Ticket Registry
 
