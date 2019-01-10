@@ -1,6 +1,8 @@
 package org.apereo.cas.web.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
@@ -18,6 +20,7 @@ import org.springframework.boot.actuate.health.Status;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -71,7 +74,8 @@ public class StatusEndpoint extends BaseCasMvcEndpoint {
      * @throws Exception the exception
      */
     @ReadOperation
-    protected void handle(final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    protected String handle() throws Exception {
+        /*
         if (request.getParameterMap().containsKey("maintenance") && request.getRemoteAddr().equals("127.0.0.1")) {
             if (request.getParameter("maintenance").equals("on")) {
                 StatusEndpoint.status = new Status("MAINTENANCE");
@@ -79,53 +83,54 @@ public class StatusEndpoint extends BaseCasMvcEndpoint {
                 StatusEndpoint.status = Status.UP;
             }
         }
+        */
 
         final StringBuilder sb = new StringBuilder();
         final Status status = StatusEndpoint.status;
 
         if (status.equals(Status.DOWN) || status.equals(Status.OUT_OF_SERVICE)) {
-            response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+            //response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
         }
 
         sb.append("Health: ").append(status.getCode());
 
         if (status.getCode().equals("MAINTENANCE")) {
             sb.append("\n");
-            writeResponse(response, sb);
-            return;
+            //writeResponse(response, sb);
+            return sb.toString();
         }
 
         ObjectMapper mapper = new ObjectMapper();
         final HzStats stats = mapper.convertValue(health.getDetails().get("hazelcast"), HzStats.class);
 
         sb.append("\n\n\tHazelcast: " + stats.getStatus());
-        sb.append("\n\t  Members: " + stats.clusterSize);
-        sb.append("\n\t  Is Master: " +  stats.isMaster());
-        for(String key : stats.maps.keySet()) {
+        sb.append("\n\t  Members: " + stats.details.clusterSize);
+        sb.append("\n\t  Is Master: " +  stats.details.isMaster());
+        for(String key : stats.details.maps.keySet()) {
             sb.append("\n\t  Map: " + key);
-            sb.append(" - Entries: " + stats.maps.get(key).size + " - Size: " + formatMemory(stats.maps.get(key).memory));
-            sb.append(" using " + stats.maps.get(key).percentFree +"% of heap");
-            sb.append("\n\t\tLocal Count: " + stats.maps.get(key).localCount);
-            sb.append("\n\t\tBackup Count: " + stats.maps.get(key).backupCount);
-            sb.append("\n\t\tGet Latency: " + stats.maps.get(key).getLatency);
-            sb.append("\n\t\tPut Latency: " + stats.maps.get(key).putLatency);
+            sb.append(" - Entries: " + stats.details.maps.get(key).size + " - Size: " + formatMemory(stats.details.maps.get(key).memory));
+            sb.append(" using " + stats.details.maps.get(key).percentFree +"% of heap");
+            sb.append("\n\t\tLocal Count: " + stats.details.maps.get(key).localCount);
+            sb.append("\n\t\tBackup Count: " + stats.details.maps.get(key).backupCount);
+            sb.append("\n\t\tGet Latency: " + stats.details.maps.get(key).getLatency);
+            sb.append("\n\t\tPut Latency: " + stats.details.maps.get(key).putLatency);
         }
 
         SessionStats sess = mapper.convertValue(health.getDetails().get("session"), SessionStats.class);
-        sb.append("\n\n\tSessions: " + sess.message);
-        sb.append(" - " + sess.sessionCount + " sessions. ");
-        sb.append(sess.ticketCount + " service tickets. ");
-        sb.append(sess.userCount + " unique users.");
+        sb.append("\n\n\tSessions: " + sess.details.getMessage());
+        sb.append(" - " + sess.details.sessionCount + " sessions. ");
+        sb.append(sess.details.ticketCount + " service tickets. ");
+        sb.append(sess.details.userCount + " unique users.");
 
         MemoryStats memStats = mapper.convertValue(health.getDetails().get("memory"), MemoryStats.class);
         sb.append("\n\n\tMemory: " + memStats.status);
-        sb.append(" - " + formatMemory(memStats.freeMemory) + " free, ");
-        sb.append(formatMemory(memStats.totalMemory) + " total.");
+        sb.append(" - " + formatMemory(memStats.details.freeMemory) + " free, ");
+        sb.append(formatMemory(memStats.details.totalMemory) + " total.");
 
         LdapStats ldapStats = mapper.convertValue(health.getDetails().get("pooledLdapConnectionFactory"), LdapStats.class);
-        sb.append("\n\n\tLDAP Pool: " + ldapStats.message);
-        sb.append(" - " + ldapStats.activeCount + " active, ");
-        sb.append(ldapStats.idleCount + " idle.");
+        sb.append("\n\n\tLDAP Pool: " + ldapStats.getDetails());
+        sb.append(" - " + ldapStats.details.activeCount + " active, ");
+        sb.append(ldapStats.details.idleCount + " idle.");
 
         sb.append("\n\nHost:\t\t").append(
             StringUtils.isBlank(casProperties.getHost().getName())
@@ -134,7 +139,8 @@ public class StatusEndpoint extends BaseCasMvcEndpoint {
         );
         sb.append("\nServer:\t\t").append(casProperties.getServer().getName());
         sb.append("\nVersion:\t").append(CasVersion.getVersion()).append("\n");
-        writeResponse(response, sb);
+        //writeResponse(response, sb);
+        return sb.toString();
     }
 
     private void writeResponse(final HttpServletResponse response, final StringBuilder sb) throws Exception {
@@ -147,49 +153,23 @@ public class StatusEndpoint extends BaseCasMvcEndpoint {
         }
     }
 
+    @Getter
+    @Setter
     private static class HzStats {
         private String status;
-        private boolean master;
-        private int clusterSize;
-        private Map<String, HzMap> maps;
-
-        public HzStats() {
-
-        }
-
-        public boolean isMaster() {
-            return master;
-        }
-
-        public void setMaster(boolean master) {
-            this.master = master;
-        }
-
-        public int getClusterSize() {
-            return clusterSize;
-        }
-
-        public void setClusterSize(int clusterSize) {
-            this.clusterSize = clusterSize;
-        }
-
-        public Map<String, HzMap> getMaps() {
-            return maps;
-        }
-
-        public void setMaps(Map<String, HzMap> maps) {
-            this.maps = maps;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
+        private Details details;
+        @Getter
+        @Setter
+        private static class Details {
+            private boolean master;
+            private int clusterSize;
+            private String message;
+            private Map<String, HzMap> maps;
         }
     }
 
+    @Getter
+    @Setter
     private static class HzMap {
         private int size;
         private int percentFree;
@@ -200,198 +180,47 @@ public class StatusEndpoint extends BaseCasMvcEndpoint {
         private long getLatency;
         private long putLatency;
         private long memory;
-
-        public HzMap() {
-
-        }
-
-        public int getSize() {
-            return size;
-        }
-
-        public void setSize(int size) {
-            this.size = size;
-        }
-
-        public int getPercentFree() {
-            return percentFree;
-        }
-
-        public void setPercentFree(int percentFree) {
-            this.percentFree = percentFree;
-        }
-
-        public long getEvictions() {
-            return evictions;
-        }
-
-        public void setEvictions(int evictions) {
-            this.evictions = evictions;
-        }
-
-        public long getCapacity() {
-            return capacity;
-        }
-
-        public void setCapacity(long capacity) {
-            this.capacity = capacity;
-        }
-
-        public long getLocalCount() {
-            return localCount;
-        }
-
-        public void setLocalCount(long localCount) {
-            this.localCount = localCount;
-        }
-
-        public long getBackupCount() {
-            return backupCount;
-        }
-
-        public void setBackupCount(long backupCount) {
-            this.backupCount = backupCount;
-        }
-
-        public long getGetLatency() {
-            return getLatency;
-        }
-
-        public void setGetLatency(long getLatency) {
-            this.getLatency = getLatency;
-        }
-
-        public long getPutLatency() {
-            return putLatency;
-        }
-
-        public void setPutLatency(long putLatency) {
-            this.putLatency = putLatency;
-        }
-
-        public long getMemory() {
-            return memory;
-        }
-
-        public void setMemory(long memory) {
-            this.memory = memory;
-        }
     }
 
+    @Getter
+    @Setter
     private static class SessionStats {
         private String status;
-        private int sessionCount;
-        private int userCount;
-        private int ticketCount;
-        private String message;
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public int getSessionCount() {
-            return sessionCount;
-        }
-
-        public void setSessionCount(int sessionCount) {
-            this.sessionCount = sessionCount;
-        }
-
-        public int getUserCount() {
-            return userCount;
-        }
-
-        public void setUserCount(int userCount) {
-            this.userCount = userCount;
-        }
-
-        public int getTicketCount() {
-            return ticketCount;
-        }
-
-        public void setTicketCount(int ticketCount) {
-            this.ticketCount = ticketCount;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
+        private Details details;
+        @Getter
+        @Setter
+        private static class Details {
+            private int sessionCount;
+            private int userCount;
+            private int ticketCount;
+            private String message;
         }
     }
 
+    @Getter
+    @Setter
     private static class MemoryStats {
         private String status;
-        private long freeMemory;
-        private long totalMemory;
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public long getFreeMemory() {
-            return freeMemory;
-        }
-
-        public void setFreeMemory(long freeMemory) {
-            this.freeMemory = freeMemory;
-        }
-
-        public long getTotalMemory() {
-            return totalMemory;
-        }
-
-        public void setTotalMemory(long totalMemory) {
-            this.totalMemory = totalMemory;
+        private Details details;
+        @Getter
+        @Setter
+        private static class Details {
+            private long freeMemory;
+            private long totalMemory;
         }
     }
 
+    @Getter
+    @Setter
     private static class LdapStats {
         private String status;
-        private String message;
-        private int activeCount;
-        private int idleCount;
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
-        public int getActiveCount() {
-            return activeCount;
-        }
-
-        public void setActiveCount(int activeCount) {
-            this.activeCount = activeCount;
-        }
-
-        public int getIdleCount() {
-            return idleCount;
-        }
-
-        public void setIdleCount(int idleCount) {
-            this.idleCount = idleCount;
+        private Details details;
+        @Getter
+        @Setter
+        private static class Details {
+            private String message;
+            private int activeCount;
+            private int idleCount;
         }
     }
 
