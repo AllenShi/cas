@@ -197,7 +197,7 @@ public class SingleSignOnSessionsEndpoint extends BaseCasMvcEndpoint {
      * @return the map
      */
     @WriteOperation
-    public Map<String, Object> destroySsoSessions(final String user) {
+    public Map<String, Object> destroySsoSessionsByUser(final String user) {
 
         val sessionsMap = new HashMap<String, Object>();
         val failedTickets = new HashMap<String, String>();

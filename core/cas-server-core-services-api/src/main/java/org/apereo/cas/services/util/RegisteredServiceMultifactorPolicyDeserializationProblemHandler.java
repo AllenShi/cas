@@ -24,7 +24,7 @@ class RegisteredServiceMultifactorPolicyDeserializationProblemHandler extends De
                                          final String valueToConvert, final String failureMsg) throws IOException {
         if (targetType.equals(RegisteredServiceMultifactorPolicy.FailureModes.class)) {
             if (StringUtils.equals("NOT_SET", valueToConvert)) {
-                LOGGER.warn("Found legacy attribute value [{}] which will be converted to [{}] as part of a service multifactor authentication policy."
+                LOGGER.trace("Found legacy attribute value [{}] which will be converted to [{}] as part of a service multifactor authentication policy."
                         + "The definition SHOULD manually be upgraded to the new supported syntax",
                     valueToConvert, RegisteredServiceMultifactorPolicy.FailureModes.UNDEFINED);
                 return RegisteredServiceMultifactorPolicy.FailureModes.UNDEFINED;

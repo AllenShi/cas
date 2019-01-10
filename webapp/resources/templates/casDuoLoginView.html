@@ -9,7 +9,7 @@
     <link href="../../static/css/cas.css" rel="stylesheet" th:remove="tag" />
 </head>
 
-<body>
+<body id="cas">
 <main role="main" class="container mt-3 mb-3">
     <div layout:fragment="content">
         <form method="post" id="duo_form" class="fm-v clearfix" th:object="${credential}" th:action="@{/login}">
